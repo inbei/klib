@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="源文件\util">
+      <UniqueIdentifier>{c8ff56fe-50e7-4b34-9c97-1c655013a2e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\thread">
+      <UniqueIdentifier>{75fcd259-be86-480a-b2d1-abc3d09f2a9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\thread">
+      <UniqueIdentifier>{f6b594a8-239c-4773-ac2d-d1eecf6a866a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\util">
+      <UniqueIdentifier>{ff43dab5-849a-406d-ac74-96751e5f4456}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\tcp">
+      <UniqueIdentifier>{186f496d-7603-4357-a7a8-c394aa6fffb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\tcp">
+      <UniqueIdentifier>{2fbe73ef-85fc-40df-8057-02ec0303ba67}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\thread\KAny.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KAtomic.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KBuffer.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KCondVariable.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KError.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KEventObject.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KException.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KLockGuard.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KMutex.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KPthread.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KQueue.cpp">
+      <Filter>源文件\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\KStringUtility.cpp">
+      <Filter>源文件\util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\KTime.cpp">
+      <Filter>源文件\util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\KEndian.cpp">
+      <Filter>源文件\util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tcp\KTcpBase.cpp">
+      <Filter>源文件\tcp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tcp\KTcpWriter.cpp">
+      <Filter>源文件\tcp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\KSHA1.cpp">
+      <Filter>源文件\util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\KBase64.cpp">
+      <Filter>源文件\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\thread\KAny.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread\KAtomic.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread\KBuffer.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread\KCondVariable.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread\KError.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread\KEventObject.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread\KException.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread\KLockGuard.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread\KMutex.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread\KPthread.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread\KQueue.h">
+      <Filter>头文件\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="include\util\KSingleton.hpp">
+      <Filter>头文件\util</Filter>
+    </ClInclude>
+    <ClInclude Include="include\util\KStringUtility.h">
+      <Filter>头文件\util</Filter>
+    </ClInclude>
+    <ClInclude Include="include\util\KTime.h">
+      <Filter>头文件\util</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tcp\KModbusProcessor.hpp">
+      <Filter>头文件\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tcp\KTcpClient.hpp">
+      <Filter>头文件\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tcp\KTcpConn.hpp">
+      <Filter>头文件\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tcp\KTcpProcessor.hpp">
+      <Filter>头文件\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tcp\KTcpServer.hpp">
+      <Filter>头文件\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\util\KEndian.h">
+      <Filter>头文件\util</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tcp\KTcpBase.h">
+      <Filter>头文件\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tcp\KTcpWriter.h">
+      <Filter>头文件\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tcp\KWebsocketProcessor.hpp">
+      <Filter>头文件\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\util\KSHA1.h">
+      <Filter>头文件\util</Filter>
+    </ClInclude>
+    <ClInclude Include="include\util\KBase64.h">
+      <Filter>头文件\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
