@@ -90,9 +90,12 @@ namespace thirdparty {
             valnil, valint64, valstatus, valdouble, valstring, valbool, valerror, valnullreply, valunsupport, valarray, valunconnected
         };
 
-        KHiredisCli(const std::vector<RedisConfig>& confs);
+        KHiredisCli();
 
         virtual ~KHiredisCli();
+
+        bool Initialize(const std::vector<RedisConfig>& confs);
+        const RedisConfig& GetCurrentConf() const { return m_currentConf; }
 
         bool CheckConnection(uint16_t times = 0);
 
@@ -130,6 +133,10 @@ namespace thirdparty {
         bool Hmset(const std::string& key, const std::map<std::string, std::string>& fieldValues);
 
         bool Hmget(const std::string& key, std::vector<std::string>& fields, std::vector<std::string>& values);
+        /*
+        判断当前连接的redis是否是master
+        */
+        bool IsMaster(redisContext* ctx);
 
 
     private:

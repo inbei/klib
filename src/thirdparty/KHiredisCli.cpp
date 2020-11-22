@@ -1,8 +1,8 @@
 #include "KHiredisCli.h"
 #include "KStringUtility.h"
 namespace thirdparty {
-    KHiredisCli::KHiredisCli(const std::vector<RedisConfig>& confs)
-        :m_redisContext(NULL), m_confs(confs)
+    KHiredisCli::KHiredisCli()
+        :m_redisContext(NULL)
     {
 
     }
@@ -12,15 +12,20 @@ namespace thirdparty {
         Close();
     }
 
-    bool KHiredisCli::CheckConnection(uint16_t times /*= 0*/)
+	bool KHiredisCli::Initialize(const std::vector<RedisConfig>& confs)
+	{
+        m_confs = confs;
+        return true;
+	}
+
+	bool KHiredisCli::CheckConnection(uint16_t times /*= 0*/)
     {
         uint16_t count = times;
         KLockGuard<KMutex> lock(m_redisMutex);
-        while (!m_redisContext && !(m_redisContext = Connect(m_currentConf)) && (times == 0 || (times > 0 && count-- > 0)))
+        while (!m_redisContext && !(m_redisContext = Connect(m_currentConf)) 
+            && (times == 0 || (times > 0 && count-- > 0)))
         {
-            //fprintf(stdout, "KHiredisCli connect try times:[%d]\n", count);
-            KTime::MSleep(3000);
-            KPthread::TestCancel();
+            KTime::MSleep(1000);
         }
         return m_redisContext != NULL;
     }
@@ -275,7 +280,21 @@ namespace thirdparty {
         }
     }
 
-    int KHiredisCli::Keys(const std::string& pattern, std::vector<std::string>& kys)
+	bool KHiredisCli::IsMaster(redisContext* ctx)
+	{
+		if (ctx)
+		{
+			redisReply* reply = reinterpret_cast<redisReply*>(redisCommand(ctx, "info replication"));
+            std::string resp;
+			int rc = GetResponse(reply, resp);
+			freeReplyObject(reply);
+            if(rc == valstring)
+			    return resp.find("role:master") != std::string::npos;
+		}
+		return false;
+	}
+
+	int KHiredisCli::Keys(const std::string& pattern, std::vector<std::string>& kys)
     {
         std::string cmd("keys ");
         cmd.append(pattern);
@@ -323,7 +342,8 @@ namespace thirdparty {
             conf = *it;
             timeval tv = { 3, 0 };
             redisContext* ctx = redisConnectWithTimeout(conf.ip.c_str(), conf.port, tv);
-            if (ctx && !ctx->err && Exec(ctx, "set check writable"))
+            // 连上之后判断是否是master，不是的话再连接其它的
+            if (ctx && !ctx->err && IsMaster(ctx))
             {
                 return ctx;
             }

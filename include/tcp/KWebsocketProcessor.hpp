@@ -24,14 +24,27 @@ namespace klib
 
 		}
 
-		void Clear()
-		{
-			opcode = 0x0f;
-			plen = 0;
+		virtual size_t GetPayloadSize() const 
+		{ 
+			if (plen == 126)
+				return extplen.extplen2;
+			else if (plen == 127)
+				return size_t(extplen.extplen8);
+			else
+				return plen;
 		}
-
-		bool Valid()
-		{
+		virtual size_t GetHeaderSize() const 
+		{ 
+			if (plen == 126)
+				return sizeof(uint16_t) * 2 + (mask ? sizeof(maskkey) : 0);
+			else if (plen == 127)
+				return sizeof(uint16_t) + sizeof(uint64_t) + (mask ? sizeof(maskkey) : 0);
+			else
+				return sizeof(uint16_t) + (mask ? sizeof(maskkey) : 0);
+		
+		}
+		virtual bool IsValid() 
+		{ 
 			return (reserved == 0 && (opcode == opmore
 				|| opcode == optext
 				|| opcode == opbinary
@@ -40,27 +53,13 @@ namespace klib
 				|| opcode == oppong));
 		}
 
-		virtual size_t GetPayloadLength() const
+		virtual void Clear() 
 		{
-			if (plen == 126)
-				return extplen.extplen2;
-			else if (plen == 127)
-				return size_t(extplen.extplen8);
-			else
-				return plen;
+			opcode = 0x0f;
+			plen = 0;
 		}
 
-		virtual size_t HeaderSize() const
-		{
-			if (plen == 126)
-				return sizeof(uint16_t) * 2 + (mask ? sizeof(maskkey) : 0);
-			else if (plen == 127)
-				return sizeof(uint16_t) + sizeof(uint64_t) + (mask ? sizeof(maskkey) : 0);
-			else
-				return sizeof(uint16_t) + (mask ? sizeof(maskkey) : 0);
-		}
-
-		void SetPayloadLength(size_t sz)
+		void SetPayloadSize(size_t sz)
 		{
 			if (sz < 126)
 				plen = sz;
@@ -82,7 +81,7 @@ namespace klib
 			reserved = 0;
 			opcode = optext;
 			mask = 0;
-			SetPayloadLength(msg.size());
+			SetPayloadSize(msg.size());
 			memset(maskkey, 0, sizeof(maskkey));
 			payload.ApendBuffer(msg.c_str(), msg.size());
 		}
@@ -120,6 +119,92 @@ namespace klib
 		*/
 		char maskkey[4]; // 0 or 4 bytes
 		KBuffer payload;
+	};
+
+	template<>
+	int ParseBlock(const KBuffer& dat, KWebsocketMessage& msg, KBuffer& left)
+	{
+		char* src = dat.GetData();
+		size_t ssz = dat.GetSize();
+		if (ssz < sizeof(uint16_t))
+			return ShortHeader;
+
+		KBuffer& payload = msg.payload;
+		// 1st byte
+		size_t offset = 0;
+		uint8_t fbyte = src[offset++];
+		msg.fin = fbyte >> 7;
+		msg.reserved = (fbyte >> 4) & 0x7;
+		msg.opcode = fbyte & 0xf;
+		if (!msg.IsValid())
+			return ProtocolError;
+
+		// 2nd byte
+		uint8_t sbyte = src[offset++];
+		msg.mask = sbyte >> 7;
+		msg.plen = sbyte & 0x7f;
+		// 3rd 4th byte means payload length
+		if (msg.plen == 126)// 2 bytes
+		{
+			size_t sz = sizeof(uint16_t);
+			if (ssz < offset + sz)
+				return ShortHeader;
+
+			KEndian::FromNetwork(reinterpret_cast<const uint8_t*>(src + offset), msg.extplen.extplen2);
+			offset += sz;
+			if (msg.extplen.extplen2 < 126)
+				return ProtocolError;
+		}
+		// 3rd - 10th byte means payload length
+		else if (msg.plen == 127) //8 bytes
+		{
+			size_t sz = sizeof(uint64_t);
+			if (ssz < offset + sz)
+				return ShortHeader;
+			KEndian::FromNetwork(reinterpret_cast<const uint8_t*>(src + offset), msg.extplen.extplen8);
+			offset += sz;
+			if (msg.extplen.extplen8 <= 65535)
+				return ProtocolError;
+		}
+
+		// mask key
+		if (msg.mask == 1)
+		{
+			size_t sz = sizeof(msg.maskkey);
+			if (ssz < offset + sz)
+				return ShortHeader;
+
+			memcpy(msg.maskkey, src + offset, sz);
+			offset += sz;
+		}
+
+		if (msg.plen > 0)
+		{
+			//copy payload
+			size_t psz = msg.GetPayloadSize();
+			if (ssz < offset + psz)
+				return ShortPayload;
+
+			char* tsrc = src + offset;
+			bool masked = (msg.mask & 0x1);
+			payload = KBuffer(psz);
+			char* dst = payload.GetData();
+			for (uint32_t i = 0; i < psz; ++i)
+			{
+				dst[i] = (masked ? (tsrc[i] ^ msg.maskkey[i % 4]) : tsrc[i]);
+			}
+			offset += psz;
+			payload.SetSize(psz);
+		}
+
+		// left data
+		if (offset < ssz)
+		{
+			KBuffer tmp(ssz - offset);
+			tmp.ApendBuffer(src + offset, tmp.Capacity());
+			left = tmp;
+		}
+		return ParseSuccess;
 	};
 
 	class KWebsocketProcessor :public KTcpProcessor<KWebsocketMessage>
@@ -216,105 +301,13 @@ namespace klib
 		}
 
 	protected:
-		/*
-		-1 protocol error
-		0 whole message
-		1 short header
-		2 short payload
-		rewrite this method
-		*/
-		virtual int ParseBlock(const KBuffer& dat, KWebsocketMessage& msg, KBuffer& left)
-		{
-			char* src = dat.GetData();
-			size_t ssz = dat.GetSize();
-			if (ssz < sizeof(uint16_t))
-				return shortheader;
-
-			KBuffer& payload = msg.payload;
-			// 1st byte
-			size_t offset = 0;
-			uint8_t fbyte = src[offset++];
-			msg.fin = fbyte >> 7;
-			msg.reserved = (fbyte >> 4) & 0x7;
-			msg.opcode = fbyte & 0xf;
-			if (!msg.Valid())
-				return protoerr;
-
-			// 2nd byte
-			uint8_t sbyte = src[offset++];
-			msg.mask = sbyte >> 7;
-			msg.plen = sbyte & 0x7f;
-			// 3rd 4th byte means payload length
-			if (msg.plen == 126)// 2 bytes
-			{
-				size_t sz = sizeof(uint16_t);
-				if (ssz < offset + sz)
-					return shortheader;
-
-				KEndian::FromNetwork(reinterpret_cast<const uint8_t*>(src + offset), msg.extplen.extplen2);
-				offset += sz;
-				if (msg.extplen.extplen2 < 126)
-					return protoerr;
-			}
-			// 3rd - 10th byte means payload length
-			else if (msg.plen == 127) //8 bytes
-			{
-				size_t sz = sizeof(uint64_t);
-				if (ssz < offset + sz)
-					return shortheader;
-				KEndian::FromNetwork(reinterpret_cast<const uint8_t*>(src + offset), msg.extplen.extplen8);
-				offset += sz;
-				if (msg.extplen.extplen8 <= 65535)
-					return protoerr;
-			}
-
-			// mask key
-			if (msg.mask == 1)
-			{
-				size_t sz = sizeof(msg.maskkey);
-				if (ssz < offset + sz)
-					return shortheader;
-
-				memcpy(msg.maskkey, src + offset, sz);
-				offset += sz;
-			}
-
-			if (msg.plen > 0)
-			{
-				//copy payload
-				size_t psz = msg.GetPayloadLength();
-				if (ssz < offset + psz)
-					return shortpayload;
-
-				char* tsrc = src + offset;
-				bool masked = (msg.mask & 0x1);
-				payload = KBuffer(psz);
-				char* dst = payload.GetData();
-				for (uint32_t i = 0; i < psz; ++i)
-				{
-					dst[i] = (masked ? (tsrc[i] ^ msg.maskkey[i % 4]) : tsrc[i]);
-				}
-				offset += psz;
-				payload.SetSize(psz);
-			}
-
-			// left data
-			if (offset < ssz)
-			{
-				KBuffer tmp(ssz - offset);
-				tmp.ApendBuffer(src + offset, tmp.Capacity());
-				left = tmp;
-			}
-			return success;
-		};
-
 		virtual void OnMessages(const std::vector<KWebsocketMessage>& msgs)
 		{
 			std::vector<KWebsocketMessage>& ms = const_cast<std::vector<KWebsocketMessage>&>(msgs);
 			std::vector<KWebsocketMessage>::iterator it = ms.begin();
 			while (it != ms.end())
 			{
-				JoinMessage(*it);
+				MergeMessage(*it, m_partial);
 				++it;
 			}
 		}
@@ -332,6 +325,11 @@ namespace klib
 				if (!GetHandshakeKey(req, "Sec-WebSocket-Key", wskey))
 					return;
 
+				std::string version;
+				GetHandshakeKey(req, "Sec-WebSocket-Protocol", version);
+				if(!version.empty())
+					version += "\r\n";
+
 				// generate key
 				GetHandshakeResponseKey(wskey);
 				wskey += "\r\n";
@@ -345,9 +343,10 @@ namespace klib
 				std::string resp;
 				resp.append("HTTP/1.1 101 Switching Protocols\r\n");
 				resp.append("Connection: upgrade\r\n");
-				resp.append("Server: hmi websocket server\r\n");
 				resp.append("Sec-WebSocket-Accept: ");
 				resp.append(wskey);
+				if (!version.empty())
+					resp.append(version);
 				resp.append("Upgrade: websocket\r\n\r\n");
 
 				if (m_base->WriteSocket(fd, resp.c_str(), resp.size()) == resp.size())
@@ -404,6 +403,11 @@ namespace klib
 			}
 		}
 
+		virtual void OnWebsocket(const KBuffer& msg)
+		{
+
+		}
+
 	private:
 		bool GetHandshakeKey(const std::string& reqstr, const std::string& keyword, std::string& wskey) const
 		{
@@ -435,41 +439,41 @@ namespace klib
 			wskey = KBase64::Encode(reinterpret_cast<const char*>(msgdigest), 20);
 		}
 
-		void JoinMessage(KWebsocketMessage& msg)
+		void MergeMessage(KWebsocketMessage& msg, KWebsocketMessage &partial)
 		{
 			switch (msg.opcode)
 			{
 			case KWebsocketMessage::optext:
+			case KWebsocketMessage::opbinary:
 			case KWebsocketMessage::opmore:
 			{
 				if (KWebsocketMessage::finlast == msg.fin)// last frame
 				{
-					std::string payloadStr;
-					if (m_partial.Valid())
+					if (partial.IsValid())
 					{
-						AppendBuffer(msg);
-						std::string(m_partial.payload.GetData(), m_partial.payload.GetSize()).swap(payloadStr);
-						m_partial.payload.Release();
-						m_partial.Clear();
+						AppendBuffer(msg, partial);
+						if (partial.opcode == KWebsocketMessage::opbinary)
+							OnWebsocket(partial.payload);
+						else
+							OnWebsocket(std::string(partial.payload.GetData(), partial.payload.GetSize()));
+						partial.payload.Release();
+						partial.Clear();
 					}
 					else
 					{
-						std::string(msg.payload.GetData(), msg.payload.GetSize()).swap(payloadStr);
+						if (msg.opcode == KWebsocketMessage::opbinary)
+							OnWebsocket(msg.payload);
+						else
+							OnWebsocket(std::string(msg.payload.GetData(), msg.payload.GetSize()));
 						msg.payload.Release();
 					}
-
-					OnWebsocket(payloadStr);
 				}
 				else// not last frame
 				{
-					if (m_partial.Valid())// middle frame
-					{
-						AppendBuffer(msg);
-					}
+					if (partial.IsValid())// middle frame
+						AppendBuffer(msg, partial);
 					else// first frame
-					{
-						m_partial = msg;
-					}
+						partial = msg;
 				}
 				break;
 			}
@@ -485,10 +489,10 @@ namespace klib
 			}
 		}
 
-		void AppendBuffer(KWebsocketMessage& msg)
+		void AppendBuffer(KWebsocketMessage& msg, KWebsocketMessage& partial) const
 		{
-			m_partial.payload.ApendBuffer(msg.payload.GetData(), msg.payload.GetSize());
-			m_partial.SetPayloadLength(m_partial.payload.GetSize() + msg.payload.GetSize());
+			partial.payload.ApendBuffer(msg.payload.GetData(), msg.payload.GetSize());
+			partial.SetPayloadSize(partial.payload.GetSize() + msg.payload.GetSize());
 			msg.payload.Release();
 		}
 
