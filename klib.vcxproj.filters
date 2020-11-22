@@ -164,5 +164,8 @@
     <ClInclude Include="include\util\KBase64.h">
       <Filter>头文件\util</Filter>
     </ClInclude>
+    <ClInclude Include="include\tcp\KMqttProcessor.hpp">
+      <Filter>头文件\tcp</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

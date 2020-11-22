@@ -216,8 +216,6 @@ namespace klib
 			GET / HTTP/1.1
 			Upgrade: websocket
 			Connection: Upgrade
-			Host: example.com
-			Origin: http://example.com
 			Sec-WebSocket-Key: sN9cRrP/n9NdMgdcy2VJFQ==
 			Sec-WebSocket-Version: 13
 			*/
@@ -226,8 +224,6 @@ namespace klib
 			req.append("GET / HTTP/1.1\r\n");
 			req.append("Upgrade: websocket\r\n");
 			req.append("Connection: Upgrade\r\n");
-			req.append("Origin: WebsocketClient\r\n");
-			req.append("Host: WebsocketServer\r\n");
 			req.append("Sec-WebSocket-Key: ");
 			req.append(m_secKey + "\r\n");
 			req.append("Sec-WebSocket-Version: 13\r\n\r\n");
@@ -325,10 +321,10 @@ namespace klib
 				if (!GetHandshakeKey(req, "Sec-WebSocket-Key", wskey))
 					return;
 
-				std::string version;
-				GetHandshakeKey(req, "Sec-WebSocket-Protocol", version);
-				if(!version.empty())
-					version += "\r\n";
+				std::string protocol;
+				GetHandshakeKey(req, "Sec-WebSocket-Protocol", protocol);
+				if(!protocol.empty())
+					protocol += "\r\n";
 
 				// generate key
 				GetHandshakeResponseKey(wskey);
@@ -338,15 +334,18 @@ namespace klib
 				Upgrade: websocket
 				Connection: Upgrade
 				Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
-				Sec-WebSocket-Protocol: chat
+				Sec-WebSocket-Protocol: mqttv3.1
 				*/
 				std::string resp;
 				resp.append("HTTP/1.1 101 Switching Protocols\r\n");
 				resp.append("Connection: upgrade\r\n");
 				resp.append("Sec-WebSocket-Accept: ");
 				resp.append(wskey);
-				if (!version.empty())
-					resp.append(version);
+				if (!protocol.empty())
+				{
+					resp.append("Sec-WebSocket-Protocol: ");
+					resp.append(protocol);
+				}
 				resp.append("Upgrade: websocket\r\n\r\n");
 
 				if (m_base->WriteSocket(fd, resp.c_str(), resp.size()) == resp.size())
@@ -403,7 +402,7 @@ namespace klib
 			}
 		}
 
-		virtual void OnWebsocket(const KBuffer& msg)
+		virtual void OnWebsocket(const std::vector<KBuffer>& msgs)
 		{
 
 		}
@@ -453,7 +452,11 @@ namespace klib
 					{
 						AppendBuffer(msg, partial);
 						if (partial.opcode == KWebsocketMessage::opbinary)
-							OnWebsocket(partial.payload);
+						{
+							std::vector<KBuffer> msgs;
+							msgs.push_back(partial.payload);
+							OnWebsocket(msgs);
+						}
 						else
 							OnWebsocket(std::string(partial.payload.GetData(), partial.payload.GetSize()));
 						partial.payload.Release();
@@ -462,7 +465,11 @@ namespace klib
 					else
 					{
 						if (msg.opcode == KWebsocketMessage::opbinary)
-							OnWebsocket(msg.payload);
+						{
+							std::vector<KBuffer> msgs;
+							msgs.push_back(msg.payload);
+							OnWebsocket(msgs);
+						}
 						else
 							OnWebsocket(std::string(msg.payload.GetData(), msg.payload.GetSize()));
 						msg.payload.Release();

@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\tcp\KModbusProcessor.hpp" />
+    <ClInclude Include="include\tcp\KMqttProcessor.hpp" />
     <ClInclude Include="include\tcp\KTcpBase.h" />
     <ClInclude Include="include\tcp\KTcpClient.hpp" />
     <ClInclude Include="include\tcp\KTcpConn.hpp" />
@@ -120,6 +121,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>.\lib</OutDir>
+    <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
