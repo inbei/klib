@@ -1,4 +1,4 @@
-#include "KSHA1.h"
+#include "util/KSHA1.h"
 namespace klib {
     KSHA1::KSHA1()
     {

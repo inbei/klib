@@ -1,7 +1,7 @@
 #pragma once
 #include "KTcpBase.h"
 #include <sstream>
-#include "KEventObject.h"
+#include "thread/KEventObject.h"
 #include "KTcpConn.hpp"
 
 namespace klib {

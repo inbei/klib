@@ -1,4 +1,4 @@
-#include "KBuffer.h"
+#include "thread/KBuffer.h"
 namespace klib {
     KBuffer::KBuffer() : m_size(0), m_dat(NULL), m_capacity(0)
     {

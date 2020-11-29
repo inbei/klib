@@ -1,9 +1,9 @@
 #pragma once
 #include "KTcpProcessor.hpp"
-#include "KStringUtility.h"
-#include "KBase64.h"
-#include "KSHA1.h"
-#include "KEndian.h"
+#include "util/KStringUtility.h"
+#include "util/KBase64.h"
+#include "util/KSHA1.h"
+#include "util/KEndian.h"
 namespace klib
 {
 	class KWebsocketMessage :public KTcpMessage

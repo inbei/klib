@@ -140,7 +140,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>.\include\tcp;.\include\thread;.\include\util;E:\depends\windows\pthreads-w32-2-9-1-release\Pre-built.2\include;E:\depends\windows\GnuWin32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;E:\depends\windows\pthreads-w32-2-9-1-release\Pre-built.2\include;E:\depends\windows\GnuWin32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>

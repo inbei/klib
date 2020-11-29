@@ -2,8 +2,8 @@
 #define _KTCPWRITER_HPP_
 #include "KTcpBase.h"
 #include <cstdio>
-#include "KTime.h"
-#include "KEventObject.h"
+#include "util/KTime.h"
+#include "thread/KEventObject.h"
 
 namespace klib {
     class KTcpWriter:public KEventObject<KBuffer>

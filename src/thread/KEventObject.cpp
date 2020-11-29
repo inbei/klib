@@ -1,4 +1,4 @@
-#include "KEventObject.h"
+#include "thread/KEventObject.h"
 
 namespace klib {
 	KMutex KEventBase::s_eobjmtx;

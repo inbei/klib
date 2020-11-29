@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
-#include "KEventObject.h"
-#include "KBuffer.h"
-#include "KBase64.h"
+#include "thread/KEventObject.h"
+#include "thread/KBuffer.h"
+#include "util/KBase64.h"
 #include "KTcpBase.h"
 
 namespace klib

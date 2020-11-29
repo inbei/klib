@@ -31,9 +31,9 @@
 #include <vector>
 #include <string>
 #include <assert.h>
-#include "KBuffer.h"
-#include "KAtomic.h"
-#include "KMutex.h"
+#include "thread/KBuffer.h"
+#include "thread/KAtomic.h"
+#include "thread/KMutex.h"
 namespace klib {
 #if defined(WIN32)
 #define SocketType SOCKET

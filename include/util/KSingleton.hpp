@@ -1,7 +1,7 @@
 #ifndef _SINGLETON_HPP_
 #define _SINGLETON_HPP_
-#include "KMutex.h"
-#include "KLockGuard.h"
+#include "thread/KMutex.h"
+#include "thread/KLockGuard.h"
 
 template<typename T>
 class KSingleton

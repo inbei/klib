@@ -1,5 +1,6 @@
-#include "KTime.h"
-#include "KError.h"
+#include "util/KTime.h"
+#include "thread/KError.h"
+
 namespace klib {
     bool KTime::NowDateTime(DateTime& datetime)
     {

@@ -1,4 +1,4 @@
-#include "KTcpWriter.h"
+#include "tcp/KTcpWriter.h"
 namespace klib {
 	klib::KTcpWriter::KTcpWriter()
 		:KEventObject<KBuffer>("KTcpWriter Thread"), m_base(NULL)

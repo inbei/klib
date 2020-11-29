@@ -59,6 +59,8 @@ namespace klib {
 			return m_running;
 		}
 
+		virtual bool IsReady() const { return true; }
+
 		inline uint32_t GetID() const
 		{
 			return m_objectID;
@@ -157,22 +159,27 @@ namespace klib {
         {
 			while (IsRunning())
 			{
-                EventType evt;
-				while (IsRunning() && m_eventQueue.PopFront(evt))
+				if (IsReady())
 				{
-					try
+					EventType evt;
+					while (IsRunning() && m_eventQueue.PopFront(evt))
 					{
-						ProcessEvent(evt);
-					}
-					catch (const std::exception& e)
-					{
-						printf("KEventObject exception:[%s]\n", e.what());
-					}
-					catch (...)
-					{
-						printf("KEventObject unknown exception\n");
+						try
+						{
+							ProcessEvent(evt);
+						}
+						catch (const std::exception& e)
+						{
+							printf("KEventObject exception:[%s]\n", e.what());
+						}
+						catch (...)
+						{
+							printf("KEventObject unknown exception\n");
+						}
 					}
 				}
+				else
+					KTime::MSleep(100);
 			}
 			return 0;
         }

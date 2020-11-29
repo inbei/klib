@@ -1,6 +1,6 @@
 #pragma once
 #include "KTcpProcessor.hpp"
-#include "KEndian.h"
+#include "util/KEndian.h"
 namespace klib
 {
 #define MaxRegisterCount 32765

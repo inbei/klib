@@ -4,7 +4,7 @@
 #define _CONDVARIABLE_HPP_
 
 #include "KException.h"
-#include "KTime.h"
+#include "util/KTime.h"
 #include "KError.h"
 #include <pthread.h>
 
