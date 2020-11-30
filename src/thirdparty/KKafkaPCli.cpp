@@ -1,4 +1,4 @@
-#include "KKafkaPCli.h"
+#include "thirdparty/KKafkaPCli.h"
 
 namespace thirdparty {
 	KKafkaPCli::KKafkaPCli() :m_running(false)

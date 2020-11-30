@@ -21,6 +21,10 @@
   <ItemGroup>
     <ClCompile Include="src\tcp\KTcpBase.cpp" />
     <ClCompile Include="src\tcp\KTcpWriter.cpp" />
+    <ClCompile Include="src\thirdparty\KHiredisCli.cpp" />
+    <ClCompile Include="src\thirdparty\KInfluxdbCli.cpp" />
+    <ClCompile Include="src\thirdparty\KKafkaPCli.cpp" />
+    <ClCompile Include="src\thirdparty\KRocketMqCCli.cpp" />
     <ClCompile Include="src\thread\KAny.cpp" />
     <ClCompile Include="src\thread\KAtomic.cpp" />
     <ClCompile Include="src\thread\KBuffer.cpp" />
@@ -48,6 +52,10 @@
     <ClInclude Include="include\tcp\KTcpServer.hpp" />
     <ClInclude Include="include\tcp\KTcpWriter.h" />
     <ClInclude Include="include\tcp\KWebsocketProcessor.hpp" />
+    <ClInclude Include="include\thirdparty\KHiredisCli.h" />
+    <ClInclude Include="include\thirdparty\KInfluxdbCli.h" />
+    <ClInclude Include="include\thirdparty\KKafkaPCli.h" />
+    <ClInclude Include="include\thirdparty\KRocketMqCCli.h" />
     <ClInclude Include="include\thread\KAny.h" />
     <ClInclude Include="include\thread\KAtomic.h" />
     <ClInclude Include="include\thread\KBuffer.h" />
@@ -140,7 +148,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>.\include;E:\depends\windows\pthreads-w32-2-9-1-release\Pre-built.2\include;E:\depends\windows\GnuWin32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;E:\depends\windows\pthreads-w32-2-9-1-release\Pre-built.2\include;E:\depends\windows\GnuWin32\include;E:\depends\windows\hiredis\include;E:\depends\windows\libcurl\include;E:\depends\windows\rdkafka\include;E:\depends\windows\rocketmq\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>

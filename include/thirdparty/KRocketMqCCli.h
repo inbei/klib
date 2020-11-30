@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <sstream>
 #include <vector>
-#include "KEventObject.h"
+#include "thread/KEventObject.h"
 
 namespace thirdparty {
     using namespace klib;

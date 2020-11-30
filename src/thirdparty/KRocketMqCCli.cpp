@@ -1,4 +1,4 @@
-#include "KRocketMqCCli.h"
+#include "thirdparty/KRocketMqCCli.h"
 
 namespace thirdparty {
 	KRocketMqCCli* KRocketMqCCli::m_self = NULL;

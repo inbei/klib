@@ -1,4 +1,4 @@
-#include "KInfluxDbCli.h"
+#include "thirdparty/KInfluxDbCli.h"
 
 namespace thirdparty {
 	void KInfluxDbCli::Initialize(const std::string& host, const std::string& database, const std::string& username, const std::string& password)

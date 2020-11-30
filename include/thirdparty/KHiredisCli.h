@@ -3,10 +3,10 @@
 #define _HIREDIS_HPP_
 
 #include "hiredis/hiredis.h"
-#include "KMutex.h"
-#include "KLockGuard.h"
-#include "KStringUtility.h"
-#include "KTime.h"
+#include "thread/KMutex.h"
+#include "thread/KLockGuard.h"
+#include "util/KStringUtility.h"
+#include "util/KTime.h"
 #include <string>
 #if defined(WIN32)
 #include <WS2tcpip.h>
@@ -20,7 +20,7 @@
 #include <set>
 #include <algorithm>
 
-#include "KPthread.h"
+#include "thread/KPthread.h"
 
 namespace thirdparty {
     using namespace klib;

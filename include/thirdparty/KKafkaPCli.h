@@ -1,9 +1,9 @@
 #pragma once
 
 #include "librdkafka/rdkafkacpp.h"
-#include "KMutex.h"
-#include "KLockGuard.h"
-#include "KAtomic.h"
+#include "thread/KMutex.h"
+#include "thread/KLockGuard.h"
+#include "thread/KAtomic.h"
 
 namespace thirdparty {
     using namespace klib;

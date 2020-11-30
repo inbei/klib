@@ -31,6 +31,12 @@
     <Filter Include="源文件\tcp">
       <UniqueIdentifier>{2fbe73ef-85fc-40df-8057-02ec0303ba67}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\thirdparty">
+      <UniqueIdentifier>{0f136ded-7a4d-49a0-aea9-d42ae3fc785c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\thirdparty">
+      <UniqueIdentifier>{6dd4fbba-45ad-4e85-8b19-30cb40d0cb83}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thread\KAny.cpp">
@@ -86,6 +92,18 @@
     </ClCompile>
     <ClCompile Include="src\util\KBase64.cpp">
       <Filter>源文件\util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thirdparty\KHiredisCli.cpp">
+      <Filter>源文件\thirdparty</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thirdparty\KInfluxdbCli.cpp">
+      <Filter>源文件\thirdparty</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thirdparty\KKafkaPCli.cpp">
+      <Filter>源文件\thirdparty</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thirdparty\KRocketMqCCli.cpp">
+      <Filter>源文件\thirdparty</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +184,18 @@
     </ClInclude>
     <ClInclude Include="include\tcp\KMqttProcessor.hpp">
       <Filter>头文件\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thirdparty\KHiredisCli.h">
+      <Filter>头文件\thirdparty</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thirdparty\KInfluxdbCli.h">
+      <Filter>头文件\thirdparty</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thirdparty\KKafkaPCli.h">
+      <Filter>头文件\thirdparty</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thirdparty\KRocketMqCCli.h">
+      <Filter>头文件\thirdparty</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
-#include "KHiredisCli.h"
-#include "KStringUtility.h"
+#include "thirdparty/KHiredisCli.h"
+#include "util/KStringUtility.h"
 namespace thirdparty {
     KHiredisCli::KHiredisCli()
         :m_redisContext(NULL)
