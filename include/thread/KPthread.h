@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef _PTHREAD_HPP_
 #define _PTHREAD_HPP_
 #include <iostream>
@@ -8,36 +6,12 @@
 #include <stdint.h>
 #include "KMutex.h"
 #include "KLockGuard.h"
+#include "KException.h"
+#include "KError.h"
 
 namespace klib {
     class KPthread
     {
-#define _Template1 template<typename ObjType, typename RetType, typename ArgType>
-#define _Template2 template<typename RetType, typename ArgType>
-#define _DeclareType1 \
-    typedef RetType(ObjType::*RunFunc)(ArgType);\
-    typedef void(ObjType::*LogFunc)(const std::string &);\
-    struct PthreadData\
-    {\
-        ObjType *obj;\
-        RunFunc rf;\
-        LogFunc lf;\
-        ArgType arg;\
-        RetType *ret;\
-        KPthread *self;\
-    };
-
-#define _DeclareType2 \
-    typedef RetType(*RunFunc)(ArgType);\
-    typedef void(*LogFunc)(const std::string &);\
-    struct PthreadData\
-    {\
-        RunFunc rf;\
-        LogFunc lf;\
-        ArgType arg;\
-        RetType *ret;\
-        KPthread *self;\
-    };
     public:
         enum ThreadError { AlreadRunning, InvalidArgument, CreateFailed, Success };
         KPthread(const std::string &name)
@@ -60,8 +34,8 @@ namespace klib {
 			}
         }
 
-        _Template1
-         int Run(ObjType* obj, RetType(ObjType::* rf)(ArgType), ArgType arg, void(ObjType::* lf)(const std::string&) = NULL, RetType* ret = NULL)
+        template<typename ObjectType, typename RetType, typename ArgType>
+         int Run(ObjectType* obj, RetType(ObjectType::* rf)(ArgType), ArgType arg, void(ObjectType::* lf)(const std::string&) = NULL, RetType* ret = NULL)
         {
             KLockGuard<KMutex> lock(m_tmtx);
             if (m_running)
@@ -73,7 +47,17 @@ namespace klib {
             {
                 return InvalidArgument;
             }
-            _DeclareType1
+            typedef RetType(ObjectType::* RunFunc)(ArgType);
+            typedef void(ObjectType::* LogFunc)(const std::string&);
+            struct PthreadData
+            {
+                ObjectType* obj;
+                RunFunc rf;
+                LogFunc lf;
+                ArgType arg;
+                RetType* ret;
+                KPthread* self;
+            };
             PthreadData* dat = new PthreadData;
             dat->obj = obj;
 			dat->rf = rf;
@@ -89,7 +73,7 @@ namespace klib {
             }
             //detach thread
             //pthread_attr_setdetachstate(&_attr, PTHREAD_CREATE_DETACHED);
-            rc = pthread_create(&m_tid, &m_attr, Work<ObjType, RetType, ArgType>, dat);
+            rc = pthread_create(&m_tid, &m_attr, Work<ObjectType, RetType, ArgType>, dat);
             if (rc != 0)
             {
                 delete dat;
@@ -98,7 +82,7 @@ namespace klib {
             return Success;
         }
 
-        _Template2
+        template<typename RetType, typename ArgType>
         int Run(RetType(*rf)(ArgType), ArgType arg, void(*lf)(const std::string&) = NULL, RetType* ret = NULL)
         {
             KLockGuard<KMutex> lock(m_tmtx);
@@ -108,7 +92,16 @@ namespace klib {
             if (!rf)
                 return InvalidArgument;
 
-            _DeclareType2
+			typedef RetType(*RunFunc)(ArgType); 
+			typedef void(*LogFunc)(const std::string&);
+			struct PthreadData
+			{
+				RunFunc rf;
+				LogFunc lf;
+				ArgType arg;
+				RetType* ret;
+				KPthread* self;
+			};
             PthreadData* dat = new PthreadData;
             dat->rf = rf;
             dat->lf = lf;
@@ -165,10 +158,20 @@ namespace klib {
 		}
 
     private:
-        _Template1
+        template<typename ObjectType, typename RetType, typename ArgType>
         static void* Work(void* arg)
         {
-            _DeclareType1
+			typedef RetType(ObjectType::* RunFunc)(ArgType);
+			typedef void(ObjectType::* LogFunc)(const std::string&);
+			struct PthreadData
+			{
+				ObjectType* obj;
+				RunFunc rf;
+				LogFunc lf;
+				ArgType arg;
+				RetType* ret;
+				KPthread* self;
+			};
             PthreadData* dat = reinterpret_cast<PthreadData*>(arg);
             {
 				KLockGuard<KMutex> lock(dat->self->m_tmtx);
@@ -193,10 +196,19 @@ namespace klib {
             return 0;
         }
 
-        _Template2
+        template<typename RetType, typename ArgType>
         static void* Work(void* arg)
         {
-            _DeclareType2
+			typedef RetType(*RunFunc)(ArgType);
+			typedef void(*LogFunc)(const std::string&);
+			struct PthreadData
+			{
+				RunFunc rf;
+				LogFunc lf;
+				ArgType arg;
+				RetType* ret;
+				KPthread* self;
+			};
             PthreadData* dat = reinterpret_cast<PthreadData*>(arg);
 			{
 				KLockGuard<KMutex> lock(dat->self->m_tmtx);

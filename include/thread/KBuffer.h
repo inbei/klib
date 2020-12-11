@@ -14,89 +14,28 @@ namespace klib {
 
         ~KBuffer();
 
-        /************************************
-        * Description: 重置缓存数据
-        * Method:    Reset
-        * FullName:  KBuffer::Reset
-        * Access:    public
-        * Returns:   void
-        * Qualifier:
-        ************************************/
+        // 重置缓存数据
         void Reset();
 
-        /************************************
-        * Description: 释放内存
-        * Method:    Release
-        * FullName:  KBuffer::Release
-        * Access:    public
-        * Returns:   void
-        * Qualifier:
-        ************************************/
+        // 释放内存
         void Release();
 
-        /************************************
-        * Description: 将数据追加到缓存最后面
-        * Method:    ApendBuffer
-        * FullName:  KBuffer::ApendBuffer
-        * Access:    public
-        * Returns:   bool
-        * Qualifier:
-        * Parameter: const char * d
-        * Parameter: size_t sz
-        ************************************/
+        // 将数据追加到缓存最后面
         bool ApendBuffer(const char* d, size_t sz);
 
-        /************************************
-        * Description: 将数据追加到缓存最前面
-        * Method:    PrependBuffer
-        * FullName:  KBuffer::PrependBuffer
-        * Access:    public
-        * Returns:   bool
-        * Qualifier:
-        * Parameter: const char * d
-        * Parameter: size_t sz
-        ************************************/
+        // 将数据追加到缓存最前面
         bool PrependBuffer(const char* d, size_t sz);
 
-        /************************************
-        * Description: 缓存最大容量
-        * Method:    Capacity
-        * FullName:  KBuffer::Capacity
-        * Access:    public
-        * Returns:   size_t
-        * Qualifier: const
-        ************************************/
+        // 缓存最大容量
         size_t Capacity() const;
 
-        /************************************
-        * Description: 获取缓存数据的指针
-        * Method:    GetData
-        * FullName:  KBuffer::GetData
-        * Access:    public
-        * Returns:   char *
-        * Qualifier: const
-        ************************************/
+        // 获取缓存数据的指针
         char* GetData() const;
 
-        /************************************
-        * Description: 获取缓存数据大小
-        * Method:    GetSize
-        * FullName:  KBuffer::GetSize
-        * Access:    public
-        * Returns:   size_t
-        * Qualifier: const
-        ************************************/
+        // 获取缓存数据大小
         size_t GetSize() const;
 
-        /************************************
-        * Description: 设置缓存数据大小
-        * Method:    SetSize
-        * FullName:  KBuffer::SetSize
-        * Access:    public
-        * Returns:   void
-        * Qualifier:
-        * Parameter: size_t sz
-        ************************************/
+        // 设置缓存数据大小
         void SetSize(size_t sz);
 
     private:

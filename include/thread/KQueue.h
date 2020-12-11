@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef _QUEUE_HPP_
 #define _QUEUE_HPP_
 #include <deque>
@@ -31,15 +29,7 @@ namespace klib {
 			KLockGuard<KMutex> lock(m_queueMutex);
         }
 
-        /************************************
-        * Description: 从后面批量追加元素，如果空间不够则返回false，否则放入元素返回true
-        * Method:    PushBackBatch
-        * FullName:  KQueue::PushBackBatch
-        * Access:    public
-        * Returns:   bool
-        * Qualifier:
-        * Parameter: const ContainerType & dat
-        ************************************/
+        // 从后面批量追加元素，如果空间不够则返回false，否则放入元素返回true
         template<typename ContainerType>
         bool PushBackBatch(const ContainerType& dat)
         {
@@ -56,16 +46,10 @@ namespace klib {
             return true;
         }
 
-        /************************************
+        /*
         * Description: 从后面追加一个元素， ms < 0 一直等待直到有空缺时再放进去并返回true，
         * ms >= 0 等待 ms 毫秒，期间如果一直没有空缺则返回false，否则追加元素返回true
-        * FullName:  KQueue<ElementType>::PushBack
-        * Access:    public
-        * Returns:   bool
-        * Qualifier: //
-        * Parameter: const ElementType & v
-        * Parameter: int ms
-        ************************************/
+        */
         bool PushBack(const ElementType& v, int ms = 0)
         {
 			bool qempty = false;
@@ -96,16 +80,10 @@ namespace klib {
 			return rc;
         }
 
-		/************************************
+		/*
 		* Description: 从前面追加一个元素， ms < 0 一直等待直到有空缺时再放进去并返回true，
 		* ms >= 0 等待 ms 毫秒，期间如果一直没有空缺则返回false，否则追加元素返回true
-		* FullName:  KQueue<ElementType>::PushFront
-		* Access:    public
-		* Returns:   bool
-		* Qualifier: //
-		* Parameter: const ElementType & v
-		* Parameter: int ms
-		************************************/
+		*/
 		bool PushFront(const ElementType& v, int ms = 0)
 		{
 			bool qempty = false;
@@ -168,17 +146,10 @@ namespace klib {
 				m_emptyCond.NotifyAll();
         }
 
-        /************************************
+        /*
         * Description: 从前面取出一个元素， ms < 0 一直等待直到有元素时再取并返回true，
         * ms >= 0 等待 ms 毫秒，期间如果一直没有元素则返回false，否则取出元素返回true
-        * Method:    PopFront
-        * FullName:  KQueue<ElementType>::PopFront
-        * Access:    public
-        * Returns:   bool
-        * Qualifier: //
-        * Parameter: ElementType & v
-        * Parameter: int ms
-        ************************************/
+        */
         bool PopFront(ElementType& v, int ms = 500)
         {
 			bool qfull = false;
@@ -221,36 +192,49 @@ namespace klib {
 			QueueBase::clear();
         }
 
-        /************************************
-        * Description: 查看指定的元素
-        * Method:    Peek
-        * FullName:  KQueue<ElementType>::Peek
-        * Access:    public
-        * Returns:   ElementType&
-        * Qualifier:
-        * Parameter: size_t i
-        ************************************/
+        // 查看指定的元素
 		inline ElementType& Peek(size_t i)
         {
 			KLockGuard<KMutex> lock(m_queueMutex);
 			return QueueBase::operator [](i);
         }
 
-        /************************************
-        * Description: 查看所有元素
-        * Method:    PeekAll
-        * FullName:  KQueue::PeekAll
-        * Access:    public
-        * Returns:   void
-        * Qualifier: const
-        * Parameter: ContainerType & dat
-        ************************************/
+        // 查看所有元素
         template<typename ContainerType>
 		inline void PeekAll(ContainerType& dat)
         {
             KLockGuard<KMutex> lock(m_queueMutex);
-            ContainerType(QueueBase::begin(), QueueBase::end()).swap(dat);
+			if (!QueueBase::empty())
+				ContainerType(QueueBase::begin(), QueueBase::end()).swap(dat);
         }
+
+		// 取出所有元素
+		template<typename ContainerType>
+		inline void GetAll(ContainerType& dat)
+		{
+			KLockGuard<KMutex> lock(m_queueMutex);
+			if (!QueueBase::empty())
+			{
+				ContainerType(QueueBase::begin(), QueueBase::end()).swap(dat);
+				QueueBase::clear();
+			}
+		}
+
+		// 取出部分元素
+		template<typename ContainerType>
+		inline void GetPart(size_t count, ContainerType& dat)
+		{
+			KLockGuard<KMutex> lock(m_queueMutex);
+			if (!QueueBase::empty())
+			{
+				count = (QueueBase::size() > count ? count : QueueBase::size());
+				typename QueueBase::iterator it = QueueBase::begin();
+				std::advance(it, count);
+
+				ContainerType(QueueBase::begin(), it).swap(dat);
+				QueueBase::erase(QueueBase::begin(), it);
+			}
+		}
 
 		inline bool IsEmpty() const
         {

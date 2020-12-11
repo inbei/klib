@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef _EVENTOBJECT_HPP_
 #define _EVENTOBJECT_HPP_
 #include "KQueue.h"
@@ -162,7 +160,7 @@ namespace klib {
 				if (IsReady())
 				{
 					EventType evt;
-					while (IsRunning() && m_eventQueue.PopFront(evt))
+					while (IsRunning() && IsReady() && m_eventQueue.PopFront(evt))
 					{
 						try
 						{

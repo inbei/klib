@@ -1,4 +1,4 @@
-#pragma once
+
 
 #ifndef _ANY_HPP_
 #define _ANY_HPP_
@@ -7,8 +7,7 @@
 #include <iostream>
 #include <cstring>
 #include <iostream>
-
-#include "KException.h"
+#include <stdexcept>
 namespace klib {
     /*
     该类可以用来存储任意数据类型
@@ -68,20 +67,20 @@ namespace klib {
         virtual ~KAny(){ Release(); }
         // 赋值操作符重载
         template<typename ValueType>
-        KAny& operator=(const ValueType& v)
-        {
-            if (TypeInfo() == typeid(ValueType))
-            {
+		KAny& operator=(const ValueType& v)
+		{
+			if (TypeInfo() == typeid(ValueType))
+			{
 				ValueHolder<ValueType>* s = dynamic_cast<ValueHolder<ValueType>*>(m_dat);
 				s->SetValue(v);
-            }
-            else
-            {
+			}
+			else
+			{
 				Release();
 				m_dat = new ValueHolder<ValueType>(v);
-            }
-            return *this;
-        }
+			}
+			return *this;
+		}
         // 赋值操作符重载
         KAny& operator=(const KAny& rhs)
         {
@@ -109,13 +108,13 @@ namespace klib {
         static const ValueType& AnyCast(const KAny& a)
         {
 			if (!a.m_dat)
-                throw KException(__FILE__, __LINE__, "null");
+                throw std::invalid_argument("KAny data is null");
 
 			ValueHolder<ValueType>* s = dynamic_cast<ValueHolder<ValueType>*>(a.m_dat);
 			if (s)
                 return s->GetValue();
 			else
-                throw KException(__FILE__, __LINE__, "bad cast");
+                throw std::bad_cast();
         }
 
     private:

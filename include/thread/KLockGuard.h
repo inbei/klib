@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef _LOCKGUARD_HPP_
 #define _LOCKGUARD_HPP_
 

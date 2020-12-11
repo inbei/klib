@@ -1,4 +1,3 @@
-#pragma once
 #ifndef _ERROR_HPP_
 #define _ERROR_HPP_
 #include <string>

@@ -1,4 +1,3 @@
-#pragma once
 #ifndef _STRING_UTIL_HPP_
 #define _STRING_UTIL_HPP_
 #include <string>
@@ -11,102 +10,28 @@ namespace klib {
     class KStringUtility
     {
     public:
-        /************************************
-        * Description: 插入字符串
-        * Method:    Insert
-        * FullName:  KStringUtility::Insert
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: const std::string & key
-        * Parameter: const std::string & is
-        * Parameter: std::string & src
-        ************************************/
+        // 插入字符串
         static void Insert(const std::string& key, const std::string& is, std::string& src);
-
-        /************************************
-        * Description: 替换字符串
-        * Method:    Replace
-        * FullName:  KStringUtility::Replace
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: const std::string & news
-        * Parameter: const std::string & olds
-        * Parameter: std::string & src
-        ************************************/
+        // 替换字符串
         static void Replace(const std::string& news, const std::string& olds, std::string& src);
-
-        /************************************
-        * Description: 分割字符串
-        * Method:    SplitString
-        * FullName:  KStringUtility::SplitString
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: const std::string & src
-        * Parameter: const std::string & delim
-        * Parameter: StringContainer & dest
-        * Parameter: bool reserveempty
-        ************************************/
+        // 分割字符串，使用字符串delim任意一个字符作为分隔符
         template <typename StringContainer>
         static void SplitString(const std::string& src, const std::string& delim, StringContainer& dest, bool reserveempty = false);
-
-        /************************************
-        * Description: 分割字符串
-        * Method:    SplitString2
-        * FullName:  KStringUtility::SplitString2
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: const std::string & src
-        * Parameter: const std::string & delim
-        * Parameter: StringContainer & dest
-        * Parameter: bool reserveempty
-        ************************************/
+        // 分割字符串，使用整个字符串delim作为分隔符
         template <typename StringContainer>
         static void SplitString2(const std::string& src, const std::string& delim, StringContainer& dest, bool reserveempty = false);
-
-        /************************************
-        * Description: 合并字符串
-        * Method:    JoinString
-        * FullName:  KStringUtility::JoinString
-        * Access:    public static
-        * Returns:   std::string
-        * Qualifier:
-        * Parameter: const StringContainer & src
-        * Parameter: const std::string & delim
-        ************************************/
+        // 合并字符串
         template <typename StringContainer>
         static std::string JoinString(const StringContainer& src, const std::string& delim);
-
-        /************************************
-        * Description: 去掉字符串两边的空白字符
-        * Method:    TrimString
-        * FullName:  KStringUtility::TrimString
-        * Access:    public static
-        * Returns:   std::string
-        * Qualifier:
-        * Parameter: const std::string & s
-        ************************************/
+        // 去掉字符串两边的空白字符
         static std::string TrimString(const std::string& s);
-
-        /************************************
-        * Description: 字符串转换成utf8
-        * Method:    ToUTF8
-        * FullName:  KStringUtility::ToUTF8
-        * Access:    public static
-        * Returns:   bool
-        * Qualifier:
-        * Parameter: const std::string & instr
-        * Parameter: std::string & outstr
-        ************************************/
+        // 字符串转换成utf8
         static bool ToUTF8(const std::string& instr, std::string& outstr);
-
+        // 转换成大写
         static std::string ToUpper(const std::string& str);
-
+        // 转换成小写
         static std::string ToLower(const std::string& str);
-
+        // 
         static std::string DoubleToString(double dval);
         static std::string FloatToString(float fval);
         static std::string Int64ToString(int64_t ival);

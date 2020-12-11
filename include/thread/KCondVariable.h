@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef _CONDVARIABLE_HPP_
 #define _CONDVARIABLE_HPP_
 
@@ -16,48 +14,13 @@ namespace klib {
 
         ~KCondVariable();
 
-        /************************************
-        * Description: 通知单个等待的条件变量
-        * Method:    Notify
-        * FullName:  KCondVariable::Notify
-        * Access:    public
-        * Returns:   void
-        * Qualifier: const
-        ************************************/
         void Notify() const;
 
-        /************************************
-        * Description: 通知所有等待的条件变量
-        * Method:    NotifyAll
-        * FullName:  KCondVariable::NotifyAll
-        * Access:    public
-        * Returns:   void
-        * Qualifier: const
-        ************************************/
         void NotifyAll() const;
 
-        /************************************
-        * Description: 一直等待通知信号
-        * Method:    Wait
-        * FullName:  KCondVariable::Wait
-        * Access:    public
-        * Returns:   void
-        * Qualifier: const
-        * Parameter: const Lock & lock
-        ************************************/
         template <typename Lock>
         void Wait(const Lock& lock) const;
 
-        /************************************
-        * Description: 在指定时长内等待通知信号
-        * Method:    TimedWait
-        * FullName:  KCondVariable::TimedWait
-        * Access:    public
-        * Returns:   bool
-        * Qualifier: const
-        * Parameter: const Lock & lock
-        * Parameter: const size_t & ms
-        ************************************/
         template <typename Lock>
         bool TimedWait(const Lock& lock, const size_t& ms) const;
 

@@ -1,4 +1,6 @@
 #include "thread/KMutex.h"
+#include "thread/KException.h"
+#include "thread/KError.h"
 namespace klib {
     KMutex::KMutex()
     {

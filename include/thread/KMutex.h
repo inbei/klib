@@ -1,10 +1,6 @@
-#pragma once
-
 #ifndef _MUTEX_HPP_
 #define _MUTEX_HPP_
 
-#include "KException.h"
-#include "KError.h"
 #include <pthread.h>
 
 namespace klib {

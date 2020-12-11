@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef _TIME_HPP_
 #define _TIME_HPP_
 #include <string>
@@ -29,15 +27,7 @@ namespace klib {
     class KTime
     {
     public:
-        /************************************
-        * Description: 获取当前时间
-        * Method:    NowDateTime
-        * FullName:  KTime::NowDateTime
-        * Access:    public static
-        * Returns:   bool
-        * Qualifier:
-        * Parameter: DateTime & datetime
-        ************************************/
+        // 获取当前时间
         static bool NowDateTime(DateTime& datetime);
         /*
         * yyyy year
@@ -48,65 +38,20 @@ namespace klib {
         * ss second
         * ccc millisecond
         */
-        /************************************
-        * Description: 根据格式获取当前时间
-        * Method:    NowDateTime
-        * FullName:  KTime::NowDateTime
-        * Access:    public static
-        * Returns:   bool
-        * Qualifier:
-        * Parameter: const std::string & fmt
-        * Parameter: std::string & datetime
-        ************************************/
         static bool NowDateTime(const std::string& fmt, std::string& datetime);
-
+        // 格式化时间
         static std::string FormatDateTime(const std::string timeString);
-
-        /************************************
-        * Description: 获取当前时间毫秒数
-        * Method:    NowMillisecond
-        * FullName:  KTime::NowMillisecond
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: uint64_t & millisec
-        ************************************/
+        // 获取当前时间毫秒数
         static void NowMillisecond(uint64_t& millisec);
-
+        // 获取当前时间微秒数
         static void NowMicrosecond(uint64_t& microsec);
-        /************************************
-        * Description: 获取当前时间秒数
-        * Method:    NowSecond
-        * FullName:  KTime::NowSecond
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: time_t & seconds
-        ************************************/
+        // 获取当前时间秒数
         static void NowSecond(time_t& seconds);
-
-        /************************************
-        * Description: 获取当前timespec时间
-        * Method:    NowTime
-        * FullName:  KTime::NowTime
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: timespec & abstime
-        ************************************/
+        // 获取当前timespec时间
         static void NowTime(timespec& abstime);
-
+        // 获取当前时间
         static void GetTime(timespec& abstime, const size_t& millisec);
-
-        /************************************
-        * Description: 睡眠millisec毫秒
-        * Method:    MSleep
-        * FullName:  KTime::MSleep
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: int millisec
-        ************************************/
+        // 睡眠millisec毫秒
         static void MSleep(int millisec);
     private:
         static void GetDateTimeElement(const std::string& fmt, const char* keyword,

@@ -47,7 +47,6 @@ namespace klib {
         KMutex m_vtMtx;
     };
 
-
     template<typename KeyType, typename ValueType>
     class AtomicMap
     {
