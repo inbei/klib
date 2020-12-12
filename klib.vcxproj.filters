@@ -173,9 +173,6 @@
     <ClInclude Include="include\tcp\KTcpBase.h">
       <Filter>头文件\tcp</Filter>
     </ClInclude>
-    <ClInclude Include="include\tcp\KTcpClient.hpp">
-      <Filter>头文件\tcp</Filter>
-    </ClInclude>
     <ClInclude Include="include\tcp\KTcpConn.hpp">
       <Filter>头文件\tcp</Filter>
     </ClInclude>
@@ -195,6 +192,9 @@
       <Filter>头文件\tcp</Filter>
     </ClInclude>
     <ClInclude Include="include\tcp\KTcpWriter.h">
+      <Filter>头文件\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tcp\KTcpClient.hpp">
       <Filter>头文件\tcp</Filter>
     </ClInclude>
   </ItemGroup>
