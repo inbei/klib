@@ -43,15 +43,15 @@
     <ClCompile Include="src\util\KTime.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\tcp\KModbusProcessor.hpp" />
-    <ClInclude Include="include\tcp\KMqttProcessor.hpp" />
     <ClInclude Include="include\tcp\KTcpBase.h" />
     <ClInclude Include="include\tcp\KTcpClient.hpp" />
     <ClInclude Include="include\tcp\KTcpConn.hpp" />
     <ClInclude Include="include\tcp\KTcpProcessor.hpp" />
+    <ClInclude Include="include\tcp\KTcpProcessorModbus.hpp" />
+    <ClInclude Include="include\tcp\KTcpProcessorMqtt.hpp" />
+    <ClInclude Include="include\tcp\KTcpProcessorWebsocket.hpp" />
     <ClInclude Include="include\tcp\KTcpServer.hpp" />
     <ClInclude Include="include\tcp\KTcpWriter.h" />
-    <ClInclude Include="include\tcp\KWebsocketProcessor.hpp" />
     <ClInclude Include="include\thirdparty\KRedisClient.h" />
     <ClInclude Include="include\thirdparty\KInfluxDbClient.h" />
     <ClInclude Include="include\thirdparty\KKafkaProducer.h" />

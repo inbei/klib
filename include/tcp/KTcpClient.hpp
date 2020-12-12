@@ -5,7 +5,7 @@ namespace klib {
 
     template<typename ProcessorType>
     class KTcpClient :protected KEventObject<SocketType>, public KTcpBase,
-        public ProcessorType, protected KTcpWriter
+        protected ProcessorType, protected KTcpWriter
     {
     public:
         KTcpClient()

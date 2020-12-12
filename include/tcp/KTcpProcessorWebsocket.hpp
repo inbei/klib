@@ -207,10 +207,10 @@ namespace klib
         return ParseSuccess;
     };
 
-    class KWebsocketProcessor :public KTcpProcessor<KWebsocketMessage>
+    class KTcpProcessorWebsocket :public KTcpProcessor<KWebsocketMessage>
     {
     public:
-        KWebsocketProcessor()
+        KTcpProcessorWebsocket()
         {
 
         }

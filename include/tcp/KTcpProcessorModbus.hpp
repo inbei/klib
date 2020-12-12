@@ -111,7 +111,7 @@ namespace klib
         return ParseSuccess;
     };
 
-    class KModbusProcessor :public KTcpProcessor<KModbusMessage>
+    class KTcpProcessorModbus :public KTcpProcessor<KModbusMessage>
     {
     public:
         KModbusMessage Request(uint16_t addr, uint16_t count)

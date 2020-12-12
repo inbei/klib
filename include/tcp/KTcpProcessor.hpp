@@ -207,5 +207,5 @@ namespace klib
         volatile bool m_ready;
     };
 
-    typedef KTcpProcessor<KTcpMessage> KTcpDefaultProcessor;
+    typedef KTcpProcessor<KTcpMessage> KTcpProcessorDefault;
 };
