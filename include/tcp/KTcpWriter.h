@@ -1,4 +1,4 @@
-#ifndef _KTCPWRITER_HPP_
+﻿#ifndef _KTCPWRITER_HPP_
 #define _KTCPWRITER_HPP_
 #include "KTcpBase.h"
 #include <cstdio>
@@ -6,13 +6,14 @@
 #include "thread/KEventObject.h"
 
 namespace klib {
-    class KTcpWriter:public KEventObject<KBuffer>
+    class KTcpWriter :public KEventObject<KBuffer>
     {
     public:
         KTcpWriter();
         bool Start(KTcpBase* base);
 
     protected:
+        virtual bool IsReady() const;
         virtual void ProcessEvent(const KBuffer& ev);
 
     private:

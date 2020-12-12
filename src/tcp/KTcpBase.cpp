@@ -1,187 +1,187 @@
-#include "tcp/KTcpBase.h"
+ï»¿#include "tcp/KTcpBase.h"
 #include "util/KTime.h"
 namespace klib {
-	klib::KTcpBase::KTcpBase() :m_connected(false)
-	{
+    klib::KTcpBase::KTcpBase() :m_connected(false)
+    {
 #if defined(WIN32)
-		WSADATA wsd;
-		assert(WSAStartup(MAKEWORD(2, 2), &wsd) == 0);
+        WSADATA wsd;
+        assert(WSAStartup(MAKEWORD(2, 2), &wsd) == 0);
 #elif defined(AIX)
-		m_pfd = pollset_create(50);
+        m_pfd = pollset_create(50);
 #elif defined(LINUX)
-		m_pfd = epoll_create1(0);
+        m_pfd = epoll_create1(0);
 #endif
-	}
+    }
 
-	klib::KTcpBase::~KTcpBase()
-	{
+    klib::KTcpBase::~KTcpBase()
+    {
 #if defined(WIN32)
-		WSACleanup();
+        WSACleanup();
 #elif defined(AIX)
-		pollset_destroy(m_pfd);
+        pollset_destroy(m_pfd);
 #elif defined(LINUX)
-		close(m_pfd);
+        close(m_pfd);
 #endif
-	}
+    }
 
-	int klib::KTcpBase::Poll()
-	{
-		KLockGuard<KMutex> lock(m_fdsMtx);
-		int rc = 0;
-		if (m_fds.empty())
-			return rc;
+    int klib::KTcpBase::PollSocket()
+    {
+        KLockGuard<KMutex> lock(m_fdsMtx);
+        int rc = 0;
+        if (m_fds.empty())
+            return rc;
 #if defined(WIN32)
-		rc = WSAPoll(&m_fds[0], m_fds.size(), PollTimeOut);
-		for (size_t i = 0; rc > 0 && i < m_fds.size(); ++i)
-			OnSocketEvent(m_fds[i].fd, m_fds[i].revents);
+        rc = WSAPoll(&m_fds[0], m_fds.size(), PollTimeOut);
+        for (size_t i = 0; rc > 0 && i < m_fds.size(); ++i)
+            OnSocketEvent(m_fds[i].fd, m_fds[i].revents);
 #elif defined(HPUX)
-		rc = ::poll(&m_fds[0], nfds_t(m_fds.size()), PollTimeOut);
-		for (size_t i = 0; rc > 0 && i < m_fds.size(); ++i)
-			OnSocketEvent(m_fds[i].fd, m_fds[i].revents);
+        rc = ::poll(&m_fds[0], nfds_t(m_fds.size()), PollTimeOut);
+        for (size_t i = 0; rc > 0 && i < m_fds.size(); ++i)
+            OnSocketEvent(m_fds[i].fd, m_fds[i].revents);
 #elif defined(LINUX)
-		rc = epoll_wait(m_pfd, m_ps, MaxEvent, PollTimeOut);
-		for (int i = 0; i < rc; ++i)
-			OnSocketEvent(m_ps[i].data.fd, m_ps[i].events);
+        rc = epoll_wait(m_pfd, m_ps, MaxEvent, PollTimeOut);
+        for (int i = 0; i < rc; ++i)
+            OnSocketEvent(m_ps[i].data.fd, m_ps[i].events);
 #elif defined(AIX)
-		rc = pollset_poll(m_pfd, m_ps, MaxEvent, PollTimeOut);
-		for (int i = 0; i < rc; ++i)
-			OnSocketEvent(m_ps[i].fd, m_ps[i].revents);
+        rc = pollset_poll(m_pfd, m_ps, MaxEvent, PollTimeOut);
+        for (int i = 0; i < rc; ++i)
+            OnSocketEvent(m_ps[i].fd, m_ps[i].revents);
 #endif
-		return rc;
-	}
+        return rc;
+    }
 
-	void klib::KTcpBase::DelFd(SocketType fd)
-	{
-		KLockGuard<KMutex> lock(m_fdsMtx);
-		DelFdInternal(fd);
-	}
+    void klib::KTcpBase::DeleteSocket(SocketType fd)
+    {
+        KLockGuard<KMutex> lock(m_fdsMtx);
+        DeleteSocketNoLock(fd);
+    }
 
-	bool klib::KTcpBase::AddFd(SocketType fd, const std::string& ipport)
-	{
-		KLockGuard<KMutex> lock(m_fdsMtx);
-		OnOpen(fd, ipport);
-		if (!SetSocketNonBlock(fd))
-		{
-			OnClose(fd);
-			CloseSocket(fd);
-			return false;
-		}
+    bool klib::KTcpBase::AddSocket(SocketType fd, const std::string& ipport)
+    {
+        KLockGuard<KMutex> lock(m_fdsMtx);
+        OnOpen(fd, ipport);
+        if (!SetSocketNonBlock(fd))
+        {
+            OnClose(fd);
+            CloseSocket(fd);
+            return false;
+        }
 #if defined(AIX)
-		poll_ctl ev;
-		ev.fd = fd;
-		ev.events = POLLIN | POLLHUP | POLLERR;
-		// PS_ADD PS_MOD PS_DELETE
-		ev.cmd = PS_ADD;
-		//int rc = pollset_ctl(pollset_t ps, struct poll_ctl* pollctl_array,int array_length)
-		if (pollset_ctl(m_pfd, &ev, 1) < 0)
-		{
-			OnClose(fd);
-			CloseSocket(fd);
-			return false;
-		}
+        poll_ctl ev;
+        ev.fd = fd;
+        ev.events = POLLIN | POLLHUP | POLLERR;
+        // PS_ADD PS_MOD PS_DELETE
+        ev.cmd = PS_ADD;
+        //int rc = pollset_ctl(pollset_t ps, struct poll_ctl* pollctl_array,int array_length)
+        if (pollset_ctl(m_pfd, &ev, 1) < 0)
+        {
+            OnClose(fd);
+            CloseSocket(fd);
+            return false;
+        }
 #elif defined(LINUX)
-		epoll_event ev;
-		ev.data.fd = fd;
-		ev.events = EPOLLIN | EPOLLET | EPOLLERR | EPOLLHUP;
-		if (epoll_ctl(m_pfd, EPOLL_CTL_ADD, fd, &ev) < 0)
-		{
-			OnClose(fd);
-			CloseSocket(fd);
-			return false;
-		}
+        epoll_event ev;
+        ev.data.fd = fd;
+        ev.events = EPOLLIN | EPOLLET | EPOLLERR | EPOLLHUP;
+        if (epoll_ctl(m_pfd, EPOLL_CTL_ADD, fd, &ev) < 0)
+        {
+            OnClose(fd);
+            CloseSocket(fd);
+            return false;
+        }
 #endif
-		pollfd p;
-		p.fd = fd;
+        pollfd p;
+        p.fd = fd;
 #if defined(WIN32)
-		p.events = epollin;
+        p.events = epollin;
 #else
-		p.events = epollin | epollhup | epollerr;
+        p.events = epollin | epollhup | epollerr;
 #endif
-		m_fds.push_back(p);
-		return true;
-	}
+        m_fds.push_back(p);
+        return true;
+    }
 
-	void klib::KTcpBase::DelFdInternal(SocketType fd)
-	{
-		std::vector<pollfd>::iterator it = m_fds.begin();
-		while (it != m_fds.end())
-		{
-			if (it->fd == fd)
-			{
-				m_fds.erase(it);
+    void klib::KTcpBase::DeleteSocketNoLock(SocketType fd)
+    {
+        std::vector<pollfd>::iterator it = m_fds.begin();
+        while (it != m_fds.end())
+        {
+            if (it->fd == fd)
+            {
+                m_fds.erase(it);
 #if defined(AIX)
-				poll_ctl ev;
-				ev.fd = fd;
-				// PS_ADD PS_MOD PS_DELETE
-				ev.cmd = PS_DELETE;
-				//int rc = pollset_ctl(pollset_t ps, struct poll_ctl* pollctl_array,int array_length)
-				pollset_ctl(m_pfd, &ev, 1);
+                poll_ctl ev;
+                ev.fd = fd;
+                // PS_ADD PS_MOD PS_DELETE
+                ev.cmd = PS_DELETE;
+                //int rc = pollset_ctl(pollset_t ps, struct poll_ctl* pollctl_array,int array_length)
+                pollset_ctl(m_pfd, &ev, 1);
 #elif defined(LINUX)
-				epoll_event ev;
-				ev.data.fd = fd;
-				epoll_ctl(m_pfd, EPOLL_CTL_DEL, fd, &ev);
+                epoll_event ev;
+                ev.data.fd = fd;
+                epoll_ctl(m_pfd, EPOLL_CTL_DEL, fd, &ev);
 #endif
-				OnClose(fd);
-				CloseSocket(fd);
-				break;
-			}
-			++it;
-		}
-	}
+                OnClose(fd);
+                CloseSocket(fd);
+                break;
+            }
+            ++it;
+        }
+    }
 
-	void klib::KTcpBase::CloseSocket(SocketType fd) const
-	{
+    void klib::KTcpBase::CloseSocket(SocketType fd) const
+    {
 #if defined(WIN32)
-		closesocket(fd);
+        closesocket(fd);
 #else
-		::close(fd);
+        ::close(fd);
 #endif
-	}
+    }
 
-	bool klib::KTcpBase::SetSocketNonBlock(SocketType fd) const
-	{
+    bool klib::KTcpBase::SetSocketNonBlock(SocketType fd) const
+    {
 #ifdef WIN32
-		// set non block
-		u_long nonblock = 1;
-		return ioctlsocket(fd, FIONBIO, &nonblock) == NO_ERROR;
+        // set non block
+        u_long nonblock = 1;
+        return ioctlsocket(fd, FIONBIO, &nonblock) == NO_ERROR;
 #else
-		// set non block
-		int flags = fcntl(fd, F_GETFL, 0);
-		if (flags < 0)
-			return false;
-		return fcntl(fd, F_SETFL, flags | O_NONBLOCK) >= 0;
+        // set non block
+        int flags = fcntl(fd, F_GETFL, 0);
+        if (flags < 0)
+            return false;
+        return fcntl(fd, F_SETFL, flags | O_NONBLOCK) >= 0;
 #endif // WIN32
-	}
+    }
 
-	int KTcpBase::WriteSocket(SocketType fd, const char* dat, size_t sz) const
-	{
-		if (sz < 1 || dat == NULL || fd < 1)
-			return 0;
+    int KTcpBase::WriteSocket(SocketType fd, const char* dat, size_t sz) const
+    {
+        if (sz < 1 || dat == NULL || fd < 1)
+            return 0;
 
-		int sent = 0;
-		while (sent != sz && fd > 0)
-		{
-			int rc = ::send(fd, dat + sent, sz - sent, 0/*MSG_DONTWAIT  MSG_WAITALL*/);
-			if (rc > 0)
-				sent += rc;
-			else
-			{
+        int sent = 0;
+        while (sent != sz && fd > 0)
+        {
+            int rc = ::send(fd, dat + sent, sz - sent, 0/*MSG_DONTWAIT  MSG_WAITALL*/);
+            if (rc > 0)
+                sent += rc;
+            else
+            {
 #if defined(WIN32)
-				if (GetLastError() == WSAEINTR) // ¶Á²Ù×÷ÖĞ¶Ï£¬ĞèÒªÖØĞÂ¶Á
-					KTime::MSleep(3);
-				else if (GetLastError() == WSAEWOULDBLOCK) // ·Ç×èÈûÄ£Ê½£¬ÔİÊ±ÎŞÊı¾İ£¬²»ĞèÒªÖØĞÂ¶Á
-					break;
+                if (GetLastError() == WSAEINTR) // è¯»æ“ä½œä¸­æ–­ï¼Œéœ€è¦é‡æ–°è¯»
+                    KTime::MSleep(3);
+                else if (GetLastError() == WSAEWOULDBLOCK) // éé˜»å¡æ¨¡å¼ï¼Œæš‚æ—¶æ— æ•°æ®ï¼Œä¸éœ€è¦é‡æ–°è¯»
+                    break;
 #else
-				if (errno == EINTR) // ¶Á²Ù×÷ÖĞ¶Ï£¬ĞèÒªÖØĞÂ¶Á
-					KTime::MSleep(3);
-				else if (errno == EWOULDBLOCK) // ·Ç×èÈûÄ£Ê½£¬ÔİÊ±ÎŞÊı¾İ£¬²»ĞèÒªÖØĞÂ¶Á
-					break;
+                if (errno == EINTR) // è¯»æ“ä½œä¸­æ–­ï¼Œéœ€è¦é‡æ–°è¯»
+                    KTime::MSleep(3);
+                else if (errno == EWOULDBLOCK) // éé˜»å¡æ¨¡å¼ï¼Œæš‚æ—¶æ— æ•°æ®ï¼Œä¸éœ€è¦é‡æ–°è¯»
+                    break;
 #endif
-				else // ´íÎó¶Ï¿ªÁ¬½Ó
-					return -1;
-			}
-		}
-		return sent;
-	}
+                else // é”™è¯¯æ–­å¼€è¿æ¥
+                    return -1;
+            }
+        }
+        return sent;
+    }
 
 };

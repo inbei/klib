@@ -1,183 +1,183 @@
-#pragma once
+Ôªø#pragma once
 #include "KTcpProcessor.hpp"
 #include "KTcpWriter.h"
 namespace klib {
 
-	template<typename ProcessorType>
-	class KTcpClient :protected KEventObject<SocketType>,public KTcpBase, 
-		protected ProcessorType, protected KTcpWriter
-	{
-	public:
-		KTcpClient()
-			:m_fd(0), KEventObject<SocketType>("KTcpClient Thread")
-		{
+    template<typename ProcessorType>
+    class KTcpClient :protected KEventObject<SocketType>, public KTcpBase,
+        public ProcessorType, protected KTcpWriter
+    {
+    public:
+        KTcpClient()
+            :m_fd(0), KEventObject<SocketType>("KTcpClient Thread")
+        {
 
-		}
+        }
 
-		bool Start(const std::string& ip, uint16_t port, bool autoReconnect = true)
-		{
-			m_ip = ip;
-			m_port = port;
-			m_autoReconnect = autoReconnect;
-			if (!KTcpWriter::Start(this))
-				return false;
+        bool Start(const std::string& ip, uint16_t port, bool autoReconnect = true)
+        {
+            m_ip = ip;
+            m_port = port;
+            m_autoReconnect = autoReconnect;
+            if (!KTcpWriter::Start(this))
+                return false;
 
-			if (!ProcessorType::Start(this))
-			{
-				KTcpWriter::Stop();
-				return false;
-			}
+            if (!ProcessorType::Start(this))
+            {
+                KTcpWriter::Stop();
+                return false;
+            }
 
-			if (!KEventObject<SocketType>::Start())
-			{
-				ProcessorType::Stop();
-				KTcpWriter::Stop();
-				return false;
-			}
-			
-			KEventObject<SocketType>::Post(0);
-			return true;
-		}
+            if (!KEventObject<SocketType>::Start())
+            {
+                ProcessorType::Stop();
+                KTcpWriter::Stop();
+                return false;
+            }
 
-		void Stop()
-		{
-			KEventObject<SocketType>::Stop();
-			while (!KTcpWriter::IsEmpty())
-				KTime::MSleep(3);
-			KTcpWriter::Stop();
-			while (!ProcessorType::IsEmpty())
-				KTime::MSleep(3);
-			ProcessorType::Stop();
-		}
+            KEventObject<SocketType>::Post(0);
+            return true;
+        }
 
-		void WaitForStop()
-		{
-			KEventObject<SocketType>::WaitForStop();
-			KTcpWriter::WaitForStop();
-			ProcessorType::WaitForStop();
-		}
+        void Stop()
+        {
+            KEventObject<SocketType>::Stop();
+            while (!KTcpWriter::IsEmpty())
+                KTime::MSleep(3);
+            KTcpWriter::Stop();
+            while (!ProcessorType::IsEmpty())
+                KTime::MSleep(3);
+            ProcessorType::Stop();
+        }
 
-		bool Send(const KBuffer& msg)
-		{
-			if(IsConnected())
-				return KTcpWriter::Post(msg);
-			return false;
-		}
+        void WaitForStop()
+        {
+            KEventObject<SocketType>::WaitForStop();
+            KTcpWriter::WaitForStop();
+            ProcessorType::WaitForStop();
+        }
 
-		virtual bool IsServer() const { return false; }
+        bool Send(const KBuffer& msg)
+        {
+            if (IsConnected())
+                return KTcpWriter::Post(msg);
+            return false;
+        }
 
-		virtual bool Handshake() { return ProcessorType::Handshake(); }
+        virtual bool IsServer() const { return false; }
 
-		virtual void Serialize(const typename ProcessorType::ProcessorMessageType& msg, KBuffer& result) const { ProcessorType::Serialize(msg, result); }
+        virtual bool Handshake() { return ProcessorType::Handshake(); }
 
-	private:
-		virtual void ProcessEvent(const SocketType& ev)
-		{
-			if (!IsConnected())
-			{
-				if (!Connect(m_ip, m_port))
-					KTime::MSleep(1000);
-			}
-			else
-			{
-				Poll();
-			}
-			KEventObject<SocketType>::Post(1);
-		}
+        virtual void Serialize(const typename ProcessorType::ProcessorMessageType& msg, KBuffer& result) const { ProcessorType::Serialize(msg, result); }
 
-		virtual void OnSocketEvent(SocketType fd, short evt)
-		{
-			if (evt & epollin)
-			{
-				std::vector<KBuffer> dat;
-				if (ReadSocket(fd, dat) < 0)
-					DelFdInternal(fd);
-				else if (!ProcessorType::Post(dat))
-				{
-					std::vector<KBuffer>::iterator it = dat.begin();
-					while (it != dat.end())
-					{
-						it->Release();
-						++it;
-					}
-				}
-			}
-			else if (evt & epollhup || evt & epollerr)
-			{
-				DelFdInternal(fd);
-			}
-		}
+    private:
+        virtual void ProcessEvent(const SocketType& ev)
+        {
+            if (!IsConnected())
+            {
+                if (!Connect(m_ip, m_port))
+                    KTime::MSleep(1000);
+            }
+            else
+            {
+                PollSocket();
+            }
+            KEventObject<SocketType>::Post(1);
+        }
 
-		virtual SocketType GetFd() const{ return m_fd; }
+        virtual void OnSocketEvent(SocketType fd, short evt)
+        {
+            if (evt & epollin)
+            {
+                std::vector<KBuffer> dat;
+                if (ReadSocket(fd, dat) < 0)
+                    DeleteSocketNoLock(fd);
+                else if (!ProcessorType::Post(dat))
+                {
+                    std::vector<KBuffer>::iterator it = dat.begin();
+                    while (it != dat.end())
+                    {
+                        it->Release();
+                        ++it;
+                    }
+                }
+            }
+            else if (evt & epollhup || evt & epollerr)
+            {
+                DeleteSocketNoLock(fd);
+            }
+        }
 
-		bool Connect(const std::string& ip, uint16_t port)
-		{
-			if ((m_fd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
-				return false;
+        virtual SocketType GetSocket() const { return m_fd; }
 
-			// set reuse address
-			int on = 1;
-			if (::setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR,
-				reinterpret_cast<const char*>(&on), sizeof(on)) != 0)
-			{
-				CloseSocket(m_fd);
-				return false;
-			}
+        bool Connect(const std::string& ip, uint16_t port)
+        {
+            if ((m_fd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
+                return false;
 
-			sockaddr_in server;
-			server.sin_family = AF_INET;
-			server.sin_port = htons(port);
-			server.sin_addr.s_addr = inet_addr(ip.c_str());
-			if (::connect(m_fd, (sockaddr*)(&server), sizeof(server)) != 0)
-			{
-				CloseSocket(m_fd);
-				return false;
-			}
+            // set reuse address
+            int on = 1;
+            if (::setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR,
+                reinterpret_cast<const char*>(&on), sizeof(on)) != 0)
+            {
+                CloseSocket(m_fd);
+                return false;
+            }
 
-			std::ostringstream os;
-			os << ip << ":" << port;
-			return AddFd(m_fd, os.str());
-		}
+            sockaddr_in server;
+            server.sin_family = AF_INET;
+            server.sin_port = htons(port);
+            server.sin_addr.s_addr = inet_addr(ip.c_str());
+            if (::connect(m_fd, (sockaddr*)(&server), sizeof(server)) != 0)
+            {
+                CloseSocket(m_fd);
+                return false;
+            }
 
-		int ReadSocket(SocketType fd, std::vector<KBuffer>& dat) const
-		{
-			int bytes = 0;
-			int rc = 1;
-			char buf[BlockSize] = { 0 };
-			while (rc > 0 && fd > 0)
-			{
-				rc = ::recv(fd, buf, BlockSize, 0/*MSG_DONTWAIT  MSG_WAITALL*/);
-				if (rc > 0)
-				{
-					KBuffer b(rc);
-					b.ApendBuffer(buf, rc);
-					dat.push_back(b);
-					bytes += rc;
-				}
-				else
-				{
+            std::ostringstream os;
+            os << ip << ":" << port;
+            return AddSocket(m_fd, os.str());
+        }
+
+        int ReadSocket(SocketType fd, std::vector<KBuffer>& dat) const
+        {
+            int bytes = 0;
+            int rc = 1;
+            char buf[BlockSize] = { 0 };
+            while (rc > 0 && fd > 0)
+            {
+                rc = ::recv(fd, buf, BlockSize, 0/*MSG_DONTWAIT  MSG_WAITALL*/);
+                if (rc > 0)
+                {
+                    KBuffer b(rc);
+                    b.ApendBuffer(buf, rc);
+                    dat.push_back(b);
+                    bytes += rc;
+                }
+                else
+                {
 #if defined(WIN32)
-					if (GetLastError() == WSAEINTR) // ∂¡≤Ÿ◊˜÷–∂œ£¨–Ë“™÷ÿ–¬∂¡
-						KTime::MSleep(6);
-					else if (GetLastError() == WSAEWOULDBLOCK) // ∑«◊Ë»˚ƒ£ Ω£¨‘› ±Œﬁ ˝æ›£¨≤ª–Ë“™÷ÿ–¬∂¡
-						break;
+                    if (GetLastError() == WSAEINTR) // ËØªÊìç‰Ωú‰∏≠Êñ≠ÔºåÈúÄË¶ÅÈáçÊñ∞ËØª
+                        KTime::MSleep(6);
+                    else if (GetLastError() == WSAEWOULDBLOCK) // ÈùûÈòªÂ°ûÊ®°ÂºèÔºåÊöÇÊó∂Êó†Êï∞ÊçÆÔºå‰∏çÈúÄË¶ÅÈáçÊñ∞ËØª
+                        break;
 #else
-					if (errno == EINTR) // ∂¡≤Ÿ◊˜÷–∂œ£¨–Ë“™÷ÿ–¬∂¡
-						KTime::MSleep(6);
-					else if (errno == EWOULDBLOCK) // ∑«◊Ë»˚ƒ£ Ω£¨‘› ±Œﬁ ˝æ›£¨≤ª–Ë“™÷ÿ–¬∂¡
-						break;
+                    if (errno == EINTR) // ËØªÊìç‰Ωú‰∏≠Êñ≠ÔºåÈúÄË¶ÅÈáçÊñ∞ËØª
+                        KTime::MSleep(6);
+                    else if (errno == EWOULDBLOCK) // ÈùûÈòªÂ°ûÊ®°ÂºèÔºåÊöÇÊó∂Êó†Êï∞ÊçÆÔºå‰∏çÈúÄË¶ÅÈáçÊñ∞ËØª
+                        break;
 #endif
-					else // ¥ÌŒÛ∂œø™¡¨Ω”
-						return -1;
-				}
-			}
-			return bytes;
-		}
+                    else // ÈîôËØØÊñ≠ÂºÄËøûÊé•
+                        return -1;
+                }
+            }
+            return bytes;
+        }
 
-	private:
-		SocketType m_fd;
-		std::string m_ip;
-		uint16_t m_port;
-		bool m_autoReconnect;
-	};
+    private:
+        SocketType m_fd;
+        std::string m_ip;
+        uint16_t m_port;
+        bool m_autoReconnect;
+    };
 };

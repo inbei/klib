@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "KTcpProcessor.hpp"
 #include "util/KStringUtility.h"
 #include "util/KBase64.h"
@@ -6,505 +6,507 @@
 #include "util/KEndian.h"
 namespace klib
 {
-	class KWebsocketMessage :public KTcpMessage
-	{
-	public:
-		enum {
-			opmore = 0x0, optext = 0x1,
-			opbinary = 0x2, opclose = 0x8, opping = 0x9, oppong = 0xa
-		};
+    class KWebsocketMessage :public KTcpMessage
+    {
+    public:
+        enum {
+            opmore = 0x0, optext = 0x1,
+            opbinary = 0x2, opclose = 0x8, opping = 0x9, oppong = 0xa
+        };
 
-		enum {mskno = 0, mskyes = 1};
+        enum { mskno = 0, mskyes = 1 };
 
-		enum {finmore = 0, finlast = 1};
+        enum { finmore = 0, finlast = 1 };
 
-		KWebsocketMessage()
-			:fin(0), reserved(0), opcode(0x0f), mask(0), plen(0), extplen()
-		{
+        KWebsocketMessage()
+            :fin(0), reserved(0), opcode(0x0f), mask(0), plen(0), extplen()
+        {
 
-		}
+        }
 
-		virtual size_t GetPayloadSize() const 
-		{ 
-			if (plen == 126)
-				return extplen.extplen2;
-			else if (plen == 127)
-				return size_t(extplen.extplen8);
-			else
-				return plen;
-		}
-		virtual size_t GetHeaderSize() const 
-		{ 
-			if (plen == 126)
-				return sizeof(uint16_t) * 2 + (mask ? sizeof(maskkey) : 0);
-			else if (plen == 127)
-				return sizeof(uint16_t) + sizeof(uint64_t) + (mask ? sizeof(maskkey) : 0);
-			else
-				return sizeof(uint16_t) + (mask ? sizeof(maskkey) : 0);
-		
-		}
-		virtual bool IsValid() 
-		{ 
-			return (reserved == 0 && (opcode == opmore
-				|| opcode == optext
-				|| opcode == opbinary
-				|| opcode == opclose
-				|| opcode == opping
-				|| opcode == oppong));
-		}
+        virtual size_t GetPayloadSize() const
+        {
+            if (plen == 126)
+                return extplen.extplen2;
+            else if (plen == 127)
+                return size_t(extplen.extplen8);
+            else
+                return plen;
+        }
+        virtual size_t GetHeaderSize() const
+        {
+            if (plen == 126)
+                return sizeof(uint16_t) * 2 + (mask ? sizeof(maskkey) : 0);
+            else if (plen == 127)
+                return sizeof(uint16_t) + sizeof(uint64_t) + (mask ? sizeof(maskkey) : 0);
+            else
+                return sizeof(uint16_t) + (mask ? sizeof(maskkey) : 0);
 
-		virtual void Clear() 
-		{
-			opcode = 0x0f;
-			plen = 0;
-		}
+        }
+        virtual bool IsValid()
+        {
+            return (reserved == 0 && (opcode == opmore
+                || opcode == optext
+                || opcode == opbinary
+                || opcode == opclose
+                || opcode == opping
+                || opcode == oppong));
+        }
 
-		void SetPayloadSize(size_t sz)
-		{
-			if (sz < 126)
-				plen = sz;
-			else if (sz < 65535)
-			{
-				plen = 126;
-				extplen.extplen2 = sz;
-			}
-			else
-			{
-				plen = 127;
-				extplen.extplen8 = sz;
-			}
-		}
+        virtual void Clear()
+        {
+            opcode = 0x0f;
+            plen = 0;
+        }
 
-		void Initialize(const std::string& msg)
-		{
-			fin = finlast;
-			reserved = 0;
-			opcode = optext;
-			mask = 0;
-			SetPayloadSize(msg.size());
-			memset(maskkey, 0, sizeof(maskkey));
-			payload.ApendBuffer(msg.c_str(), msg.size());
-		}
+        void SetPayloadSize(size_t sz)
+        {
+            if (sz < 126)
+                plen = sz;
+            else if (sz < 65535)
+            {
+                plen = 126;
+                extplen.extplen2 = sz;
+            }
+            else
+            {
+                plen = 127;
+                extplen.extplen8 = sz;
+            }
+        }
 
-	public:
-		uint8_t fin : 1; //1 last frame, 0 more frame
-		uint8_t reserved : 3;
-		/*
-		(4 bits) 0x0 more frame, 0x1 text frame, 0x2 binary frame, 0x3-7 reserved, 0x8 closed,
-		0x9 ping, 0xa pong
-		*/
-		uint8_t opcode : 4;
+        void Initialize(const std::string& msg)
+        {
+            fin = finlast;
+            reserved = 0;
+            opcode = optext;
+            mask = 0;
+            SetPayloadSize(msg.size());
+            memset(maskkey, 0, sizeof(maskkey));
+            payload.ApendBuffer(msg.c_str(), msg.size());
+        }
 
-		uint8_t mask : 1; //±íÊ¾ÊÇ·ñÒª¶ÔÊý¾ÝÔØºÉ½øÐÐÑÚÂëÒì»ò²Ù×÷, 1 yes, 0 no 
+    public:
+        uint8_t fin : 1; //1 last frame, 0 more frame
+        uint8_t reserved : 3;
+        /*
+        (4 bits) 0x0 more frame, 0x1 text frame, 0x2 binary frame, 0x3-7 reserved, 0x8 closed,
+        0x9 ping, 0xa pong
+        */
+        uint8_t opcode : 4;
 
-		/*
-		±íÊ¾Êý¾ÝÔØºÉµÄ³¤¶È
-		0~125£ºÊý¾ÝµÄ³¤¶ÈµÈÓÚ¸ÃÖµ£»
-		126£ººóÐø 2 ¸ö×Ö½Ú´ú±íÒ»¸ö 16 Î»µÄÎÞ·ûºÅÕûÊý£¬¸ÃÎÞ·ûºÅÕûÊýµÄÖµÎªÊý¾ÝµÄ³¤¶È£»
-		127£ººóÐø 8 ¸ö×Ö½Ú´ú±íÒ»¸ö 64 Î»µÄÎÞ·ûºÅÕûÊý£¨×î¸ßÎ»Îª 0£©£¬¸ÃÎÞ·ûºÅÕûÊýµÄÖµÎªÊý¾ÝµÄ³¤¶È
-		*/
-		uint8_t plen : 7;
+        uint8_t mask : 1; //è¡¨ç¤ºæ˜¯å¦è¦å¯¹æ•°æ®è½½è·è¿›è¡ŒæŽ©ç å¼‚æˆ–æ“ä½œ, 1 yes, 0 no 
 
-		union
-		{
-			uint16_t extplen2;
-			uint64_t extplen8;
-		} extplen;
+        /*
+        è¡¨ç¤ºæ•°æ®è½½è·çš„é•¿åº¦
+        0~125ï¼šæ•°æ®çš„é•¿åº¦ç­‰äºŽè¯¥å€¼ï¼›
+        126ï¼šåŽç»­ 2 ä¸ªå­—èŠ‚ä»£è¡¨ä¸€ä¸ª 16 ä½çš„æ— ç¬¦å·æ•´æ•°ï¼Œè¯¥æ— ç¬¦å·æ•´æ•°çš„å€¼ä¸ºæ•°æ®çš„é•¿åº¦ï¼›
+        127ï¼šåŽç»­ 8 ä¸ªå­—èŠ‚ä»£è¡¨ä¸€ä¸ª 64 ä½çš„æ— ç¬¦å·æ•´æ•°ï¼ˆæœ€é«˜ä½ä¸º 0ï¼‰ï¼Œè¯¥æ— ç¬¦å·æ•´æ•°çš„å€¼ä¸ºæ•°æ®çš„é•¿åº¦
+        */
+        uint8_t plen : 7;
 
-		/*
-		µ± mask Îª 1£¬ÔòÐ¯´øÁË 4 ×Ö½ÚµÄ Masking-key£»
-		µ± mask Îª 0£¬ÔòÃ»ÓÐ Masking-key¡£
-		ÑÚÂëËã·¨£º°´Î»×öÑ­»·Òì»òÔËËã£¬ÏÈ¶Ô¸ÃÎ»µÄË÷ÒýÈ¡Ä£À´»ñµÃ Masking-key ÖÐ¶ÔÓ¦µÄÖµ x£¬È»ºó¶Ô¸ÃÎ»Óë x ×öÒì»ò£¬´Ó¶øµÃµ½ÕæÊµµÄ byte Êý¾Ý¡£
-		×¢Òâ£ºÑÚÂëµÄ×÷ÓÃ²¢²»ÊÇÎªÁË·ÀÖ¹Êý¾ÝÐ¹ÃÜ£¬¶øÊÇÎªÁË·ÀÖ¹ÔçÆÚ°æ±¾µÄÐ­ÒéÖÐ´æÔÚµÄ´úÀí»º´æÎÛÈ¾¹¥»÷£¨proxy cache poisoning attacks£©µÈÎÊÌâ
-		*/
-		char maskkey[4]; // 0 or 4 bytes
-		KBuffer payload;
-	};
+        union
+        {
+            uint16_t extplen2;
+            uint64_t extplen8;
+        } extplen;
 
-	template<>
-	int ParseBlock(const KBuffer& dat, KWebsocketMessage& msg, KBuffer& left)
-	{
-		char* src = dat.GetData();
-		size_t ssz = dat.GetSize();
-		if (ssz < sizeof(uint16_t))
-			return ShortHeader;
+        /*
+        å½“ mask ä¸º 1ï¼Œåˆ™æºå¸¦äº† 4 å­—èŠ‚çš„ Masking-keyï¼›
+        å½“ mask ä¸º 0ï¼Œåˆ™æ²¡æœ‰ Masking-keyã€‚
+        æŽ©ç ç®—æ³•ï¼šæŒ‰ä½åšå¾ªçŽ¯å¼‚æˆ–è¿ç®—ï¼Œå…ˆå¯¹è¯¥ä½çš„ç´¢å¼•å–æ¨¡æ¥èŽ·å¾— Masking-key ä¸­å¯¹åº”çš„å€¼ xï¼Œç„¶åŽå¯¹è¯¥ä½ä¸Ž x åšå¼‚æˆ–ï¼Œä»Žè€Œå¾—åˆ°çœŸå®žçš„ byte æ•°æ®ã€‚
+        æ³¨æ„ï¼šæŽ©ç çš„ä½œç”¨å¹¶ä¸æ˜¯ä¸ºäº†é˜²æ­¢æ•°æ®æ³„å¯†ï¼Œè€Œæ˜¯ä¸ºäº†é˜²æ­¢æ—©æœŸç‰ˆæœ¬çš„åè®®ä¸­å­˜åœ¨çš„ä»£ç†ç¼“å­˜æ±¡æŸ“æ”»å‡»ï¼ˆproxy cache poisoning attacksï¼‰ç­‰é—®é¢˜
+        */
+        char maskkey[4]; // 0 or 4 bytes
+        KBuffer payload;
+    };
 
-		KBuffer& payload = msg.payload;
-		// 1st byte
-		size_t offset = 0;
-		uint8_t fbyte = src[offset++];
-		msg.fin = fbyte >> 7;
-		msg.reserved = (fbyte >> 4) & 0x7;
-		msg.opcode = fbyte & 0xf;
-		if (!msg.IsValid())
-			return ProtocolError;
+    template<>
+    int ParseBlock(const KBuffer& dat, KWebsocketMessage& msg, KBuffer& left)
+    {
+        char* src = dat.GetData();
+        size_t ssz = dat.GetSize();
+        if (ssz < sizeof(uint16_t))
+            return ShortHeader;
 
-		// 2nd byte
-		uint8_t sbyte = src[offset++];
-		msg.mask = sbyte >> 7;
-		msg.plen = sbyte & 0x7f;
-		// 3rd 4th byte means payload length
-		if (msg.plen == 126)// 2 bytes
-		{
-			size_t sz = sizeof(uint16_t);
-			if (ssz < offset + sz)
-				return ShortHeader;
+        KBuffer& payload = msg.payload;
+        // 1st byte
+        size_t offset = 0;
+        uint8_t fbyte = src[offset++];
+        msg.fin = fbyte >> 7;
+        msg.reserved = (fbyte >> 4) & 0x7;
+        msg.opcode = fbyte & 0xf;
+        if (!msg.IsValid())
+            return ProtocolError;
 
-			KEndian::FromNetwork(reinterpret_cast<const uint8_t*>(src + offset), msg.extplen.extplen2);
-			offset += sz;
-			if (msg.extplen.extplen2 < 126)
-				return ProtocolError;
-		}
-		// 3rd - 10th byte means payload length
-		else if (msg.plen == 127) //8 bytes
-		{
-			size_t sz = sizeof(uint64_t);
-			if (ssz < offset + sz)
-				return ShortHeader;
-			KEndian::FromNetwork(reinterpret_cast<const uint8_t*>(src + offset), msg.extplen.extplen8);
-			offset += sz;
-			if (msg.extplen.extplen8 <= 65535)
-				return ProtocolError;
-		}
+        // 2nd byte
+        uint8_t sbyte = src[offset++];
+        msg.mask = sbyte >> 7;
+        msg.plen = sbyte & 0x7f;
+        // 3rd 4th byte means payload length
+        if (msg.plen == 126)// 2 bytes
+        {
+            size_t sz = sizeof(uint16_t);
+            if (ssz < offset + sz)
+                return ShortHeader;
 
-		// mask key
-		if (msg.mask == 1)
-		{
-			size_t sz = sizeof(msg.maskkey);
-			if (ssz < offset + sz)
-				return ShortHeader;
+            KEndian::FromNetwork(reinterpret_cast<const uint8_t*>(src + offset), msg.extplen.extplen2);
+            offset += sz;
+            if (msg.extplen.extplen2 < 126)
+                return ProtocolError;
+        }
+        // 3rd - 10th byte means payload length
+        else if (msg.plen == 127) //8 bytes
+        {
+            size_t sz = sizeof(uint64_t);
+            if (ssz < offset + sz)
+                return ShortHeader;
+            KEndian::FromNetwork(reinterpret_cast<const uint8_t*>(src + offset), msg.extplen.extplen8);
+            offset += sz;
+            if (msg.extplen.extplen8 <= 65535)
+                return ProtocolError;
+        }
 
-			memcpy(msg.maskkey, src + offset, sz);
-			offset += sz;
-		}
+        // mask key
+        if (msg.mask == 1)
+        {
+            size_t sz = sizeof(msg.maskkey);
+            if (ssz < offset + sz)
+                return ShortHeader;
 
-		if (msg.plen > 0)
-		{
-			//copy payload
-			size_t psz = msg.GetPayloadSize();
-			if (ssz < offset + psz)
-				return ShortPayload;
+            memcpy(msg.maskkey, src + offset, sz);
+            offset += sz;
+        }
 
-			char* tsrc = src + offset;
-			bool masked = (msg.mask & 0x1);
-			payload = KBuffer(psz);
-			char* dst = payload.GetData();
-			for (uint32_t i = 0; i < psz; ++i)
-			{
-				dst[i] = (masked ? (tsrc[i] ^ msg.maskkey[i % 4]) : tsrc[i]);
-			}
-			offset += psz;
-			payload.SetSize(psz);
-		}
+        if (msg.plen > 0)
+        {
+            //copy payload
+            size_t psz = msg.GetPayloadSize();
+            if (ssz < offset + psz)
+                return ShortPayload;
 
-		// left data
-		if (offset < ssz)
-		{
-			KBuffer tmp(ssz - offset);
-			tmp.ApendBuffer(src + offset, tmp.Capacity());
-			left = tmp;
-		}
-		return ParseSuccess;
-	};
+            char* tsrc = src + offset;
+            bool masked = (msg.mask & 0x1);
+            payload = KBuffer(psz);
+            char* dst = payload.GetData();
+            for (uint32_t i = 0; i < psz; ++i)
+            {
+                dst[i] = (masked ? (tsrc[i] ^ msg.maskkey[i % 4]) : tsrc[i]);
+            }
+            offset += psz;
+            payload.SetSize(psz);
+        }
 
-	class KWebsocketProcessor :public KTcpProcessor<KWebsocketMessage>
-	{
-	public:
-		virtual bool Handshake() // client
-		{
-			/*
-			GET / HTTP/1.1
-			Upgrade: websocket
-			Connection: Upgrade
-			Sec-WebSocket-Key: sN9cRrP/n9NdMgdcy2VJFQ==
-			Sec-WebSocket-Version: 13
-			*/
-			m_secKey = "helloshit";
-			std::string req;
-			req.append("GET / HTTP/1.1\r\n");
-			req.append("Upgrade: websocket\r\n");
-			req.append("Connection: Upgrade\r\n");
-			req.append("Sec-WebSocket-Key: ");
-			req.append(m_secKey + "\r\n");
-			req.append("Sec-WebSocket-Version: 13\r\n\r\n");
+        // left data
+        if (offset < ssz)
+        {
+            KBuffer tmp(ssz - offset);
+            tmp.ApendBuffer(src + offset, tmp.Capacity());
+            left = tmp;
+        }
+        return ParseSuccess;
+    };
 
-			return m_base->WriteSocket(m_base->GetFd(), req.c_str(), req.size()) == req.size();
-		}
+    class KWebsocketProcessor :public KTcpProcessor<KWebsocketMessage>
+    {
+    public:
+        KWebsocketProcessor()
+        {
 
-		virtual void Serialize(const KWebsocketMessage& msg, KBuffer& result) const
-		{
-			const KBuffer& payload = msg.payload;
-			size_t psz = payload.GetSize();
-			result = KBuffer(2 + 8 + 4 + psz);
-			uint8_t* dst = reinterpret_cast<uint8_t*>(result.GetData());
+        }
 
-			// first
-			size_t offset = 0;
-			dst[offset++] = uint8_t((msg.fin << 7) + msg.opcode);
+        virtual bool Handshake() // client
+        {
+            /*
+            GET / HTTP/1.1
+            Upgrade: websocket
+            Connection: Upgrade
+            Sec-WebSocket-Key: sN9cRrP/n9NdMgdcy2VJFQ==
+            Sec-WebSocket-Version: 13
+            */
+            m_secKey = "helloshit";
+            std::string req;
+            req.append("GET / HTTP/1.1\r\n");
+            req.append("Upgrade: websocket\r\n");
+            req.append("Connection: Upgrade\r\n");
+            req.append("Sec-WebSocket-Key: ");
+            req.append(m_secKey + "\r\n");
+            req.append("Sec-WebSocket-Version: 13\r\n\r\n");
 
-			// second
-			dst[offset++] = uint8_t((msg.mask << 7) + msg.plen);
+            return m_base->WriteSocket(m_base->GetSocket(), req.c_str(), req.size()) == req.size();
+        }
 
-			//fprintf(stdout, "header:%02x %02x \n", uint8_t(dst[0]), uint8_t(dst[1]));
-			if (psz >= 126 && psz <= 65535)
-			{
-				// length
-				KEndian::ToBigEndian(uint16_t(psz), dst + offset);
-				offset += sizeof(uint16_t);
+        virtual void Serialize(const KWebsocketMessage& msg, KBuffer& result) const
+        {
+            const KBuffer& payload = msg.payload;
+            size_t psz = payload.GetSize();
+            result = KBuffer(2 + 8 + 4 + psz);
+            uint8_t* dst = reinterpret_cast<uint8_t*>(result.GetData());
 
-				//fprintf(stdout, "plen:%02x %02x \n", uint8_t(dst[2]), uint8_t(dst[3]));
-			}
-			else if (psz > 65535)
-			{
-				// length
-				KEndian::ToBigEndian(uint64_t(psz), dst + offset);
-				offset += sizeof(uint64_t);
+            // first
+            size_t offset = 0;
+            dst[offset++] = uint8_t((msg.fin << 7) + msg.opcode);
 
-				/*fprintf(stdout, "plen:%02x %02x %02x %02x %02x %02x %02x %02x \n",
-					uint8_t(dst[2]), uint8_t(dst[3]), uint8_t(dst[4]), uint8_t(dst[5]),
-					uint8_t(dst[6]), uint8_t(dst[7]), uint8_t(dst[8]), uint8_t(dst[9]));*/
-			}
+            // second
+            dst[offset++] = uint8_t((msg.mask << 7) + msg.plen);
 
-			// mask key
-			if (msg.mask & 0x1)
-			{
-				size_t msz = sizeof(msg.maskkey);
-				memcpy(dst + offset, msg.maskkey, msz);
-				offset += msz;
-			}
+            //fprintf(stdout, "header:%02x %02x \n", uint8_t(dst[0]), uint8_t(dst[1]));
+            if (psz >= 126 && psz <= 65535)
+            {
+                // length
+                KEndian::ToBigEndian(uint16_t(psz), dst + offset);
+                offset += sizeof(uint16_t);
 
-			result.SetSize(offset);
-			// payload
-			if (psz > 0)
-			{
-				// payload
-				uint8_t* src = reinterpret_cast<uint8_t*>(payload.GetData());
-				// result
-				if ((msg.mask & 0x1) != 1)
-				{
-					memmove(dst + offset, src, psz);
-				}
-				else
-				{
-					size_t mod4 = 0;//dsz % 4;
-					for (uint32_t i = 0; i < psz; ++i)
-					{
-						dst[offset + i] = src[i] ^ msg.maskkey[(i + mod4) % 4];
-					}
-				}
-				result.SetSize(offset + psz);
-			}
-		}
+                //fprintf(stdout, "plen:%02x %02x \n", uint8_t(dst[2]), uint8_t(dst[3]));
+            }
+            else if (psz > 65535)
+            {
+                // length
+                KEndian::ToBigEndian(uint64_t(psz), dst + offset);
+                offset += sizeof(uint64_t);
 
-	protected:
-		virtual void OnMessages(const std::vector<KWebsocketMessage>& msgs)
-		{
-			std::vector<KWebsocketMessage>& ms = const_cast<std::vector<KWebsocketMessage>&>(msgs);
-			std::vector<KWebsocketMessage>::iterator it = ms.begin();
-			while (it != ms.end())
-			{
-				MergeMessage(*it, m_partial);
-				++it;
-			}
-		}
+                /*fprintf(stdout, "plen:%02x %02x %02x %02x %02x %02x %02x %02x \n",
+                    uint8_t(dst[2]), uint8_t(dst[3]), uint8_t(dst[4]), uint8_t(dst[5]),
+                    uint8_t(dst[6]), uint8_t(dst[7]), uint8_t(dst[8]), uint8_t(dst[9]));*/
+            }
 
-		virtual bool NeedPrepare() const { return true; }
+            // mask key
+            if (msg.mask & 0x1)
+            {
+                size_t msz = sizeof(msg.maskkey);
+                memcpy(dst + offset, msg.maskkey, msz);
+                offset += msz;
+            }
 
-		virtual void Prepare(const std::vector<KBuffer>& ev)
-		{
-			std::string req(ev[0].GetData(), ev[0].GetSize());
-			SocketType fd = m_base->GetFd();
-			if (IsServer())// server
-			{
-				// get key
-				std::string wskey;
-				if (!GetHandshakeKey(req, "Sec-WebSocket-Key", wskey))
-					return;
+            result.SetSize(offset);
+            // payload
+            if (psz > 0)
+            {
+                // payload
+                uint8_t* src = reinterpret_cast<uint8_t*>(payload.GetData());
+                // result
+                if ((msg.mask & 0x1) != 1)
+                {
+                    memmove(dst + offset, src, psz);
+                }
+                else
+                {
+                    size_t mod4 = 0;//dsz % 4;
+                    for (uint32_t i = 0; i < psz; ++i)
+                    {
+                        dst[offset + i] = src[i] ^ msg.maskkey[(i + mod4) % 4];
+                    }
+                }
+                result.SetSize(offset + psz);
+            }
+        }
 
-				std::string protocol;
-				GetHandshakeKey(req, "Sec-WebSocket-Protocol", protocol);
-				if(!protocol.empty())
-					protocol += "\r\n";
+    protected:
+        virtual void OnMessages(const std::vector<KWebsocketMessage>& msgs)
+        {
+            std::vector<KWebsocketMessage>& ms = const_cast<std::vector<KWebsocketMessage>&>(msgs);
+            std::vector<KWebsocketMessage>::iterator it = ms.begin();
+            while (it != ms.end())
+            {
+                MergeMessage(*it, m_partial);
+                ++it;
+            }
+        }
 
-				// generate key
-				GetHandshakeResponseKey(wskey);
-				wskey += "\r\n";
-				/*
-				HTTP/1.1 101 Switching Protocols
-				Upgrade: websocket
-				Connection: Upgrade
-				Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
-				Sec-WebSocket-Protocol: mqttv3.1
-				*/
-				std::string resp;
-				resp.append("HTTP/1.1 101 Switching Protocols\r\n");
-				resp.append("Connection: upgrade\r\n");
-				resp.append("Sec-WebSocket-Accept: ");
-				resp.append(wskey);
-				if (!protocol.empty())
-				{
-					resp.append("Sec-WebSocket-Protocol: ");
-					resp.append(protocol);
-				}
-				resp.append("Upgrade: websocket\r\n\r\n");
+        virtual bool NeedPrepare() const { return true; }
 
-				if (m_base->WriteSocket(fd, resp.c_str(), resp.size()) == resp.size())
-				{
-					std::cout << "handshake with client successfully\n";
-					KTcpProcessor<KWebsocketMessage>::Prepare(ev);
-				}
+        virtual void Prepare(const std::vector<KBuffer>& ev)
+        {
+            std::string req(ev[0].GetData(), ev[0].GetSize());
+            SocketType fd = m_base->GetSocket();
+            if (IsServer())// server
+            {
+                // get key
+                std::string wskey;
+                if (!GetHandshakeKey(req, "Sec-WebSocket-Key", wskey))
+                    return;
 
-			}
-			else // client
-			{
-				std::string wskey;
-				GetHandshakeKey(req, "Sec-WebSocket-Accept", wskey);
-				std::string respKey(m_secKey);
-				GetHandshakeResponseKey(respKey);
-				if (respKey == wskey)
-				{
-					std::cout << "handshake with server successfully\n";
-					KTcpProcessor<KWebsocketMessage>::Prepare(ev);
-				}
-			}
+                std::string protocol;
+                GetHandshakeKey(req, "Sec-WebSocket-Protocol", protocol);
+                if (!protocol.empty())
+                    protocol += "\r\n";
 
-			if (!IsPrepared())
-				m_base->DelFd(fd);
+                // generate key
+                GetHandshakeResponseKey(wskey);
+                wskey += "\r\n";
+                /*
+                HTTP/1.1 101 Switching Protocols
+                Upgrade: websocket
+                Connection: Upgrade
+                Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+                Sec-WebSocket-Protocol: mqttv3.1
+                */
+                std::string resp;
+                resp.append("HTTP/1.1 101 Switching Protocols\r\n");
+                resp.append("Connection: upgrade\r\n");
+                resp.append("Sec-WebSocket-Accept: ");
+                resp.append(wskey);
+                if (!protocol.empty())
+                {
+                    resp.append("Sec-WebSocket-Protocol: ");
+                    resp.append(protocol);
+                }
+                resp.append("Upgrade: websocket\r\n\r\n");
 
-			std::vector<KBuffer>& bufs = const_cast<std::vector<KBuffer>&>(ev);
-			std::vector<KBuffer>::iterator it = bufs.begin();
-			while (it != bufs.end())
-			{
-				it->Release();
-				++it;
-			}			
-		}
+                if (m_base->WriteSocket(fd, resp.c_str(), resp.size()) == resp.size())
+                {
+                    std::cout << "handshake with client successfully\n";
+                    KTcpProcessor<KWebsocketMessage>::Prepare(ev);
+                }
 
-		virtual void OnWebsocket(const std::string& msg)
-		{
-			if (IsServer())
-			{
-				std::cout << "server recv: [" << msg << "]\n";
+            }
+            else // client
+            {
+                std::string wskey;
+                GetHandshakeKey(req, "Sec-WebSocket-Accept", wskey);
+                std::string respKey(m_secKey);
+                GetHandshakeResponseKey(respKey);
+                if (respKey == wskey)
+                {
+                    std::cout << "handshake with server successfully\n";
+                    KTcpProcessor<KWebsocketMessage>::Prepare(ev);
+                }
+            }
 
-				std::ostringstream os;
-				os << "i recv size: [" << msg.size() << "]";
-				KWebsocketMessage m;
-				m.Initialize(os.str());
-				KBuffer resp;
-				Serialize(m, resp);
-				m_base->WriteSocket(m_base->GetFd(), resp.GetData(), resp.GetSize());
-				m.payload.Release();
-				resp.Release();
-			}
-			else
-			{
-				std::cout << "client recv: [" << msg << "]\n";
-			}
-		}
+            if (!IsPrepared())
+                m_base->DeleteSocket(fd);
 
-		virtual void OnWebsocket(const std::vector<KBuffer>& msgs)
-		{
+            std::vector<KBuffer>& bufs = const_cast<std::vector<KBuffer>&>(ev);
+            std::vector<KBuffer>::iterator it = bufs.begin();
+            while (it != bufs.end())
+            {
+                it->Release();
+                ++it;
+            }
+        }
 
-		}
+        virtual void OnWebsocket(const std::string& msg)// text web socket
+        {
+            if (IsServer())
+            {
+                KWebsocketMessage m;
+                m.Initialize("xxxx");
+                KBuffer resp;
+                Serialize(m, resp);
+                static int i = 0;
+                if (m_base->WriteSocket(m_base->GetSocket(), resp.GetData(), resp.GetSize()) != resp.GetSize())
+                    std::cout << "response failed\n";
+                else
+                    ++i;
+                std::cout << "server:" << i << std::endl;
+                m.payload.Release();
+                resp.Release();
+            }
+        }
 
-	private:
-		bool GetHandshakeKey(const std::string& reqstr, const std::string& keyword, std::string& wskey) const
-		{
-			std::istringstream s(reqstr);
-			std::string line;
-			while (std::getline(s, line, '\n'))
-			{
-				std::vector<std::string> strs;
-				KStringUtility::SplitString2(line, ": ", strs);
-				if (strs.size() == 2 && strs[0].find(keyword) != std::string::npos)
-				{
-					wskey = strs[1];
-					wskey.erase(wskey.end() - 1);
-				}
-			}
-			return !wskey.empty();
-		}
+        virtual void OnWebsocket(const std::vector<KBuffer>& msgs) // binary web socket
+        {
 
-		void GetHandshakeResponseKey(std::string& wskey) const
-		{
-			wskey += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-			KSHA1 sha;
-			unsigned int msgdigest[5];
-			sha.Reset();
-			sha << wskey.c_str();
-			sha.Result(msgdigest);
-			for (int i = 0; i < 5; i++)
-				msgdigest[i] = htonl(msgdigest[i]);
-			wskey = KBase64::Encode(reinterpret_cast<const char*>(msgdigest), 20);
-		}
+        }
 
-		void MergeMessage(KWebsocketMessage& msg, KWebsocketMessage &partial)
-		{
-			switch (msg.opcode)
-			{
-			case KWebsocketMessage::optext:
-			case KWebsocketMessage::opbinary:
-			case KWebsocketMessage::opmore:
-			{
-				if (KWebsocketMessage::finlast == msg.fin)// last frame
-				{
-					if (partial.IsValid())
-					{
-						AppendBuffer(msg, partial);
-						if (partial.opcode == KWebsocketMessage::opbinary)
-						{
-							std::vector<KBuffer> msgs;
-							msgs.push_back(partial.payload);
-							OnWebsocket(msgs);
-						}
-						else
-							OnWebsocket(std::string(partial.payload.GetData(), partial.payload.GetSize()));
-						partial.payload.Release();
-						partial.Clear();
-					}
-					else
-					{
-						if (msg.opcode == KWebsocketMessage::opbinary)
-						{
-							std::vector<KBuffer> msgs;
-							msgs.push_back(msg.payload);
-							OnWebsocket(msgs);
-						}
-						else
-							OnWebsocket(std::string(msg.payload.GetData(), msg.payload.GetSize()));
-						msg.payload.Release();
-					}
-				}
-				else// not last frame
-				{
-					if (partial.IsValid())// middle frame
-						AppendBuffer(msg, partial);
-					else// first frame
-						partial = msg;
-				}
-				break;
-			}
-			case KWebsocketMessage::opclose:
-			{
-				printf("web socket recv close request\n");
-				m_base->DelFd(m_base->GetFd());
-				msg.payload.Release();
-				break;
-			}
-			default:
-				break;
-			}
-		}
+    private:
+        bool GetHandshakeKey(const std::string& reqstr, const std::string& keyword, std::string& wskey) const
+        {
+            std::istringstream s(reqstr);
+            std::string line;
+            while (std::getline(s, line, '\n'))
+            {
+                std::vector<std::string> strs;
+                KStringUtility::SplitString2(line, ": ", strs);
+                if (strs.size() == 2 && strs[0].find(keyword) != std::string::npos)
+                {
+                    wskey = strs[1];
+                    wskey.erase(wskey.end() - 1);
+                }
+            }
+            return !wskey.empty();
+        }
 
-		void AppendBuffer(KWebsocketMessage& msg, KWebsocketMessage& partial) const
-		{
-			partial.payload.ApendBuffer(msg.payload.GetData(), msg.payload.GetSize());
-			partial.SetPayloadSize(partial.payload.GetSize() + msg.payload.GetSize());
-			msg.payload.Release();
-		}
+        void GetHandshakeResponseKey(std::string& wskey) const
+        {
+            wskey += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+            KSHA1 sha;
+            unsigned int msgdigest[5];
+            sha.Reset();
+            sha << wskey.c_str();
+            sha.Result(msgdigest);
+            for (int i = 0; i < 5; i++)
+                msgdigest[i] = htonl(msgdigest[i]);
+            wskey = KBase64::Encode(reinterpret_cast<const char*>(msgdigest), 20);
+        }
 
-	private:
-		KWebsocketMessage m_partial;
-		std::string m_secKey;// client
-	};
+        void MergeMessage(KWebsocketMessage& msg, KWebsocketMessage& partial)
+        {
+            switch (msg.opcode)
+            {
+            case KWebsocketMessage::optext:
+            case KWebsocketMessage::opbinary:
+            case KWebsocketMessage::opmore:
+            {
+                if (KWebsocketMessage::finlast == msg.fin)// last frame
+                {
+                    if (partial.IsValid())
+                    {
+                        AppendBuffer(msg, partial);
+                        if (partial.opcode == KWebsocketMessage::opbinary)
+                        {
+                            std::vector<KBuffer> msgs;
+                            msgs.push_back(partial.payload);
+                            OnWebsocket(msgs);
+                        }
+                        else
+                            OnWebsocket(std::string(partial.payload.GetData(), partial.payload.GetSize()));
+                        partial.payload.Release();
+                        partial.Clear();
+                    }
+                    else
+                    {
+                        if (msg.opcode == KWebsocketMessage::opbinary)
+                        {
+                            std::vector<KBuffer> msgs;
+                            msgs.push_back(msg.payload);
+                            OnWebsocket(msgs);
+                        }
+                        else
+                            OnWebsocket(std::string(msg.payload.GetData(), msg.payload.GetSize()));
+                        msg.payload.Release();
+                    }
+                }
+                else// not last frame
+                {
+                    if (partial.IsValid())// middle frame
+                        AppendBuffer(msg, partial);
+                    else// first frame
+                        partial = msg;
+                }
+                break;
+            }
+            case KWebsocketMessage::opclose:
+            {
+                printf("web socket recv close request\n");
+                m_base->DeleteSocket(m_base->GetSocket());
+                msg.payload.Release();
+                break;
+            }
+            default:
+                break;
+            }
+        }
+
+        void AppendBuffer(KWebsocketMessage& msg, KWebsocketMessage& partial) const
+        {
+            partial.payload.ApendBuffer(msg.payload.GetData(), msg.payload.GetSize());
+            partial.SetPayloadSize(partial.payload.GetSize() + msg.payload.GetSize());
+            msg.payload.Release();
+        }
+
+    private:
+        KWebsocketMessage m_partial;
+        std::string m_secKey;// client
+    };
 };

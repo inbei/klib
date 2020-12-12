@@ -1,156 +1,156 @@
-#pragma once
+ï»¿#pragma once
 #include "KTcpProcessor.hpp"
 #include "KTcpWriter.h"
 namespace klib {
 
-	template<typename ProcessorType>
-	class KTcpConnection :protected KEventObject<SocketType>, public KTcpBase,
-		protected ProcessorType, protected KTcpWriter
-	{
-	public:
-		KTcpConnection()
-			:m_fd(0), KEventObject<SocketType>("KTcpConnection Thread")
-		{
+    template<typename ProcessorType>
+    class KTcpConnection :protected KEventObject<SocketType>, public KTcpBase,
+        protected ProcessorType, protected KTcpWriter
+    {
+    public:
+        KTcpConnection()
+            :m_fd(0), KEventObject<SocketType>("KTcpConnection Thread")
+        {
 
-		}
+        }
 
-		~KTcpConnection()
-		{
-			std::cout << m_ipport << " disconnected" << std::endl;
-		}
+        ~KTcpConnection()
+        {
+            std::cout << m_ipport << " disconnected" << std::endl;
+        }
 
-		bool Start(const std::string& ipport, SocketType fd)
-		{
-			m_ipport = ipport;
-			m_fd = fd;
+        bool Start(const std::string& ipport, SocketType fd)
+        {
+            m_ipport = ipport;
+            m_fd = fd;
 
-			if (!AddFd(fd, ipport))
-				return false;
+            if (!AddSocket(fd, ipport))
+                return false;
 
-			if (!KTcpWriter::Start(this))
-			{
-				DelFd(fd);
-				return false;
-			}
+            if (!KTcpWriter::Start(this))
+            {
+                DeleteSocket(fd);
+                return false;
+            }
 
-			if (!ProcessorType::Start(this))
-			{
-				DelFd(fd);
-				KTcpWriter::Stop();
-				return false;
-			}
+            if (!ProcessorType::Start(this))
+            {
+                DeleteSocket(fd);
+                KTcpWriter::Stop();
+                return false;
+            }
 
-			if (!KEventObject<SocketType>::Start())
-			{
-				DelFd(fd);
-				ProcessorType::Stop();
-				KTcpWriter::Stop();
-				return false;
-			}
-			
-			KEventObject<SocketType>::Post(0);
-			return true;
-		}
+            if (!KEventObject<SocketType>::Start())
+            {
+                DeleteSocket(fd);
+                ProcessorType::Stop();
+                KTcpWriter::Stop();
+                return false;
+            }
 
-		void Stop()
-		{
-			KEventObject<SocketType>::Stop();
-			while (!KTcpWriter::IsEmpty())
-				KTime::MSleep(3);
-			KTcpWriter::Stop();
-			while (!ProcessorType::IsEmpty())
-				KTime::MSleep(3);
-			ProcessorType::Stop();
-		}
+            KEventObject<SocketType>::Post(0);
+            return true;
+        }
 
-		void WaitForStop()
-		{
-			KEventObject<SocketType>::WaitForStop();
-			KTcpWriter::WaitForStop();
-			ProcessorType::WaitForStop();
-		}
+        void Stop()
+        {
+            KEventObject<SocketType>::Stop();
+            while (!KTcpWriter::IsEmpty())
+                KTime::MSleep(3);
+            KTcpWriter::Stop();
+            while (!ProcessorType::IsEmpty())
+                KTime::MSleep(3);
+            ProcessorType::Stop();
+        }
 
-		bool Send(const KBuffer& msg)
-		{
-			if(IsConnected())
-				return KTcpWriter::Post(msg);
-			return false;
-		}
+        void WaitForStop()
+        {
+            KEventObject<SocketType>::WaitForStop();
+            KTcpWriter::WaitForStop();
+            ProcessorType::WaitForStop();
+        }
 
-		virtual bool IsServer() const { return true; }
+        bool Send(const KBuffer& msg)
+        {
+            if (IsConnected())
+                return KTcpWriter::Post(msg);
+            return false;
+        }
 
-		virtual SocketType GetFd() const { return m_fd; }
+        virtual bool IsServer() const { return true; }
 
-	private:
-		virtual void ProcessEvent(const SocketType& ev)
-		{
-			if (IsConnected())
-			{
-				Poll();
-				KEventObject<SocketType>::Post(1);
-			}
-		}
+        virtual SocketType GetSocket() const { return m_fd; }
 
-		virtual void OnSocketEvent(SocketType fd, short evt)
-		{
-			if (evt & epollin)
-			{
-				std::vector<KBuffer> dat;
-				if (ReadSocket(fd, dat) < 0)
-					DelFdInternal(fd);
-				else if (!ProcessorType::Post(dat))
-				{
-					std::vector<KBuffer>::iterator it = dat.begin();
-					while (it != dat.end())
-					{
-						it->Release();
-						++it;
-					}
-				}
-			}
-			else if (evt & epollhup || evt & epollerr)
-			{
-				DelFdInternal(fd);
-			}
-		}
+    private:
+        virtual void ProcessEvent(const SocketType& ev)
+        {
+            if (IsConnected())
+            {
+                PollSocket();
+                KEventObject<SocketType>::Post(1);
+            }
+        }
 
-		int ReadSocket(SocketType fd, std::vector<KBuffer>& dat) const
-		{
-			int bytes = 0;
-			int rc = 1;
-			char buf[BlockSize] = { 0 };
-			while (rc > 0 && fd > 0)
-			{
-				rc = ::recv(fd, buf, BlockSize, 0/*MSG_DONTWAIT  MSG_WAITALL*/);
-				if (rc > 0)
-				{
-					KBuffer b(rc);
-					b.ApendBuffer(buf, rc);
-					dat.push_back(b);
-					bytes += rc;
-				}
-				else
-				{
+        virtual void OnSocketEvent(SocketType fd, short evt)
+        {
+            if (evt & epollin)
+            {
+                std::vector<KBuffer> dat;
+                if (ReadSocket(fd, dat) < 0)
+                    DeleteSocketNoLock(fd);
+                else if (!ProcessorType::Post(dat))
+                {
+                    std::vector<KBuffer>::iterator it = dat.begin();
+                    while (it != dat.end())
+                    {
+                        it->Release();
+                        ++it;
+                    }
+                }
+            }
+            else if (evt & epollhup || evt & epollerr)
+            {
+                DeleteSocketNoLock(fd);
+            }
+        }
+
+        int ReadSocket(SocketType fd, std::vector<KBuffer>& dat) const
+        {
+            int bytes = 0;
+            int rc = 1;
+            char buf[BlockSize] = { 0 };
+            while (rc > 0 && fd > 0)
+            {
+                rc = ::recv(fd, buf, BlockSize, 0/*MSG_DONTWAIT  MSG_WAITALL*/);
+                if (rc > 0)
+                {
+                    KBuffer b(rc);
+                    b.ApendBuffer(buf, rc);
+                    dat.push_back(b);
+                    bytes += rc;
+                }
+                else
+                {
 #if defined(WIN32)
-					if (GetLastError() == WSAEINTR) // ¶Á²Ù×÷ÖĞ¶Ï£¬ĞèÒªÖØĞÂ¶Á
-						KTime::MSleep(3);
-					else if (GetLastError() == WSAEWOULDBLOCK) // ·Ç×èÈûÄ£Ê½£¬ÔİÊ±ÎŞÊı¾İ£¬²»ĞèÒªÖØĞÂ¶Á
-						break;
+                    if (GetLastError() == WSAEINTR) // è¯»æ“ä½œä¸­æ–­ï¼Œéœ€è¦é‡æ–°è¯»
+                        KTime::MSleep(3);
+                    else if (GetLastError() == WSAEWOULDBLOCK) // éé˜»å¡æ¨¡å¼ï¼Œæš‚æ—¶æ— æ•°æ®ï¼Œä¸éœ€è¦é‡æ–°è¯»
+                        break;
 #else
-					if (errno == EINTR) // ¶Á²Ù×÷ÖĞ¶Ï£¬ĞèÒªÖØĞÂ¶Á
-						KTime::MSleep(3);
-					else if (errno == EWOULDBLOCK) // ·Ç×èÈûÄ£Ê½£¬ÔİÊ±ÎŞÊı¾İ£¬²»ĞèÒªÖØĞÂ¶Á
-						break;
+                    if (errno == EINTR) // è¯»æ“ä½œä¸­æ–­ï¼Œéœ€è¦é‡æ–°è¯»
+                        KTime::MSleep(3);
+                    else if (errno == EWOULDBLOCK) // éé˜»å¡æ¨¡å¼ï¼Œæš‚æ—¶æ— æ•°æ®ï¼Œä¸éœ€è¦é‡æ–°è¯»
+                        break;
 #endif
-					else // ´íÎó¶Ï¿ªÁ¬½Ó
-						return -1;
-				}
-			}
-			return bytes;
-		}
+                    else // é”™è¯¯æ–­å¼€è¿æ¥
+                        return -1;
+                }
+            }
+            return bytes;
+        }
 
-	private:
-		SocketType m_fd;
-		std::string m_ipport;
-	};
+    private:
+        SocketType m_fd;
+        std::string m_ipport;
+    };
 };

@@ -93,16 +93,16 @@
     <ClCompile Include="src\util\KBase64.cpp">
       <Filter>源文件\util</Filter>
     </ClCompile>
-    <ClCompile Include="src\thirdparty\KHiredisCli.cpp">
+    <ClCompile Include="src\thirdparty\KRedisClient.cpp">
       <Filter>源文件\thirdparty</Filter>
     </ClCompile>
-    <ClCompile Include="src\thirdparty\KInfluxdbCli.cpp">
+    <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp">
       <Filter>源文件\thirdparty</Filter>
     </ClCompile>
-    <ClCompile Include="src\thirdparty\KKafkaPCli.cpp">
+    <ClCompile Include="src\thirdparty\KKafkaProducer.cpp">
       <Filter>源文件\thirdparty</Filter>
     </ClCompile>
-    <ClCompile Include="src\thirdparty\KRocketMqCCli.cpp">
+    <ClCompile Include="src\thirdparty\KRocketMqConsumer.cpp">
       <Filter>源文件\thirdparty</Filter>
     </ClCompile>
   </ItemGroup>
@@ -185,16 +185,16 @@
     <ClInclude Include="include\tcp\KMqttProcessor.hpp">
       <Filter>头文件\tcp</Filter>
     </ClInclude>
-    <ClInclude Include="include\thirdparty\KHiredisCli.h">
+    <ClInclude Include="include\thirdparty\KRedisClient.h">
       <Filter>头文件\thirdparty</Filter>
     </ClInclude>
-    <ClInclude Include="include\thirdparty\KInfluxdbCli.h">
+    <ClInclude Include="include\thirdparty\KInfluxDbClient.h">
       <Filter>头文件\thirdparty</Filter>
     </ClInclude>
-    <ClInclude Include="include\thirdparty\KKafkaPCli.h">
+    <ClInclude Include="include\thirdparty\KKafkaProducer.h">
       <Filter>头文件\thirdparty</Filter>
     </ClInclude>
-    <ClInclude Include="include\thirdparty\KRocketMqCCli.h">
+    <ClInclude Include="include\thirdparty\KRocketMqConsumer.h">
       <Filter>头文件\thirdparty</Filter>
     </ClInclude>
   </ItemGroup>

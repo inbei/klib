@@ -21,10 +21,10 @@
   <ItemGroup>
     <ClCompile Include="src\tcp\KTcpBase.cpp" />
     <ClCompile Include="src\tcp\KTcpWriter.cpp" />
-    <ClCompile Include="src\thirdparty\KHiredisCli.cpp" />
-    <ClCompile Include="src\thirdparty\KInfluxdbCli.cpp" />
-    <ClCompile Include="src\thirdparty\KKafkaPCli.cpp" />
-    <ClCompile Include="src\thirdparty\KRocketMqCCli.cpp" />
+    <ClCompile Include="src\thirdparty\KRedisClient.cpp" />
+    <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp" />
+    <ClCompile Include="src\thirdparty\KKafkaProducer.cpp" />
+    <ClCompile Include="src\thirdparty\KRocketMqConsumer.cpp" />
     <ClCompile Include="src\thread\KAny.cpp" />
     <ClCompile Include="src\thread\KAtomic.cpp" />
     <ClCompile Include="src\thread\KBuffer.cpp" />
@@ -52,10 +52,10 @@
     <ClInclude Include="include\tcp\KTcpServer.hpp" />
     <ClInclude Include="include\tcp\KTcpWriter.h" />
     <ClInclude Include="include\tcp\KWebsocketProcessor.hpp" />
-    <ClInclude Include="include\thirdparty\KHiredisCli.h" />
-    <ClInclude Include="include\thirdparty\KInfluxdbCli.h" />
-    <ClInclude Include="include\thirdparty\KKafkaPCli.h" />
-    <ClInclude Include="include\thirdparty\KRocketMqCCli.h" />
+    <ClInclude Include="include\thirdparty\KRedisClient.h" />
+    <ClInclude Include="include\thirdparty\KInfluxDbClient.h" />
+    <ClInclude Include="include\thirdparty\KKafkaProducer.h" />
+    <ClInclude Include="include\thirdparty\KRocketMqConsumer.h" />
     <ClInclude Include="include\thread\KAny.h" />
     <ClInclude Include="include\thread\KAtomic.h" />
     <ClInclude Include="include\thread\KBuffer.h" />
