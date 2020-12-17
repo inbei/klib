@@ -1,8 +1,10 @@
 ﻿#pragma once
+#if defined(WIN32)
+#include <WS2tcpip.h>
+#endif
 #include <vector>
 #include "thread/KEventObject.h"
 #include "thread/KBuffer.h"
-#include "util/KBase64.h"
 #include "KTcpBase.h"
 
 namespace klib

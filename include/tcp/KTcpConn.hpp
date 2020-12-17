@@ -1,4 +1,7 @@
 ﻿#pragma once
+#if defined(WIN32)
+#include <WS2tcpip.h>
+#endif
 #include "KTcpProcessor.hpp"
 #include "KTcpWriter.h"
 namespace klib {
