@@ -29,6 +29,7 @@ namespace klib {
     public:
         // 获取当前时间
         static bool NowDateTime(DateTime& datetime);
+        static bool NowDateTime(const std::string& fmt, std::string& datetime, DateTime& dt);
         /*
         * yyyy year
         * mm month

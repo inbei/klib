@@ -1,10 +1,10 @@
 #ifndef _EVENTOBJECT_HPP_
 #define _EVENTOBJECT_HPP_
-#include "KQueue.h"
-#include "KPthread.h"
-#include "KAtomic.h"
-#include "KMutex.h"
-#include "KLockGuard.h"
+#include "thread/KQueue.h"
+#include "thread/KPthread.h"
+#include "thread/KAtomic.h"
+#include "thread/KMutex.h"
+#include "thread/KLockGuard.h"
 
 #include <cassert>
 #include <map>

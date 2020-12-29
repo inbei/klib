@@ -243,4 +243,38 @@ namespace klib {
             return false;
         }
     }
+
+    bool KTime::NowDateTime(const std::string& fmt, std::string& datetime, DateTime& dt)
+    {
+        if (NowDateTime(dt))
+        {
+            char buf[32] = { 0 };
+#ifdef WIN32
+            strcpy_s(buf, fmt.size() + 1, fmt.data());
+#else
+            strcpy(buf, fmt.data());
+#endif
+            // year
+            GetDateTimeElement(fmt, "yyyy", "%04d", dt.year, buf);
+            // month
+            GetDateTimeElement(fmt, "mm", "%02d", dt.month, buf);
+            // day
+            GetDateTimeElement(fmt, "dd", "%02d", dt.day, buf);
+            // hour
+            GetDateTimeElement(fmt, "hh", "%02d", dt.hour, buf);
+            // minute
+            GetDateTimeElement(fmt, "nn", "%02d", dt.minute, buf);
+            // second
+            GetDateTimeElement(fmt, "ss", "%02d", dt.second, buf);
+            // millisecond
+            GetDateTimeElement(fmt, "ccc", "%03d", dt.milliSecond, buf);
+            datetime = buf;
+            return true;
+        }
+        else
+        {
+            datetime = KError::ErrorStr(KError::ErrorCode());
+            return false;
+        }
+    }
 };

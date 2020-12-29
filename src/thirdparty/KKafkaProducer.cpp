@@ -54,15 +54,6 @@ namespace thirdparty {
                 errStr.c_str());
         }
 
-        {
-            std::list<std::string>* gconfs = kc->dump();
-            std::list<std::string>::iterator it = gconfs->begin();
-            while (it != gconfs->end())
-            {
-                printf("global name:[%s] value:[%s]\n", it++->c_str(), it++->c_str());
-            }
-        }
-
         // 
         RdKafka::Producer* producer = RdKafka::Producer::create(kc, errStr);
         Release(kc);
@@ -76,14 +67,6 @@ namespace thirdparty {
         // topic conf
         kc = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
         RdKafka::Topic* topic = RdKafka::Topic::create(producer, m_conf.topicName, kc, errStr);
-        {
-            std::list<std::string>* gconfs = kc->dump();
-            std::list<std::string>::iterator it = gconfs->begin();
-            while (it != gconfs->end())
-            {
-                printf("topic name:[%s] value:[%s]\n", it++->c_str(), it++->c_str());
-            }
-        }
         Release(kc);
         if (!topic)
         {
@@ -99,7 +82,11 @@ namespace thirdparty {
             RdKafka::Metadata::TopicMetadataIterator it = metadata->topics()->begin();
             while (it != metadata->topics()->end())
             {
-                m_conf.partition = m_conf.partitionKey % (*it)->partitions()->size();
+                size_t psz = (*it)->partitions()->size();
+                if (psz > 0)
+                    m_conf.partition = m_conf.partitionKey % psz;
+                else
+                    m_conf.partition = 0;
                 ++it;
             }
         }
@@ -121,7 +108,9 @@ namespace thirdparty {
         {
             if (RdKafka::ERR__UNKNOWN_PARTITION == resp)
                 m_conf.partition = 0;
-            errStr = RdKafka::err2str(resp);
+            std::ostringstream os;
+            os << resp;
+            errStr = os.str();
             return false;
         }
         return true;

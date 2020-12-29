@@ -13,189 +13,174 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="源文件\util">
-      <UniqueIdentifier>{c8ff56fe-50e7-4b34-9c97-1c655013a2e6}</UniqueIdentifier>
+    <Filter Include="tcp">
+      <UniqueIdentifier>{08f2f5f0-94c1-4fe9-b455-8d757a4c9346}</UniqueIdentifier>
     </Filter>
-    <Filter Include="源文件\thread">
-      <UniqueIdentifier>{75fcd259-be86-480a-b2d1-abc3d09f2a9a}</UniqueIdentifier>
+    <Filter Include="thread">
+      <UniqueIdentifier>{1d8d3e67-ac4a-4c8a-8077-f4301c42a204}</UniqueIdentifier>
     </Filter>
-    <Filter Include="头文件\thread">
-      <UniqueIdentifier>{f6b594a8-239c-4773-ac2d-d1eecf6a866a}</UniqueIdentifier>
+    <Filter Include="util">
+      <UniqueIdentifier>{dbd24ef2-87ee-4ae4-bac3-673e3b66a8e6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="头文件\util">
-      <UniqueIdentifier>{ff43dab5-849a-406d-ac74-96751e5f4456}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="头文件\tcp">
-      <UniqueIdentifier>{186f496d-7603-4357-a7a8-c394aa6fffb8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\tcp">
-      <UniqueIdentifier>{2fbe73ef-85fc-40df-8057-02ec0303ba67}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="头文件\thirdparty">
-      <UniqueIdentifier>{0f136ded-7a4d-49a0-aea9-d42ae3fc785c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\thirdparty">
-      <UniqueIdentifier>{6dd4fbba-45ad-4e85-8b19-30cb40d0cb83}</UniqueIdentifier>
+    <Filter Include="thirdparty">
+      <UniqueIdentifier>{0b68492d-cea2-49a3-9d71-9a8b6c56816d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\thread\KAny.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KAtomic.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KBuffer.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KCondVariable.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KError.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KEventObject.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KException.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KLockGuard.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KMutex.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KPthread.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KQueue.cpp">
-      <Filter>源文件\thread</Filter>
-    </ClCompile>
-    <ClCompile Include="src\util\KStringUtility.cpp">
-      <Filter>源文件\util</Filter>
-    </ClCompile>
-    <ClCompile Include="src\util\KTime.cpp">
-      <Filter>源文件\util</Filter>
-    </ClCompile>
-    <ClCompile Include="src\util\KEndian.cpp">
-      <Filter>源文件\util</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tcp\KTcpBase.cpp">
-      <Filter>源文件\tcp</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tcp\KTcpWriter.cpp">
-      <Filter>源文件\tcp</Filter>
-    </ClCompile>
-    <ClCompile Include="src\util\KSHA1.cpp">
-      <Filter>源文件\util</Filter>
-    </ClCompile>
-    <ClCompile Include="src\util\KBase64.cpp">
-      <Filter>源文件\util</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thirdparty\KRedisClient.cpp">
-      <Filter>源文件\thirdparty</Filter>
-    </ClCompile>
     <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp">
-      <Filter>源文件\thirdparty</Filter>
+      <Filter>thirdparty</Filter>
     </ClCompile>
     <ClCompile Include="src\thirdparty\KKafkaProducer.cpp">
-      <Filter>源文件\thirdparty</Filter>
+      <Filter>thirdparty</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thirdparty\KRedisClient.cpp">
+      <Filter>thirdparty</Filter>
     </ClCompile>
     <ClCompile Include="src\thirdparty\KRocketMqConsumer.cpp">
-      <Filter>源文件\thirdparty</Filter>
+      <Filter>thirdparty</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\KBase64.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\KEndian.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\KSHA1.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\KStringUtility.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\KTime.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KBuffer.cpp">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KCondVariable.cpp">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KError.cpp">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KEventObject.cpp">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KException.cpp">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread\KMutex.cpp">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tcp\KTcpBase.cpp">
+      <Filter>tcp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tcp\KTcpProcessorModbus.cpp">
+      <Filter>tcp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tcp\KTcpProcessorWebsocket.cpp">
+      <Filter>tcp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tcp\KTcpWriter.cpp">
+      <Filter>tcp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\thread\KAny.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\thirdparty\KInfluxDbClient.h">
+      <Filter>thirdparty</Filter>
     </ClInclude>
-    <ClInclude Include="include\thread\KAtomic.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\thirdparty\KKafkaProducer.h">
+      <Filter>thirdparty</Filter>
     </ClInclude>
-    <ClInclude Include="include\thread\KBuffer.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\thirdparty\KRedisClient.h">
+      <Filter>thirdparty</Filter>
     </ClInclude>
-    <ClInclude Include="include\thread\KCondVariable.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\thirdparty\KRocketMqConsumer.h">
+      <Filter>thirdparty</Filter>
     </ClInclude>
-    <ClInclude Include="include\thread\KError.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\util\KBase64.h">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="include\thread\KEventObject.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\util\KCsvFile.hpp">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="include\thread\KException.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\util\KEndian.h">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="include\thread\KLockGuard.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\util\KIniFile.hpp">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="include\thread\KMutex.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\util\KSHA1.h">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="include\thread\KPthread.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\util\KSingleton.hpp">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="include\thread\KQueue.h">
-      <Filter>头文件\thread</Filter>
+    <ClInclude Include="src\util\KStringUtility.h">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="include\util\KSingleton.hpp">
-      <Filter>头文件\util</Filter>
+    <ClInclude Include="src\util\KTextFile.hpp">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="include\util\KStringUtility.h">
-      <Filter>头文件\util</Filter>
+    <ClInclude Include="src\util\KTime.h">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="include\util\KTime.h">
-      <Filter>头文件\util</Filter>
+    <ClInclude Include="src\thread\KAny.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\util\KEndian.h">
-      <Filter>头文件\util</Filter>
+    <ClInclude Include="src\thread\KAtomic.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\util\KSHA1.h">
-      <Filter>头文件\util</Filter>
+    <ClInclude Include="src\thread\KBuffer.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\util\KBase64.h">
-      <Filter>头文件\util</Filter>
+    <ClInclude Include="src\thread\KCondVariable.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\thirdparty\KRedisClient.h">
-      <Filter>头文件\thirdparty</Filter>
+    <ClInclude Include="src\thread\KError.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\thirdparty\KInfluxDbClient.h">
-      <Filter>头文件\thirdparty</Filter>
+    <ClInclude Include="src\thread\KEventObject.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\thirdparty\KKafkaProducer.h">
-      <Filter>头文件\thirdparty</Filter>
+    <ClInclude Include="src\thread\KException.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\thirdparty\KRocketMqConsumer.h">
-      <Filter>头文件\thirdparty</Filter>
+    <ClInclude Include="src\thread\KLockGuard.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\tcp\KTcpBase.h">
-      <Filter>头文件\tcp</Filter>
+    <ClInclude Include="src\thread\KMutex.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\tcp\KTcpConn.hpp">
-      <Filter>头文件\tcp</Filter>
+    <ClInclude Include="src\thread\KPthread.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\tcp\KTcpProcessor.hpp">
-      <Filter>头文件\tcp</Filter>
+    <ClInclude Include="src\thread\KQueue.h">
+      <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="include\tcp\KTcpProcessorModbus.hpp">
-      <Filter>头文件\tcp</Filter>
+    <ClInclude Include="src\tcp\KTcpBase.h">
+      <Filter>tcp</Filter>
     </ClInclude>
-    <ClInclude Include="include\tcp\KTcpProcessorMqtt.hpp">
-      <Filter>头文件\tcp</Filter>
+    <ClInclude Include="src\tcp\KTcpClient.hpp">
+      <Filter>tcp</Filter>
     </ClInclude>
-    <ClInclude Include="include\tcp\KTcpProcessorWebsocket.hpp">
-      <Filter>头文件\tcp</Filter>
+    <ClInclude Include="src\tcp\KTcpConn.hpp">
+      <Filter>tcp</Filter>
     </ClInclude>
-    <ClInclude Include="include\tcp\KTcpServer.hpp">
-      <Filter>头文件\tcp</Filter>
+    <ClInclude Include="src\tcp\KTcpProcessor.hpp">
+      <Filter>tcp</Filter>
     </ClInclude>
-    <ClInclude Include="include\tcp\KTcpWriter.h">
-      <Filter>头文件\tcp</Filter>
+    <ClInclude Include="src\tcp\KTcpProcessorModbus.h">
+      <Filter>tcp</Filter>
     </ClInclude>
-    <ClInclude Include="include\tcp\KTcpClient.hpp">
-      <Filter>头文件\tcp</Filter>
+    <ClInclude Include="src\tcp\KTcpProcessorWebsocket.h">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpServer.hpp">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpWriter.h">
+      <Filter>tcp</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

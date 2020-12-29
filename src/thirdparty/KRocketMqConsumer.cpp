@@ -4,7 +4,7 @@ namespace thirdparty {
     KRocketMqConsumer* KRocketMqConsumer::m_self = NULL;
 
     KRocketMqConsumer::KRocketMqConsumer()
-        : m_consumer(NULL), KEventObject<RocketMqMessage>("KRocketMqConsumer Thread")
+        : m_consumer(NULL), KEventObject<RocketMqMessage>("KRocketMqConsumer Thread", 1000)
     {
         m_self = this;
     }

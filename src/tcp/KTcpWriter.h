@@ -3,8 +3,8 @@
 #if defined(WIN32)
 #include <WS2tcpip.h>
 #endif
-#include "KTcpBase.h"
 #include <cstdio>
+#include "tcp/KTcpBase.h"
 #include "util/KTime.h"
 #include "thread/KEventObject.h"
 

@@ -4,10 +4,10 @@
 #include <pthread.h>
 #include <string>
 #include <stdint.h>
-#include "KMutex.h"
-#include "KLockGuard.h"
-#include "KException.h"
-#include "KError.h"
+#include "thread/KMutex.h"
+#include "thread/KLockGuard.h"
+#include "thread/KException.h"
+#include "thread/KError.h"
 
 namespace klib {
     class KPthread

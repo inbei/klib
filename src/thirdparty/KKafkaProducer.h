@@ -21,8 +21,12 @@ namespace thirdparty {
             {
             case RdKafka::Event::EVENT_ERROR:
             {
-                if (event.err() == RdKafka::ERR__ALL_BROKERS_DOWN)
+                RdKafka::ErrorCode ec = event.err();
+                if (ec == RdKafka::ERR__ALL_BROKERS_DOWN || RdKafka::ERR__TRANSPORT == ec)
                     m_running = false;
+                std::ostringstream os;
+                os << ec;
+                printf("kafka error:[%s]\n", os.str().c_str());
                 break;
             }
             default:

@@ -1,7 +1,7 @@
 #ifndef _LOCKGUARD_HPP_
 #define _LOCKGUARD_HPP_
 
-#include "KException.h"
+#include "thread/KException.h"
 #include <pthread.h>
 namespace klib {
     class KCondVariable;

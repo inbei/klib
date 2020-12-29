@@ -2,10 +2,10 @@
 #define _QUEUE_HPP_
 #include <deque>
 #include <assert.h>
-#include "KMutex.h"
-#include "KLockGuard.h"
-#include "KCondVariable.h"
-#include "KAtomic.h"
+#include "thread/KMutex.h"
+#include "thread/KLockGuard.h"
+#include "thread/KCondVariable.h"
+#include "thread/KAtomic.h"
 
 namespace klib {
     template<typename ElementType>

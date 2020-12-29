@@ -7,6 +7,7 @@
 #include "thread/KLockGuard.h"
 #include "util/KStringUtility.h"
 #include "util/KTime.h"
+#include "thread/KPthread.h"
 #include <string>
 #if defined(WIN32)
 #include <WS2tcpip.h>
@@ -19,8 +20,6 @@
 #include <sstream>
 #include <set>
 #include <algorithm>
-
-#include "thread/KPthread.h"
 
 namespace thirdparty {
     using namespace klib;

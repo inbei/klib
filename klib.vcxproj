@@ -20,22 +20,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\tcp\KTcpBase.cpp" />
+    <ClCompile Include="src\tcp\KTcpProcessorModbus.cpp" />
+    <ClCompile Include="src\tcp\KTcpProcessorWebsocket.cpp" />
     <ClCompile Include="src\tcp\KTcpWriter.cpp" />
-    <ClCompile Include="src\thirdparty\KRedisClient.cpp" />
     <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp" />
     <ClCompile Include="src\thirdparty\KKafkaProducer.cpp" />
+    <ClCompile Include="src\thirdparty\KRedisClient.cpp" />
     <ClCompile Include="src\thirdparty\KRocketMqConsumer.cpp" />
-    <ClCompile Include="src\thread\KAny.cpp" />
-    <ClCompile Include="src\thread\KAtomic.cpp" />
     <ClCompile Include="src\thread\KBuffer.cpp" />
     <ClCompile Include="src\thread\KCondVariable.cpp" />
     <ClCompile Include="src\thread\KError.cpp" />
     <ClCompile Include="src\thread\KEventObject.cpp" />
     <ClCompile Include="src\thread\KException.cpp" />
-    <ClCompile Include="src\thread\KLockGuard.cpp" />
     <ClCompile Include="src\thread\KMutex.cpp" />
-    <ClCompile Include="src\thread\KPthread.cpp" />
-    <ClCompile Include="src\thread\KQueue.cpp" />
     <ClCompile Include="src\util\KBase64.cpp" />
     <ClCompile Include="src\util\KEndian.cpp" />
     <ClCompile Include="src\util\KSHA1.cpp" />
@@ -43,36 +40,38 @@
     <ClCompile Include="src\util\KTime.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\tcp\KTcpBase.h" />
-    <ClInclude Include="include\tcp\KTcpClient.hpp" />
-    <ClInclude Include="include\tcp\KTcpConn.hpp" />
-    <ClInclude Include="include\tcp\KTcpProcessor.hpp" />
-    <ClInclude Include="include\tcp\KTcpProcessorModbus.hpp" />
-    <ClInclude Include="include\tcp\KTcpProcessorMqtt.hpp" />
-    <ClInclude Include="include\tcp\KTcpProcessorWebsocket.hpp" />
-    <ClInclude Include="include\tcp\KTcpServer.hpp" />
-    <ClInclude Include="include\tcp\KTcpWriter.h" />
-    <ClInclude Include="include\thirdparty\KRedisClient.h" />
-    <ClInclude Include="include\thirdparty\KInfluxDbClient.h" />
-    <ClInclude Include="include\thirdparty\KKafkaProducer.h" />
-    <ClInclude Include="include\thirdparty\KRocketMqConsumer.h" />
-    <ClInclude Include="include\thread\KAny.h" />
-    <ClInclude Include="include\thread\KAtomic.h" />
-    <ClInclude Include="include\thread\KBuffer.h" />
-    <ClInclude Include="include\thread\KCondVariable.h" />
-    <ClInclude Include="include\thread\KError.h" />
-    <ClInclude Include="include\thread\KEventObject.h" />
-    <ClInclude Include="include\thread\KException.h" />
-    <ClInclude Include="include\thread\KLockGuard.h" />
-    <ClInclude Include="include\thread\KMutex.h" />
-    <ClInclude Include="include\thread\KPthread.h" />
-    <ClInclude Include="include\thread\KQueue.h" />
-    <ClInclude Include="include\util\KBase64.h" />
-    <ClInclude Include="include\util\KEndian.h" />
-    <ClInclude Include="include\util\KSHA1.h" />
-    <ClInclude Include="include\util\KSingleton.hpp" />
-    <ClInclude Include="include\util\KStringUtility.h" />
-    <ClInclude Include="include\util\KTime.h" />
+    <ClInclude Include="src\tcp\KTcpBase.h" />
+    <ClInclude Include="src\tcp\KTcpClient.hpp" />
+    <ClInclude Include="src\tcp\KTcpConn.hpp" />
+    <ClInclude Include="src\tcp\KTcpProcessor.hpp" />
+    <ClInclude Include="src\tcp\KTcpProcessorModbus.h" />
+    <ClInclude Include="src\tcp\KTcpProcessorWebsocket.h" />
+    <ClInclude Include="src\tcp\KTcpServer.hpp" />
+    <ClInclude Include="src\tcp\KTcpWriter.h" />
+    <ClInclude Include="src\thirdparty\KInfluxDbClient.h" />
+    <ClInclude Include="src\thirdparty\KKafkaProducer.h" />
+    <ClInclude Include="src\thirdparty\KRedisClient.h" />
+    <ClInclude Include="src\thirdparty\KRocketMqConsumer.h" />
+    <ClInclude Include="src\thread\KAny.h" />
+    <ClInclude Include="src\thread\KAtomic.h" />
+    <ClInclude Include="src\thread\KBuffer.h" />
+    <ClInclude Include="src\thread\KCondVariable.h" />
+    <ClInclude Include="src\thread\KError.h" />
+    <ClInclude Include="src\thread\KEventObject.h" />
+    <ClInclude Include="src\thread\KException.h" />
+    <ClInclude Include="src\thread\KLockGuard.h" />
+    <ClInclude Include="src\thread\KMutex.h" />
+    <ClInclude Include="src\thread\KPthread.h" />
+    <ClInclude Include="src\thread\KQueue.h" />
+    <ClInclude Include="src\util\KBase64.h" />
+    <ClInclude Include="src\util\KCsvFile.hpp" />
+    <ClInclude Include="src\util\KEndian.h" />
+    <ClInclude Include="src\util\KIniFile.hpp" />
+    <ClInclude Include="src\util\KSHA1.h" />
+    <ClInclude Include="src\util\KSingleton.hpp" />
+    <ClInclude Include="src\util\KStringUtility.h" />
+    <ClInclude Include="src\util\KTextFile.hpp" />
+    <ClInclude Include="src\util\KTime.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -148,7 +147,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>.\include;E:\depends\windows\pthreads-w32-2-9-1-release\Pre-built.2\include;E:\depends\windows\GnuWin32\include;E:\depends\windows\hiredis\include;E:\depends\windows\libcurl\include;E:\depends\windows\rdkafka\include;E:\depends\windows\rocketmq\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\depends\windows\pthreads-w32-2-9-1-release\Pre-built.2\include;E:\depends\windows\GnuWin32\include;E:\depends\windows\hiredis\include;E:\depends\windows\libcurl\include;E:\depends\windows\rdkafka\include;E:\depends\windows\rocketmq\include;.\src;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>

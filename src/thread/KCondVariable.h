@@ -1,9 +1,9 @@
 #ifndef _CONDVARIABLE_HPP_
 #define _CONDVARIABLE_HPP_
 
-#include "KException.h"
+#include "thread/KException.h"
 #include "util/KTime.h"
-#include "KError.h"
+#include "thread/KError.h"
 #include <pthread.h>
 
 namespace klib {

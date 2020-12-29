@@ -5,7 +5,7 @@
 #include <vector>
 #include "thread/KEventObject.h"
 #include "thread/KBuffer.h"
-#include "KTcpBase.h"
+#include "tcp/KTcpBase.h"
 
 namespace klib
 {

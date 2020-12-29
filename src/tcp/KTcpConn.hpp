@@ -2,66 +2,50 @@
 #if defined(WIN32)
 #include <WS2tcpip.h>
 #endif
-#include "KTcpProcessor.hpp"
-#include "KTcpWriter.h"
-#include "util/KStringUtility.h"
+#include "tcp/KTcpProcessor.hpp"
+#include "tcp/KTcpWriter.h"
 namespace klib {
 
     template<typename ProcessorType>
-    class KTcpClient :protected KEventObject<SocketType>, public KTcpBase,
+    class KTcpConnection :protected KEventObject<SocketType>, public KTcpBase,
         protected ProcessorType, protected KTcpWriter
     {
     public:
-        KTcpClient()
-            :m_fd(0), KEventObject<SocketType>("KTcpClient Thread")
+        KTcpConnection()
+            :m_fd(0), KEventObject<SocketType>("KTcpConnection Thread")
         {
 
         }
 
-        bool Start(const std::string& hosts, bool autoReconnect = true)
+        ~KTcpConnection()
         {
-            std::vector<std::string> brokers;
-            klib::KStringUtility::SplitString(hosts, ",", brokers);
-            std::vector<std::string>::const_iterator it = brokers.begin();
-            while (it != brokers.end())
-            {
-                const std::string& broker = *it;
-                std::vector<std::string> ipandport;
-                klib::KStringUtility::SplitString(broker, ":", ipandport);
-                if (ipandport.size() != 2)
-                {
-                    printf("invalid broker:[%s]\n", broker.c_str());
-                }
-                else
-                {
-                    uint16_t port = atoi(ipandport[1].c_str());
-                    if (port == 0)
-                        printf("invalid broker:[%s]\n", broker.c_str());
-                    else
-                        m_hostip[ipandport[0]] = port;
-                }
-                ++it;
-            }
+            std::cout << m_ipport << " disconnected" << std::endl;
+        }
 
-            if (m_hostip.empty())
-            {
-                printf("invalid brokers:[%s]\n", hosts.c_str());
+        bool Start(const std::string& ipport, SocketType fd)
+        {
+            m_ipport = ipport;
+            m_fd = fd;
+
+            if (!AddSocket(fd, ipport))
                 return false;
-            }
 
-            m_it = m_hostip.begin();
-            m_autoReconnect = autoReconnect;
             if (!KTcpWriter::Start(this))
+            {
+                DeleteSocket(fd);
                 return false;
+            }
 
             if (!ProcessorType::Start(this))
             {
+                DeleteSocket(fd);
                 KTcpWriter::Stop();
                 return false;
             }
 
             if (!KEventObject<SocketType>::Start())
             {
+                DeleteSocket(fd);
                 ProcessorType::Stop();
                 KTcpWriter::Stop();
                 return false;
@@ -96,29 +80,18 @@ namespace klib {
             return false;
         }
 
-        virtual bool IsServer() const { return false; }
+        virtual bool IsServer() const { return true; }
 
-        virtual bool Handshake() { return ProcessorType::Handshake(); }
-
-        virtual void Serialize(const typename ProcessorType::ProcessorMessageType& msg, KBuffer& result) const { ProcessorType::Serialize(msg, result); }
+        virtual SocketType GetSocket() const { return m_fd; }
 
     private:
         virtual void ProcessEvent(const SocketType& ev)
         {
-            if (!IsConnected())
-            {
-                if (!Connect(m_it->first, m_it->second))
-                {
-                    KTime::MSleep(1000);
-                    if (++m_it == m_hostip.end())
-                        m_it = m_hostip.begin();
-                }
-            }
-            else
+            if (IsConnected())
             {
                 PollSocket();
+                KEventObject<SocketType>::Post(1);
             }
-            KEventObject<SocketType>::Post(1);
         }
 
         virtual void OnSocketEvent(SocketType fd, short evt)
@@ -144,37 +117,6 @@ namespace klib {
             }
         }
 
-        virtual SocketType GetSocket() const { return m_fd; }
-
-        bool Connect(const std::string& ip, uint16_t port)
-        {
-            if ((m_fd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
-                return false;
-
-            // set reuse address
-            int on = 1;
-            if (::setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR,
-                reinterpret_cast<const char*>(&on), sizeof(on)) != 0)
-            {
-                CloseSocket(m_fd);
-                return false;
-            }
-
-            sockaddr_in server;
-            server.sin_family = AF_INET;
-            server.sin_port = htons(port);
-            server.sin_addr.s_addr = inet_addr(ip.c_str());
-            if (::connect(m_fd, (sockaddr*)(&server), sizeof(server)) != 0)
-            {
-                CloseSocket(m_fd);
-                return false;
-            }
-
-            std::ostringstream os;
-            os << ip << ":" << port;
-            return AddSocket(m_fd, os.str());
-        }
-
         int ReadSocket(SocketType fd, std::vector<KBuffer>& dat) const
         {
             int bytes = 0;
@@ -194,12 +136,12 @@ namespace klib {
                 {
 #if defined(WIN32)
                     if (GetLastError() == WSAEINTR) // 读操作中断，需要重新读
-                        KTime::MSleep(6);
+                        KTime::MSleep(3);
                     else if (GetLastError() == WSAEWOULDBLOCK) // 非阻塞模式，暂时无数据，不需要重新读
                         break;
 #else
                     if (errno == EINTR) // 读操作中断，需要重新读
-                        KTime::MSleep(6);
+                        KTime::MSleep(3);
                     else if (errno == EWOULDBLOCK) // 非阻塞模式，暂时无数据，不需要重新读
                         break;
 #endif
@@ -212,8 +154,6 @@ namespace klib {
 
     private:
         SocketType m_fd;
-        bool m_autoReconnect;
-        std::map<std::string, uint16_t> m_hostip;
-        std::map<std::string, uint16_t>::const_iterator m_it;
+        std::string m_ipport;
     };
 };

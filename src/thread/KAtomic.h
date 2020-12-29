@@ -6,8 +6,8 @@
 #endif
 #include <map>
 
-#include "KMutex.h"
-#include "KLockGuard.h"
+#include "thread/KMutex.h"
+#include "thread/KLockGuard.h"
 
 namespace klib {
     template<typename VariantType>

@@ -1,5 +1,8 @@
 ﻿#pragma once
-#include "KTcpProcessor.hpp"
+#if defined(WIN32)
+#include <WS2tcpip.h>
+#endif
+#include "tcp/KTcpProcessor.hpp"
 #include "util/KEndian.h"
 namespace klib
 {
@@ -18,7 +21,7 @@ namespace klib
 
         virtual size_t GetPayloadSize() const { return len; }
         virtual size_t GetHeaderSize() const { return sizeof(seq) + sizeof(ver) + sizeof(len); }
-        virtual bool IsValid() { return (ver == 0x0 && dev == 0xff && func == 0x04); }
+        virtual bool IsValid() { return (ver == 0x0 && ((dev == 0xff && func == 0x04) || (dev == 0x01 && func == 0x03))); }
         virtual void Clear() { len = 0; dev = 0; func = 0; }
 
         bool ToRequest()
@@ -68,73 +71,44 @@ namespace klib
     };
 
     template<>
-    int ParseBlock(const KBuffer& dat, KModbusMessage& msg, KBuffer& left)
-    {
-        size_t hsz = msg.GetHeaderSize() + sizeof(msg.dev) + sizeof(msg.func);
-        if (dat.GetSize() < hsz)
-            return ShortHeader;
-
-        uint8_t* src = (uint8_t*)dat.GetData();
-        size_t offset = 0;
-        KEndian::FromNetwork(src + offset, msg.seq);
-        offset += sizeof(msg.seq);
-        KEndian::FromNetwork(src + offset, msg.ver);
-        offset += sizeof(msg.ver);
-        KEndian::FromNetwork(src + offset, msg.len);
-        offset += sizeof(msg.len);
-
-        msg.dev = src[offset++];
-        msg.func = src[offset++];
-
-        if (!msg.IsValid())
-        {
-            std::cout << "invalid modbus packet\n";
-            return ProtocolError;
-        }
-
-        size_t ssz = dat.GetSize();
-        if (ssz < msg.GetHeaderSize() + msg.GetPayloadSize())
-            return ShortPayload;
-
-        size_t psz = msg.GetPayloadSize() - sizeof(msg.dev) - sizeof(msg.func);
-        msg.payload = KBuffer(psz);
-        msg.payload.ApendBuffer((const char*)src + offset, psz);
-        offset += psz;
-
-        // left data
-        if (offset < ssz)
-        {
-            KBuffer tmp(ssz - offset);
-            tmp.ApendBuffer((const char*)src + offset, tmp.Capacity());
-            left = tmp;
-        }
-        return ParseSuccess;
-    };
+    int ParseBlock(const KBuffer& dat, KModbusMessage& msg, KBuffer& left);
 
     class KTcpProcessorModbus :public KTcpProcessor<KModbusMessage>
     {
     public:
-        KModbusMessage Request(uint16_t addr, uint16_t count)
+        KTcpProcessorModbus()
+            :m_seq(0), m_func(0x04), m_dev(0xff)
+        {
+
+        }
+
+        void SetDev(uint8_t dev) { m_dev = dev; }
+        void SetFunc(uint8_t func) { m_func = func; }
+
+        virtual KModbusMessage Request(uint16_t addr, uint16_t count)
         {
             KModbusMessage msg(KModbusMessage::ModbusRequest);
-            msg.seq = 1;
+            uint16_t s = m_seq++;
+            if (s == 0xffff)
+                m_seq = 0;
+            msg.seq = s;
             msg.ver = 0;
             msg.len = 6;
-            msg.dev = 0xff;
-            msg.func = 0x04;
+            msg.dev = m_dev;
+            msg.func = m_func;
             msg.saddr = addr;
             msg.count = count;
             return msg;
         }
 
-        KModbusMessage Response(const KBuffer& r)
+        virtual KModbusMessage Response(uint16_t seq, const KBuffer& r)
         {
             KModbusMessage msg(KModbusMessage::ModbusResponse);
-            msg.seq = 1;
+            msg.seq = seq;
             msg.ver = 0;
             msg.len = 3 + r.GetSize();
-            msg.dev = 0xff;
-            msg.func = 0x04;
+            msg.dev = m_dev;
+            msg.func = m_func;
             msg.ler = r.GetSize();
             msg.dat = r;
             return msg;
@@ -211,5 +185,10 @@ namespace klib
                 ++it;
             }
         }
+
+    private:
+        uint16_t m_seq;
+        uint8_t m_dev;
+        uint8_t m_func;
     };
 };
