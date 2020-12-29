@@ -101,7 +101,7 @@ namespace klib
         return CheckSqlState(SQL_HANDLE_STMT, stmt, r);
     }
 
-    bool KOdbcClient::BindParam(SQLHANDLE stmt, std::vector<KBuffer>& paras)
+    bool KOdbcClient::BindParam(SQLHANDLE stmt, const QueryParam& paras)
     {
         KLockGuard<KMutex> lock(m_dmtx);
         // Check to see if there are any parameters. If so, process them. 
@@ -654,6 +654,28 @@ namespace klib
                 delete[] buf;
             ++hit;
         }
+    }
+
+    void Clear(QueryParam& param)
+    {
+        QueryParam::iterator it = param.begin();
+        while (it != param.end())
+        {
+            it->Release();
+            ++it;
+        }
+        param.clear();
+    }
+
+    void Clear(QueryParamSeq& params)
+    {
+        QueryParamSeq::iterator it = params.begin();
+        while (it != params.end())
+        {
+            Clear(*it);
+            ++it;
+        }
+        params.clear();
     }
 
 };

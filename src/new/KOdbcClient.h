@@ -107,6 +107,9 @@ namespace klib
 
     typedef std::vector<QueryParam> QueryParamSeq;
 
+    void Clear(QueryParam& param);
+    void Clear(QueryParamSeq& params);
+
     //struct QueryResult;
     struct FieldDescr;
     //struct QueryField;
@@ -125,7 +128,7 @@ namespace klib
 
         bool Prepare(SQLHANDLE& stmt, const std::string& sql);
 
-        bool BindParam(SQLHANDLE stmt, std::vector<KBuffer>& paras);
+        bool BindParam(SQLHANDLE stmt, const QueryParam& paras);
 
         bool Execute(SQLHANDLE stmt);
 
