@@ -40,11 +40,77 @@ namespace klib
         DriverType drvtype;
     };
 
-    struct QueryResult;
-    struct FieldDescr;
-    struct QueryField;
-    struct QueryValue;
+    struct QueryField
+    {
+        enum
+        {
+            tnull = 0, tbool, tuint8, tint8, tuint16, tint16, tuint32, tint32,
+            tuint64, tint64, tfloat, tdouble, tnumeric, tguid, tstring, tbinary,
+            tdate, ttime, ttimestamp
+        };
+
+        std::string name;
+        uint16_t type;
+        char* valbuf;
+        int bufsize;
+        int valsize;
+        int precision;
+        bool nullable;
+
+        QueryField()
+            :bufsize(0), nullable(true), type(tnull), precision(0), valbuf(NULL), valsize(0)
+        {
+
+        }
+    };
+
     typedef std::vector<QueryField> QueryHeader;
+
+    struct QueryValue
+    {
+        union
+        {
+            uint8_t ui8val;
+            int8_t i8val;
+            uint16_t ui16val;
+            int16_t i16val;
+            uint32_t ui32val;
+            int32_t i32val;
+            uint64_t ui64val;
+            int64_t i64val;
+            float fval;
+            double dval;
+            char* cval;
+            bool bval;
+        } val;
+        uint16_t size;
+        bool nul;
+
+        QueryValue()
+            :size(0), val(), nul(false)
+        {
+
+        }
+    };
+
+    typedef std::vector<QueryValue> QueryRow;
+
+    struct QueryResult
+    {
+        QueryHeader header;
+        std::vector<QueryRow> rows;
+
+        void Release();
+    };
+
+    typedef std::vector<KBuffer> QueryParam;
+
+    typedef std::vector<QueryParam> QueryParamSeq;
+
+    //struct QueryResult;
+    struct FieldDescr;
+    //struct QueryField;
+    //struct QueryValue;
 
     class KOdbcClient
     {

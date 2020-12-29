@@ -1,109 +1,6 @@
 #include "new/KOdbcClient.h"
 namespace klib
 {
-    struct QueryValue
-    {
-        union
-        {
-            uint8_t ui8val;
-            int8_t i8val;
-            uint16_t ui16val;
-            int16_t i16val;
-            uint32_t ui32val;
-            int32_t i32val;
-            uint64_t ui64val;
-            int64_t i64val;
-            float fval;
-            double dval;
-            char* cval;
-            bool bval;
-        } val;
-        uint16_t size;
-        bool nul;
-
-        QueryValue()
-            :size(0), val(), nul(false)
-        {
-
-        }
-    };
-
-    typedef std::vector<QueryValue> QueryRow;
-
-    struct QueryField
-    {
-        enum
-        {
-            tnull = 0, tbool, tuint8, tint8, tuint16, tint16, tuint32, tint32,
-            tuint64, tint64, tfloat, tdouble, tnumeric, tguid, tstring, tbinary,
-            tdate, ttime, ttimestamp
-        };
-
-        std::string name;
-        uint16_t type;
-        char* valbuf;
-        int bufsize;
-        int valsize;
-        int precision;
-        bool nullable;
-
-        QueryField()
-            :bufsize(0), nullable(true), type(tnull), precision(0), valbuf(NULL), valsize(0)
-        {
-
-        }
-    };    
-
-    struct QueryResult
-    {
-        QueryHeader header;
-        std::vector<QueryRow> rows;
-
-        void Release()
-        {
-            std::vector<QueryRow>::iterator it = rows.begin();
-            while (it != rows.end())
-            {
-                for (size_t i = 0; i < header.size(); ++i)
-                {
-                    uint16_t type = header[i].type;
-                    char* buf = (*it)[i].val.cval;
-                    switch (type)
-                    {
-                    case QueryField::tbool:
-                    case QueryField::tfloat:
-                    case QueryField::tdouble:
-                    case QueryField::tuint8:
-                    case QueryField::tint8:
-                    case QueryField::tuint16:
-                    case QueryField::tint16:
-                    case QueryField::tuint32:
-                    case QueryField::tint32:
-                    case QueryField::tuint64:
-                    case QueryField::tint64:
-                        break;
-                    default:
-                        delete[] buf;
-                    }
-                }
-                ++it;
-            }
-
-            QueryHeader::iterator hit = header.begin();
-            while (hit != header.end())
-            {
-                char* buf = (*hit).valbuf;
-                if (buf)
-                    delete[] buf;
-                ++hit;
-            }
-        }
-    };
-
-    typedef std::vector<KBuffer> QueryParam;
-
-    typedef std::vector<QueryParam> QueryParamSeq;
-
     // ×Ö¶ÎÐÅÏ¢
     struct FieldDescr
     {
@@ -696,6 +593,46 @@ namespace klib
             ret = false;
         }
         return ret;
+    }
+
+    void QueryResult::Release()
+    {
+        std::vector<QueryRow>::iterator it = rows.begin();
+        while (it != rows.end())
+        {
+            for (size_t i = 0; i < header.size(); ++i)
+            {
+                uint16_t type = header[i].type;
+                char* buf = (*it)[i].val.cval;
+                switch (type)
+                {
+                case QueryField::tbool:
+                case QueryField::tfloat:
+                case QueryField::tdouble:
+                case QueryField::tuint8:
+                case QueryField::tint8:
+                case QueryField::tuint16:
+                case QueryField::tint16:
+                case QueryField::tuint32:
+                case QueryField::tint32:
+                case QueryField::tuint64:
+                case QueryField::tint64:
+                    break;
+                default:
+                    delete[] buf;
+                }
+            }
+            ++it;
+        }
+
+        QueryHeader::iterator hit = header.begin();
+        while (hit != header.end())
+        {
+            char* buf = (*hit).valbuf;
+            if (buf)
+                delete[] buf;
+            ++hit;
+        }
     }
 
 };
