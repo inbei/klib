@@ -356,6 +356,7 @@ namespace klib
         case SQL_TIME:
             //TIME_STRUCT
             return QueryField::ttime;
+        case 91://mysql
         case SQL_TIMESTAMP:
         case 93:
             //TIMESTAMP_STRUCT
@@ -457,6 +458,32 @@ namespace klib
         qr.rows.push_back(rw);
     }
 
+    double GetDoubleFromHexStruct(SQL_NUMERIC_STRUCT& numeric)
+    {
+        long value = 0;
+        int lastVal = 1;
+        for (int i = 0; i < 16; i++)
+        {
+            int currentVal = (int)numeric.val[i];
+            int lsd = currentVal % 16;
+            int msd = currentVal / 16;
+
+            value += lastVal * lsd;
+            lastVal = lastVal * 16;
+            value += lastVal * msd;
+            lastVal = lastVal * 16;
+        }
+
+        long divisor = 1;
+        for (int i = 0; i < numeric.scale; i++)
+        {
+            divisor = divisor * 10;
+        }
+
+        return (double)(value / (double)divisor);
+
+    }
+
     void KOdbcClient::ParseStruct(QueryValue& qv, const QueryHeader::iterator& it)
     {
         qv.val.cval = new char[qv.size]();
@@ -482,14 +509,8 @@ namespace klib
         case QueryField::tnumeric:
         {
             SQL_NUMERIC_STRUCT* numberic = reinterpret_cast<SQL_NUMERIC_STRUCT*>(qv.val.cval);
-            if (numberic->scale > 0)
-            {
-                printf("%lf,", *reinterpret_cast<double*>(numberic->val));
-            }
-            else
-            {
-                printf("%lld,", *reinterpret_cast<int64_t*>(numberic->val));
-            }
+            double val = GetDoubleFromHexStruct(*numberic);
+            printf("%llf,", val);
             break;
         }
 
@@ -526,7 +547,7 @@ namespace klib
         case QueryField::tuint8:
         {
             qv.val.ui8val = *(uint8_t*)(it->valbuf);
-            std::cout << qv.val.ui8val << ',';
+            std::cout << (uint16_t)qv.val.ui8val << ',';
             break;
         }
         case QueryField::tint8:
@@ -580,7 +601,7 @@ namespace klib
         case QueryField::tfloat:
         {
             qv.val.fval = *(float*)it->valbuf;
-            std::cout << qv.val.dval << ',';
+            std::cout << qv.val.fval << ',';
             break;
         }
         case QueryField::tdouble:

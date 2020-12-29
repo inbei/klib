@@ -46,7 +46,7 @@ namespace klib
         {
             tnull = 0, tbool, tuint8, tint8, tuint16, tint16, tuint32, tint32,
             tuint64, tint64, tfloat, tdouble, tnumeric, tguid, tstring, tbinary,
-            tdate, ttime, ttimestamp
+            tdate, ttime, ttimestamp, tstringnum
         };
 
         std::string name;
