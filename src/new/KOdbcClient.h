@@ -83,7 +83,7 @@ namespace klib
             char* cval;
             bool bval;
         } val;
-        uint16_t size;
+        int16_t size;
         bool nul;
 
         QueryValue()

@@ -448,12 +448,12 @@ namespace klib
             else
             {
                 qv.nul = true;
-                fprintf(stdout, "null,");
+                printf("null,");
             }
             rw.push_back(qv);
             ++it;
         }
-        fprintf(stdout, "\n");
+        printf("\n");
         qr.rows.push_back(rw);
     }
 
@@ -465,18 +465,18 @@ namespace klib
         {
         case QueryField::tbinary:
         {
-            fprintf(stdout, "binary,");
+            printf("binary,");
             break;
         }
         case QueryField::tguid:
         {
             SQLGUID* guid = reinterpret_cast<SQLGUID*>(qv.val.cval);
-            fprintf(stdout, "%d-%d-%d-%s,", guid->Data1, guid->Data2, guid->Data3, guid->Data4);
+            printf("%d-%d-%d-%s,", guid->Data1, guid->Data2, guid->Data3, guid->Data4);
             break;
         }
         case QueryField::tstring:
         {
-            fprintf(stdout, "%s,", std::string(qv.val.cval, qv.size).c_str());
+            printf("%s,", std::string(qv.val.cval, qv.size).c_str());
             break;
         }
         case QueryField::tnumeric:
@@ -484,11 +484,11 @@ namespace klib
             SQL_NUMERIC_STRUCT* numberic = reinterpret_cast<SQL_NUMERIC_STRUCT*>(qv.val.cval);
             if (numberic->scale > 0)
             {
-                fprintf(stdout, "%lf,", *reinterpret_cast<double*>(numberic->val));
+                printf("%lf,", *reinterpret_cast<double*>(numberic->val));
             }
             else
             {
-                fprintf(stdout, "%lld,", *reinterpret_cast<int64_t*>(numberic->val));
+                printf("%lld,", *reinterpret_cast<int64_t*>(numberic->val));
             }
             break;
         }
@@ -496,20 +496,20 @@ namespace klib
         case QueryField::tdate:
         {
             DATE_STRUCT* date = reinterpret_cast<DATE_STRUCT*>(qv.val.cval);
-            fprintf(stdout, "%d/%d/%d,", date->year, date->month, date->day);
+            printf("%04d/%02d/%02d,", date->year, date->month, date->day);
             break;
         }
         case QueryField::ttime:
         {
             TIME_STRUCT* time = reinterpret_cast<TIME_STRUCT*>(qv.val.cval);
-            fprintf(stdout, "%d:%d:%d,", time->hour, time->minute, time->second);
+            printf("%02d:%02d:%02d,", time->hour, time->minute, time->second);
             break;
         }
         case QueryField::ttimestamp:
         {
             TIMESTAMP_STRUCT* timestamp = reinterpret_cast<TIMESTAMP_STRUCT*>(qv.val.cval);
-            std::cout << timestamp->year << "/" << timestamp->month << "/" << timestamp->day << " "
-                << timestamp->hour << ":" << timestamp->minute << ":" << timestamp->second << ",";
+            printf("%04d/%02d/%02d %02d:%02d:%02d,", timestamp->year, timestamp->month, timestamp->day, 
+                timestamp->hour, timestamp->minute, timestamp->second);
             break;
         }
         default:
