@@ -656,7 +656,7 @@ namespace klib
         }
     }
 
-    void Clear(QueryParam& param)
+    void KOdbcClient::Clear(QueryParam& param)
     {
         QueryParam::iterator it = param.begin();
         while (it != param.end())
@@ -667,7 +667,7 @@ namespace klib
         param.clear();
     }
 
-    void Clear(QueryParamSeq& params)
+    void KOdbcClient::Clear(QueryParamSeq& params)
     {
         QueryParamSeq::iterator it = params.begin();
         while (it != params.end())

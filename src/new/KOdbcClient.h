@@ -107,9 +107,6 @@ namespace klib
 
     typedef std::vector<QueryParam> QueryParamSeq;
 
-    void Clear(QueryParam& param);
-    void Clear(QueryParamSeq& params);
-
     //struct QueryResult;
     struct FieldDescr;
     //struct QueryField;
@@ -143,6 +140,10 @@ namespace klib
         bool Commit();
 
         bool Rollback();
+
+        static void Clear(QueryParam& param);
+
+        static void Clear(QueryParamSeq& params);
 
     private:
         std::string GetConnStr(const DataBaseConfig& prop);
