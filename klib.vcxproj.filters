@@ -25,6 +25,9 @@
     <Filter Include="thirdparty">
       <UniqueIdentifier>{0b68492d-cea2-49a3-9d71-9a8b6c56816d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="new">
+      <UniqueIdentifier>{f48d26c7-c305-4545-987d-963189176fe7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp">
@@ -83,6 +86,9 @@
     </ClCompile>
     <ClCompile Include="src\tcp\KTcpWriter.cpp">
       <Filter>tcp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\new\KOdbcClient.cpp">
+      <Filter>new</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -181,6 +187,21 @@
     </ClInclude>
     <ClInclude Include="src\tcp\KTcpWriter.h">
       <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\new\KBarrier.hpp">
+      <Filter>new</Filter>
+    </ClInclude>
+    <ClInclude Include="src\new\KReadWriteLock.hpp">
+      <Filter>new</Filter>
+    </ClInclude>
+    <ClInclude Include="src\new\KSpinLock.hpp">
+      <Filter>new</Filter>
+    </ClInclude>
+    <ClInclude Include="src\new\KPingClient.hpp">
+      <Filter>new</Filter>
+    </ClInclude>
+    <ClInclude Include="src\new\KOdbcClient.h">
+      <Filter>new</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -4,8 +4,8 @@
 
 #if !defined(HPUX)
 #include <pthread.h>
-#include "KException.h"
-#include "KError.h"
+#include "thread/KException.h"
+#include "thread/KError.h"
 namespace klib
 {
     class KSpinLock 

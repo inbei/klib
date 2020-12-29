@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\new\KOdbcClient.cpp" />
     <ClCompile Include="src\tcp\KTcpBase.cpp" />
     <ClCompile Include="src\tcp\KTcpProcessorModbus.cpp" />
     <ClCompile Include="src\tcp\KTcpProcessorWebsocket.cpp" />
@@ -40,6 +41,11 @@
     <ClCompile Include="src\util\KTime.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\new\KBarrier.hpp" />
+    <ClInclude Include="src\new\KOdbcClient.h" />
+    <ClInclude Include="src\new\KPingClient.hpp" />
+    <ClInclude Include="src\new\KReadWriteLock.hpp" />
+    <ClInclude Include="src\new\KSpinLock.hpp" />
     <ClInclude Include="src\tcp\KTcpBase.h" />
     <ClInclude Include="src\tcp\KTcpClient.hpp" />
     <ClInclude Include="src\tcp\KTcpConn.hpp" />
@@ -85,7 +91,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v100</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
