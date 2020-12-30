@@ -23,6 +23,411 @@ namespace klib
         SQLSMALLINT     msglen;
     };
 
+    bool KOdbcSql::BindParam(const QueryParam& paras)
+    {
+        SQLHANDLE& stmt = m_stmt;
+        // Check to see if there are any parameters. If so, process them. 
+        SQLSMALLINT numpara = 0;
+        SQLRETURN r = SQLNumParams(stmt, &numpara);
+        if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
+            return false;
+        if (numpara == paras.size())
+        {
+            SQLSMALLINT   sqltype, decimaldigits, nullable;
+            SQLUINTEGER   colsize;
+            int i = 1;
+            std::vector<KBuffer>::const_iterator it = paras.begin();
+            while (it != paras.end())
+            {
+                SQLRETURN r = SQLDescribeParam(stmt, i, &sqltype, &colsize, &decimaldigits, &nullable);
+                if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
+                    return false;
+                // Bind the memory to the parameter. Assume that we only have input parameters. 
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                    sqltype, colsize, decimaldigits, it->GetData(), it->GetSize(), 0);
+                if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
+                    return false;
+                ++i;
+                ++it;
+            }
+            return true;
+        }
+        return numpara == 0;
+    }
+
+    bool KOdbcSql::Execute()
+    {
+        SQLHANDLE& stmt = m_stmt;
+        SQLRETURN r = SQLExecute(stmt);
+        return KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
+    }
+
+    bool KOdbcSql::GetResult(QueryResult& qr)
+    {
+        SQLHANDLE& stmt = m_stmt;
+        if (!GetHeader(stmt, qr.header))
+        {
+            qr.Release();
+            return false;
+        }
+
+        if (qr.header.empty())
+            return true;
+
+        while (SQLFetch(stmt) != SQL_NO_DATA)
+            ParseRow(qr);
+
+        return true;
+    }
+
+    void KOdbcSql::Release()
+    {
+        SQLHANDLE& stmt = m_stmt;
+        SQLRETURN r = SQLCloseCursor(stmt);
+        r = SQLCancel(stmt);
+        r = SQLFreeStmt(stmt, SQL_CLOSE);
+        KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
+        r = SQLFreeStmt(stmt, SQL_UNBIND);
+        KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
+        r = SQLFreeStmt(stmt, SQL_RESET_PARAMS);
+        KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
+        r = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+        KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
+    }
+
+    void KOdbcSql::Clear(QueryParam& param)
+    {
+        QueryParam::iterator it = param.begin();
+        while (it != param.end())
+        {
+            it->Release();
+            ++it;
+        }
+        param.clear();
+    }
+
+    void KOdbcSql::Clear(QueryParamSeq& params)
+    {
+        QueryParamSeq::iterator it = params.begin();
+        while (it != params.end())
+        {
+            Clear(*it);
+            ++it;
+        }
+        params.clear();
+    }
+
+    bool KOdbcSql::GetHeader(SQLHANDLE stmt, QueryHeader& head)
+    {
+        //获取列数
+        SQLSMALLINT numcols = 0;
+        SQLRETURN r = SQLNumResultCols(stmt, &numcols);
+        if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
+            return false;
+
+        if (numcols == 0)
+            return true;
+
+        // 获取字段信息
+        head.resize(numcols);
+        for (SQLSMALLINT i = 0; i < numcols; i++)
+        {
+            FieldDescr cd;
+            r = SQLDescribeCol(stmt, (SQLSMALLINT)i + 1, cd.colname, sizeof(cd.colname), &cd.namelen,
+                &cd.sqltype, &cd.colsize, &cd.decimaldigits, &cd.nullable);
+            if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
+                return false;
+            DescribeField(cd, head[i]);
+            r = SQLBindCol(stmt, i + 1, EnumToCType(head[i].type), head[i].valbuf, head[i].bufsize, (SQLLEN*)&(head[i].valsize));
+            if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
+                return false;
+        }
+        return true;
+    }
+
+    void KOdbcSql::DescribeField(const FieldDescr& cd, QueryField& r)
+    {
+        r.name = std::string((char*)&cd.colname[0], cd.namelen);
+        r.precision = cd.decimaldigits;
+        r.nullable = (cd.nullable == SQL_NO_NULLS ? false : true);
+        r.bufsize = cd.colsize;
+        r.valbuf = new char[r.bufsize]();
+        r.type = SqlTypeToEnum(cd.sqltype);
+    }
+
+    SQLSMALLINT KOdbcSql::SqlTypeToEnum(SQLSMALLINT ct)
+    {
+        switch (ct)
+        {
+        case SQL_BIT:
+            return QueryField::tbool;
+        case SQL_TINYINT:
+            return QueryField::tuint8;
+        case SQL_SMALLINT:
+            return QueryField::tint16;
+        case SQL_INTEGER:
+            return QueryField::tint32;
+        case SQL_BIGINT:
+            return QueryField::tint64;
+        case SQL_REAL:
+            return QueryField::tfloat;
+        case SQL_FLOAT:
+        case SQL_DOUBLE:
+            return QueryField::tdouble;
+        case SQL_CHAR:
+        case SQL_VARCHAR:
+        case -9:
+            return QueryField::tstring;
+        case SQL_LONGVARCHAR:
+        case SQL_VARBINARY:
+        case SQL_BINARY:
+            return QueryField::tbinary;
+        case SQL_DECIMAL:
+        case SQL_NUMERIC:
+            //SQL_NUMERIC_STRUCT
+            return QueryField::tnumeric;
+        case SQL_GUID:
+            //SQLGUID
+            return QueryField::tguid;
+        case SQL_DATE:
+            //DATE_STRUCT
+            return QueryField::tdate;
+        case SQL_TIME:
+            //TIME_STRUCT
+            return QueryField::ttime;
+        case 91://mysql
+        case SQL_TIMESTAMP:
+        case 93:
+            //TIMESTAMP_STRUCT
+            return QueryField::ttimestamp;
+        default:
+            fprintf(stderr, "sqltype2enum unknown type:%d\n", ct);
+            return QueryField::tnull;
+        }
+    }
+
+    SQLSMALLINT KOdbcSql::EnumToCType(SQLSMALLINT et)
+    {
+        switch (et)
+        {
+        case QueryField::tbool:
+            return SQL_C_BIT;
+        case QueryField::tuint8:
+            return SQL_C_TINYINT;
+        case QueryField::tint16:
+            return SQL_C_SHORT;
+        case QueryField::tint32:
+            return SQL_C_LONG;
+        case QueryField::tint64:
+            return SQL_C_SBIGINT;
+        case QueryField::tfloat:
+            return SQL_C_FLOAT;
+        case QueryField::tdouble:
+            return SQL_C_DOUBLE;
+        case QueryField::tguid:
+            return SQL_C_GUID;
+        case QueryField::tnumeric:
+            return SQL_C_NUMERIC;
+        case QueryField::tstring:
+            return SQL_C_CHAR;
+        case QueryField::tbinary:
+            return SQL_C_BINARY;
+        case QueryField::tdate:
+            return SQL_C_DATE;
+        case QueryField::ttime:
+            return SQL_C_TIME;
+        case QueryField::ttimestamp:
+            return SQL_C_TIMESTAMP;
+        default:
+            return SQL_C_DEFAULT;
+        }
+    }
+
+    void KOdbcSql::ParseRow(QueryResult& qr)
+    {
+        QueryRow rw;
+        QueryHeader::iterator it = qr.header.begin();
+        while (it != qr.header.end())
+        {
+            QueryValue qv;
+            if ((qv.size = it->valsize) > 0)
+            {
+                if (!ParseNumber(qv, it))
+                {
+                    ParseStruct(qv, it);
+                }
+            }
+            else
+            {
+                qv.nul = true;
+                printf("null,");
+            }
+            rw.push_back(qv);
+            ++it;
+        }
+        printf("\n");
+        qr.rows.push_back(rw);
+    }
+
+    double KOdbcSql::GetDoubleFromHexStruct(SQL_NUMERIC_STRUCT& numeric)
+    {
+        long value = 0;
+        int lastVal = 1;
+        for (int i = 0; i < 16; i++)
+        {
+            int currentVal = (int)numeric.val[i];
+            int lsd = currentVal % 16;
+            int msd = currentVal / 16;
+
+            value += lastVal * lsd;
+            lastVal = lastVal * 16;
+            value += lastVal * msd;
+            lastVal = lastVal * 16;
+        }
+
+        long divisor = 1;
+        for (int i = 0; i < numeric.scale; i++)
+        {
+            divisor = divisor * 10;
+        }
+
+        return (double)(value / (double)divisor);
+    }
+
+    void KOdbcSql::ParseStruct(QueryValue& qv, const QueryHeader::iterator& it)
+    {
+        qv.val.cval = new char[qv.size]();
+        memcpy(qv.val.cval, it->valbuf, qv.size);
+        switch (it->type)
+        {
+        case QueryField::tbinary:
+        {
+            printf("binary,");
+            break;
+        }
+        case QueryField::tguid:
+        {
+            SQLGUID* guid = reinterpret_cast<SQLGUID*>(qv.val.cval);
+            printf("%d-%d-%d-%s,", guid->Data1, guid->Data2, guid->Data3, guid->Data4);
+            break;
+        }
+        case QueryField::tstring:
+        {
+            printf("%s,", std::string(qv.val.cval, qv.size).c_str());
+            break;
+        }
+        case QueryField::tnumeric:
+        {
+            SQL_NUMERIC_STRUCT* numberic = reinterpret_cast<SQL_NUMERIC_STRUCT*>(qv.val.cval);
+            double val = GetDoubleFromHexStruct(*numberic);
+            printf("%llf,", val);
+            break;
+        }
+
+        case QueryField::tdate:
+        {
+            DATE_STRUCT* date = reinterpret_cast<DATE_STRUCT*>(qv.val.cval);
+            printf("%04d/%02d/%02d,", date->year, date->month, date->day);
+            break;
+        }
+        case QueryField::ttime:
+        {
+            TIME_STRUCT* time = reinterpret_cast<TIME_STRUCT*>(qv.val.cval);
+            printf("%02d:%02d:%02d,", time->hour, time->minute, time->second);
+            break;
+        }
+        case QueryField::ttimestamp:
+        {
+            TIMESTAMP_STRUCT* timestamp = reinterpret_cast<TIMESTAMP_STRUCT*>(qv.val.cval);
+            printf("%04d/%02d/%02d %02d:%02d:%02d,", timestamp->year, timestamp->month, timestamp->day,
+                timestamp->hour, timestamp->minute, timestamp->second);
+            break;
+        }
+        default:
+            fprintf(stderr, "type:[%d],", it->type);
+            break;
+        }
+    }
+
+    bool KOdbcSql::ParseNumber(QueryValue& qv, const QueryHeader::iterator& it)
+    {
+        bool ret = true;
+        switch (it->type)
+        {
+        case QueryField::tuint8:
+        {
+            qv.val.ui8val = *(uint8_t*)(it->valbuf);
+            std::cout << (uint16_t)qv.val.ui8val << ',';
+            break;
+        }
+        case QueryField::tint8:
+        {
+            qv.val.ui8val = *(int8_t*)(it->valbuf);
+            std::cout << qv.val.i8val << ',';
+            break;
+        }
+        case QueryField::tuint16:
+        {
+            qv.val.ui16val = *(uint16_t*)(it->valbuf);
+            std::cout << qv.val.ui16val << ',';
+            break;
+        }
+        case QueryField::tint16:
+        {
+            qv.val.i16val = *(int16_t*)(it->valbuf);
+            std::cout << qv.val.i16val << ',';
+            break;
+        }
+        case QueryField::tuint32:
+        {
+            qv.val.ui32val = *(uint32_t*)(it->valbuf);
+            std::cout << qv.val.ui32val << ',';
+            break;
+        }
+        case QueryField::tint32:
+        {
+            qv.val.i32val = *(int32_t*)(it->valbuf);
+            std::cout << qv.val.i32val << ',';
+            break;
+        }
+        case QueryField::tuint64:
+        {
+            qv.val.ui64val = *(uint64_t*)(it->valbuf);
+            std::cout << qv.val.ui64val << ',';
+            break;
+        }
+        case QueryField::tint64:
+        {
+            qv.val.i64val = *(int64_t*)(it->valbuf);
+            std::cout << qv.val.i64val << ',';
+            break;
+        }
+        case QueryField::tbool:
+        {
+            qv.val.bval = 0x01 & it->valbuf[0];
+            std::cout << qv.val.bval << ',';
+            break;
+        }
+        case QueryField::tfloat:
+        {
+            qv.val.fval = *(float*)it->valbuf;
+            std::cout << qv.val.fval << ',';
+            break;
+        }
+        case QueryField::tdouble:
+        {
+            qv.val.dval = *(double*)it->valbuf;
+            std::cout << qv.val.dval << ',';
+            break;
+        }
+        default:
+            ret = false;
+        }
+        return ret;
+    }
+
+
+
     KOdbcClient::KOdbcClient(const DataBaseConfig& prop) :m_conf(prop), m_henv(SQL_NULL_HENV), m_hdbc(SQL_NULL_HDBC), m_autoCommit(true)
     {
         // Create the DB2 environment handle
@@ -77,7 +482,7 @@ namespace klib
         return CheckSqlState(SQL_HANDLE_DBC, m_hdbc, r);
     }
 
-    void KOdbcClient::Close()
+    void KOdbcClient::Disconnect()
     {
         KLockGuard<KMutex> lock(m_dmtx);
         SQLRETURN r = SQLDisconnect(m_hdbc);
@@ -86,96 +491,21 @@ namespace klib
         CheckSqlState(SQL_HANDLE_DBC, m_hdbc, r);
     }
 
-    bool KOdbcClient::Prepare(const std::string& sql)
+    KOdbcSql* KOdbcClient::Prepare(const std::string& sql)
     {
         KLockGuard<KMutex> lock(m_dmtx);
-        SQLHANDLE& stmt = m_stmt;
-        stmt = SQLHANDLE(SQL_NULL_HSTMT);
+        SQLHANDLE stmt = SQLHANDLE(SQL_NULL_HSTMT);
         //获取操作句柄
         SQLRETURN r = SQLAllocHandle(SQL_HANDLE_STMT, m_hdbc, &stmt);
         if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-            return false;
+            return NULL;
         r = SQLSetStmtAttr(stmt, SQL_ATTR_USE_BOOKMARKS, (SQLPOINTER)SQL_UB_OFF, SQL_IS_INTEGER);
         if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-            return false;
+            return NULL;
         r = SQLPrepare(stmt, (DBCHAR*)sql.c_str(), SQL_NTS);
-        return CheckSqlState(SQL_HANDLE_STMT, stmt, r);
-    }
-
-    bool KOdbcClient::BindParam(const QueryParam& paras)
-    {
-        KLockGuard<KMutex> lock(m_dmtx);
-        SQLHANDLE& stmt = m_stmt;
-        // Check to see if there are any parameters. If so, process them. 
-        SQLSMALLINT numpara = 0;
-        SQLRETURN r = SQLNumParams(stmt, &numpara);
-        if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-            return false;
-        if (numpara == paras.size())
-        {
-            SQLSMALLINT   sqltype, decimaldigits, nullable;
-            SQLUINTEGER   colsize;
-            int i = 1;
-            std::vector<KBuffer>::const_iterator it = paras.begin();
-            while (it != paras.end())
-            {
-                SQLRETURN r = SQLDescribeParam(stmt, i, &sqltype, &colsize, &decimaldigits, &nullable);
-                if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-                    return false;
-                // Bind the memory to the parameter. Assume that we only have input parameters. 
-                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
-                    sqltype, colsize, decimaldigits, it->GetData(), it->GetSize(), 0);
-                if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-                    return false;
-                ++i;
-                ++it;
-            }
-            return true;
-        }
-        return numpara == 0;
-    }
-
-    bool KOdbcClient::Execute()
-    {
-        KLockGuard<KMutex> lock(m_dmtx);
-        SQLHANDLE& stmt = m_stmt;
-        SQLRETURN r = SQLExecute(stmt);
-        return CheckSqlState(SQL_HANDLE_STMT, stmt, r);
-    }
-
-    bool KOdbcClient::GetResult(QueryResult& qr)
-    {
-        KLockGuard<KMutex> lock(m_dmtx);
-        SQLHANDLE& stmt = m_stmt;
-        if (!GetHeader(stmt, qr.header))
-        {
-            qr.Release();
-            return false;
-        }
-
-        if (qr.header.empty())
-            return true;
-
-        while (SQLFetch(stmt) != SQL_NO_DATA)
-            ParseRow(qr);
-
-        return true;
-    }
-
-    void KOdbcClient::Release()
-    {
-        KLockGuard<KMutex> lock(m_dmtx);
-        SQLHANDLE& stmt = m_stmt;
-        SQLRETURN r = SQLCloseCursor(stmt);
-        r = SQLCancel(stmt);
-        r = SQLFreeStmt(stmt, SQL_CLOSE);
-        CheckSqlState(SQL_HANDLE_STMT, stmt, r);
-        r = SQLFreeStmt(stmt, SQL_UNBIND);
-        CheckSqlState(SQL_HANDLE_STMT, stmt, r);
-        r = SQLFreeStmt(stmt, SQL_RESET_PARAMS);
-        CheckSqlState(SQL_HANDLE_STMT, stmt, r);
-        r = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-        CheckSqlState(SQL_HANDLE_STMT, stmt, r);
+        if (CheckSqlState(SQL_HANDLE_STMT, stmt, r))
+            return new KOdbcSql(stmt);
+        return NULL;
     }
 
     bool KOdbcClient::Commit()
@@ -275,314 +605,7 @@ namespace klib
         return (r == SQL_SUCCESS || r == SQL_SUCCESS_WITH_INFO);
     }
 
-    bool KOdbcClient::GetHeader(SQLHANDLE stmt, QueryHeader& head)
-    {
-        //获取列数
-        SQLSMALLINT numcols = 0;
-        SQLRETURN r = SQLNumResultCols(stmt, &numcols);
-        if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-            return false;
 
-        if (numcols == 0)
-            return true;
-
-        // 获取字段信息
-        head.resize(numcols);
-        for (SQLSMALLINT i = 0; i < numcols; i++)
-        {
-            FieldDescr cd;
-            r = SQLDescribeCol(stmt, (SQLSMALLINT)i + 1, cd.colname, sizeof(cd.colname), &cd.namelen,
-                &cd.sqltype, &cd.colsize, &cd.decimaldigits, &cd.nullable);
-            if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-                return false;
-            DescribeField(cd, head[i]);
-            r = SQLBindCol(stmt, i + 1, EnumToCType(head[i].type), head[i].valbuf, head[i].bufsize, (SQLLEN*)&(head[i].valsize));
-            if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-                return false;
-        }
-        return true;
-    }
-
-    void KOdbcClient::DescribeField(const FieldDescr& cd, QueryField& r)
-    {
-        r.name = std::string((char*)&cd.colname[0], cd.namelen);
-        r.precision = cd.decimaldigits;
-        r.nullable = (cd.nullable == SQL_NO_NULLS ? false : true);
-        r.bufsize = cd.colsize;
-        r.valbuf = new char[r.bufsize]();
-        r.type = SqlTypeToEnum(cd.sqltype);
-    }
-
-    SQLSMALLINT KOdbcClient::SqlTypeToEnum(SQLSMALLINT ct)
-    {
-        switch (ct)
-        {
-        case SQL_BIT:
-            return QueryField::tbool;
-        case SQL_TINYINT:
-            return QueryField::tuint8;
-        case SQL_SMALLINT:
-            return QueryField::tint16;
-        case SQL_INTEGER:
-            return QueryField::tint32;
-        case SQL_BIGINT:
-            return QueryField::tint64;
-        case SQL_REAL:
-            return QueryField::tfloat;
-        case SQL_FLOAT:
-        case SQL_DOUBLE:
-            return QueryField::tdouble;
-        case SQL_CHAR:
-        case SQL_VARCHAR:
-        case -9:
-            return QueryField::tstring;
-        case SQL_LONGVARCHAR:
-        case SQL_VARBINARY:
-        case SQL_BINARY:
-            return QueryField::tbinary;
-        case SQL_DECIMAL:
-        case SQL_NUMERIC:
-            //SQL_NUMERIC_STRUCT
-            return QueryField::tnumeric;
-        case SQL_GUID:
-            //SQLGUID
-            return QueryField::tguid;
-        case SQL_DATE:
-            //DATE_STRUCT
-            return QueryField::tdate;
-        case SQL_TIME:
-            //TIME_STRUCT
-            return QueryField::ttime;
-        case 91://mysql
-        case SQL_TIMESTAMP:
-        case 93:
-            //TIMESTAMP_STRUCT
-            return QueryField::ttimestamp;
-        default:
-            fprintf(stderr, "sqltype2enum unknown type:%d\n", ct);
-            return QueryField::tnull;
-        }
-    }
-
-    SQLSMALLINT KOdbcClient::EnumToCType(SQLSMALLINT et)
-    {
-        switch (et)
-        {
-        case QueryField::tbool:
-            return SQL_C_BIT;
-        case QueryField::tuint8:
-            return SQL_C_TINYINT;
-        case QueryField::tint16:
-            return SQL_C_SHORT;
-        case QueryField::tint32:
-            return SQL_C_LONG;
-        case QueryField::tint64:
-            return SQL_C_SBIGINT;
-        case QueryField::tfloat:
-            return SQL_C_FLOAT;
-        case QueryField::tdouble:
-            return SQL_C_DOUBLE;
-        case QueryField::tguid:
-            return SQL_C_GUID;
-        case QueryField::tnumeric:
-            return SQL_C_NUMERIC;
-        case QueryField::tstring:
-            return SQL_C_CHAR;
-        case QueryField::tbinary:
-            return SQL_C_BINARY;
-        case QueryField::tdate:
-            return SQL_C_DATE;
-        case QueryField::ttime:
-            return SQL_C_TIME;
-        case QueryField::ttimestamp:
-            return SQL_C_TIMESTAMP;
-        default:
-            return SQL_C_DEFAULT;
-        }
-    }
-
-    void KOdbcClient::ParseRow(QueryResult& qr)
-    {
-        QueryRow rw;
-        QueryHeader::iterator it = qr.header.begin();
-        while (it != qr.header.end())
-        {
-            QueryValue qv;
-            if ((qv.size = it->valsize) > 0)
-            {
-                if (!ParseNumber(qv, it))
-                {
-                    ParseStruct(qv, it);
-                }
-            }
-            else
-            {
-                qv.nul = true;
-                printf("null,");
-            }
-            rw.push_back(qv);
-            ++it;
-        }
-        printf("\n");
-        qr.rows.push_back(rw);
-    }
-
-    double KOdbcClient::GetDoubleFromHexStruct(SQL_NUMERIC_STRUCT& numeric)
-    {
-        long value = 0;
-        int lastVal = 1;
-        for (int i = 0; i < 16; i++)
-        {
-            int currentVal = (int)numeric.val[i];
-            int lsd = currentVal % 16;
-            int msd = currentVal / 16;
-
-            value += lastVal * lsd;
-            lastVal = lastVal * 16;
-            value += lastVal * msd;
-            lastVal = lastVal * 16;
-        }
-
-        long divisor = 1;
-        for (int i = 0; i < numeric.scale; i++)
-        {
-            divisor = divisor * 10;
-        }
-
-        return (double)(value / (double)divisor);
-    }
-
-    void KOdbcClient::ParseStruct(QueryValue& qv, const QueryHeader::iterator& it)
-    {
-        qv.val.cval = new char[qv.size]();
-        memcpy(qv.val.cval, it->valbuf, qv.size);
-        switch (it->type)
-        {
-        case QueryField::tbinary:
-        {
-            printf("binary,");
-            break;
-        }
-        case QueryField::tguid:
-        {
-            SQLGUID* guid = reinterpret_cast<SQLGUID*>(qv.val.cval);
-            printf("%d-%d-%d-%s,", guid->Data1, guid->Data2, guid->Data3, guid->Data4);
-            break;
-        }
-        case QueryField::tstring:
-        {
-            printf("%s,", std::string(qv.val.cval, qv.size).c_str());
-            break;
-        }
-        case QueryField::tnumeric:
-        {
-            SQL_NUMERIC_STRUCT* numberic = reinterpret_cast<SQL_NUMERIC_STRUCT*>(qv.val.cval);
-            double val = GetDoubleFromHexStruct(*numberic);
-            printf("%llf,", val);
-            break;
-        }
-
-        case QueryField::tdate:
-        {
-            DATE_STRUCT* date = reinterpret_cast<DATE_STRUCT*>(qv.val.cval);
-            printf("%04d/%02d/%02d,", date->year, date->month, date->day);
-            break;
-        }
-        case QueryField::ttime:
-        {
-            TIME_STRUCT* time = reinterpret_cast<TIME_STRUCT*>(qv.val.cval);
-            printf("%02d:%02d:%02d,", time->hour, time->minute, time->second);
-            break;
-        }
-        case QueryField::ttimestamp:
-        {
-            TIMESTAMP_STRUCT* timestamp = reinterpret_cast<TIMESTAMP_STRUCT*>(qv.val.cval);
-            printf("%04d/%02d/%02d %02d:%02d:%02d,", timestamp->year, timestamp->month, timestamp->day, 
-                timestamp->hour, timestamp->minute, timestamp->second);
-            break;
-        }
-        default:
-            fprintf(stderr, "type:[%d],", it->type);
-            break;
-        }
-    }
-
-    bool KOdbcClient::ParseNumber(QueryValue& qv, const QueryHeader::iterator& it)
-    {
-        bool ret = true;
-        switch (it->type)
-        {
-        case QueryField::tuint8:
-        {
-            qv.val.ui8val = *(uint8_t*)(it->valbuf);
-            std::cout << (uint16_t)qv.val.ui8val << ',';
-            break;
-        }
-        case QueryField::tint8:
-        {
-            qv.val.ui8val = *(int8_t*)(it->valbuf);
-            std::cout << qv.val.i8val << ',';
-            break;
-        }
-        case QueryField::tuint16:
-        {
-            qv.val.ui16val = *(uint16_t*)(it->valbuf);
-            std::cout << qv.val.ui16val << ',';
-            break;
-        }
-        case QueryField::tint16:
-        {
-            qv.val.i16val = *(int16_t*)(it->valbuf);
-            std::cout << qv.val.i16val << ',';
-            break;
-        }
-        case QueryField::tuint32:
-        {
-            qv.val.ui32val = *(uint32_t*)(it->valbuf);
-            std::cout << qv.val.ui32val << ',';
-            break;
-        }
-        case QueryField::tint32:
-        {
-            qv.val.i32val = *(int32_t*)(it->valbuf);
-            std::cout << qv.val.i32val << ',';
-            break;
-        }
-        case QueryField::tuint64:
-        {
-            qv.val.ui64val = *(uint64_t*)(it->valbuf);
-            std::cout << qv.val.ui64val << ',';
-            break;
-        }
-        case QueryField::tint64:
-        {
-            qv.val.i64val = *(int64_t*)(it->valbuf);
-            std::cout << qv.val.i64val << ',';
-            break;
-        }
-        case QueryField::tbool:
-        {
-            qv.val.bval = 0x01 & it->valbuf[0];
-            std::cout << qv.val.bval << ',';
-            break;
-        }
-        case QueryField::tfloat:
-        {
-            qv.val.fval = *(float*)it->valbuf;
-            std::cout << qv.val.fval << ',';
-            break;
-        }
-        case QueryField::tdouble:
-        {
-            qv.val.dval = *(double*)it->valbuf;
-            std::cout << qv.val.dval << ',';
-            break;
-        }
-        default:
-            ret = false;
-        }
-        return ret;
-    }
 
     void QueryResult::Release()
     {
@@ -623,27 +646,4 @@ namespace klib
             ++hit;
         }
     }
-
-    void KOdbcClient::Clear(QueryParam& param)
-    {
-        QueryParam::iterator it = param.begin();
-        while (it != param.end())
-        {
-            it->Release();
-            ++it;
-        }
-        param.clear();
-    }
-
-    void KOdbcClient::Clear(QueryParamSeq& params)
-    {
-        QueryParamSeq::iterator it = params.begin();
-        while (it != params.end())
-        {
-            Clear(*it);
-            ++it;
-        }
-        params.clear();
-    }
-
 };

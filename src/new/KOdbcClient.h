@@ -112,18 +112,19 @@ namespace klib
     //struct QueryField;
     //struct QueryValue;
 
-    class KOdbcClient
+    class KOdbcSql
     {
     public:
-        KOdbcClient(const DataBaseConfig& prop);
+        KOdbcSql(SQLHANDLE stmt)
+            :m_stmt(stmt)
+        {
 
-        virtual ~KOdbcClient();
+        }
 
-        bool Connect(bool autocommit = true);
-
-        void Close();
-
-        bool Prepare(const std::string& sql);
+        ~KOdbcSql()
+        {
+            Release();
+        }
 
         bool BindParam(const QueryParam& paras);
 
@@ -131,24 +132,12 @@ namespace klib
 
         bool GetResult(QueryResult& qr);
 
-        void Release();
-
-        /*
-        Transactions in ODBC do not have to be explicitly initiated. Instead,
-        a transaction begins implicitly whenever the application starts operating on the database
-        */
-        bool Commit();
-
-        bool Rollback();
-
         static void Clear(QueryParam& param);
 
         static void Clear(QueryParamSeq& params);
 
     private:
-        std::string GetConnStr(const DataBaseConfig& prop);
-
-        bool CheckSqlState(SQLSMALLINT htype, SQLHANDLE handle, SQLRETURN r);
+        void Release();
 
         bool GetHeader(SQLHANDLE stmt, QueryHeader& head);
 
@@ -167,13 +156,43 @@ namespace klib
         bool ParseNumber(QueryValue& qv, const QueryHeader::iterator& it);
 
     private:
+        SQLHANDLE m_stmt;
+    };
+
+    class KOdbcClient
+    {
+    public:
+        KOdbcClient(const DataBaseConfig& prop);
+
+        virtual ~KOdbcClient();
+
+        bool Connect(bool autocommit = true);
+
+        void Disconnect();
+
+        KOdbcSql* Prepare(const std::string& sql);
+
+        /*
+        Transactions in ODBC do not have to be explicitly initiated. Instead,
+        a transaction begins implicitly whenever the application starts operating on the database
+        */
+        bool Commit();
+
+        bool Rollback();
+
+    private:
+        std::string GetConnStr(const DataBaseConfig& prop);
+
+        static bool CheckSqlState(SQLSMALLINT htype, SQLHANDLE handle, SQLRETURN r);
+
+    private:
         DataBaseConfig m_conf;
         // db2 handle
         SQLHDBC   m_hdbc;
         SQLHENV   m_henv;          // Environment handle
         KMutex m_dmtx;
-        SQLHANDLE m_stmt;
         volatile bool m_autoCommit;
+        friend class KOdbcSql;
     };
 };
 #endif // !_DB2CLI_H_
