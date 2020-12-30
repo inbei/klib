@@ -123,15 +123,15 @@ namespace klib
 
         void Close();
 
-        bool Prepare(SQLHANDLE& stmt, const std::string& sql);
+        bool Prepare(const std::string& sql);
 
-        bool BindParam(SQLHANDLE stmt, const QueryParam& paras);
+        bool BindParam(const QueryParam& paras);
 
-        bool Execute(SQLHANDLE stmt);
+        bool Execute();
 
-        bool GetResult(SQLHANDLE stmt, QueryResult& qr);
+        bool GetResult(QueryResult& qr);
 
-        void Release(SQLHANDLE stmt);
+        void Release();
 
         /*
         Transactions in ODBC do not have to be explicitly initiated. Instead,
@@ -162,6 +162,8 @@ namespace klib
 
         void ParseStruct(QueryValue& qv, const QueryHeader::iterator& it);
 
+        double GetDoubleFromHexStruct(SQL_NUMERIC_STRUCT& numeric);
+
         bool ParseNumber(QueryValue& qv, const QueryHeader::iterator& it);
 
     private:
@@ -170,6 +172,7 @@ namespace klib
         SQLHDBC   m_hdbc;
         SQLHENV   m_henv;          // Environment handle
         KMutex m_dmtx;
+        SQLHANDLE m_stmt;
         volatile bool m_autoCommit;
     };
 };

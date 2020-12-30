@@ -86,9 +86,10 @@ namespace klib
         CheckSqlState(SQL_HANDLE_DBC, m_hdbc, r);
     }
 
-    bool KOdbcClient::Prepare(SQLHANDLE& stmt, const std::string& sql)
+    bool KOdbcClient::Prepare(const std::string& sql)
     {
         KLockGuard<KMutex> lock(m_dmtx);
+        SQLHANDLE& stmt = m_stmt;
         stmt = SQLHANDLE(SQL_NULL_HSTMT);
         //获取操作句柄
         SQLRETURN r = SQLAllocHandle(SQL_HANDLE_STMT, m_hdbc, &stmt);
@@ -101,9 +102,10 @@ namespace klib
         return CheckSqlState(SQL_HANDLE_STMT, stmt, r);
     }
 
-    bool KOdbcClient::BindParam(SQLHANDLE stmt, const QueryParam& paras)
+    bool KOdbcClient::BindParam(const QueryParam& paras)
     {
         KLockGuard<KMutex> lock(m_dmtx);
+        SQLHANDLE& stmt = m_stmt;
         // Check to see if there are any parameters. If so, process them. 
         SQLSMALLINT numpara = 0;
         SQLRETURN r = SQLNumParams(stmt, &numpara);
@@ -133,16 +135,18 @@ namespace klib
         return numpara == 0;
     }
 
-    bool KOdbcClient::Execute(SQLHANDLE stmt)
+    bool KOdbcClient::Execute()
     {
         KLockGuard<KMutex> lock(m_dmtx);
+        SQLHANDLE& stmt = m_stmt;
         SQLRETURN r = SQLExecute(stmt);
         return CheckSqlState(SQL_HANDLE_STMT, stmt, r);
     }
 
-    bool KOdbcClient::GetResult(SQLHANDLE stmt, QueryResult& qr)
+    bool KOdbcClient::GetResult(QueryResult& qr)
     {
         KLockGuard<KMutex> lock(m_dmtx);
+        SQLHANDLE& stmt = m_stmt;
         if (!GetHeader(stmt, qr.header))
         {
             qr.Release();
@@ -150,21 +154,18 @@ namespace klib
         }
 
         if (qr.header.empty())
-        {
             return true;
-        }
 
         while (SQLFetch(stmt) != SQL_NO_DATA)
-        {
             ParseRow(qr);
-        }
 
         return true;
     }
 
-    void KOdbcClient::Release(SQLHANDLE stmt)
+    void KOdbcClient::Release()
     {
         KLockGuard<KMutex> lock(m_dmtx);
+        SQLHANDLE& stmt = m_stmt;
         SQLRETURN r = SQLCloseCursor(stmt);
         r = SQLCancel(stmt);
         r = SQLFreeStmt(stmt, SQL_CLOSE);
@@ -181,9 +182,7 @@ namespace klib
     {
         KLockGuard<KMutex> lock(m_dmtx);
         if (m_autoCommit)
-        {
             return true;
-        }
 
         SQLRETURN r = SQLEndTran(SQL_HANDLE_DBC, m_hdbc, SQL_COMMIT);
         return CheckSqlState(SQL_HANDLE_DBC, m_hdbc, r);
@@ -268,7 +267,7 @@ namespace klib
             while (i <= numrecs && (tmp = SQLGetDiagRec(htype, handle, i, ss.state, &ss.nativerr,
                 ss.msgtext, sizeof(ss.msgtext), &ss.msglen)) != SQL_NO_DATA)
             {
-                fprintf(stderr, "checksqlstate error:%s\n", std::string((char*)&ss.msgtext[0], ss.msglen).c_str());
+                fprintf(stderr, "check sql state error:%s\n", std::string((char*)&ss.msgtext[0], ss.msglen).c_str());
                 i++;
             }
         }
@@ -285,9 +284,7 @@ namespace klib
             return false;
 
         if (numcols == 0)
-        {
             return true;
-        }
 
         // 获取字段信息
         head.resize(numcols);
@@ -372,61 +369,33 @@ namespace klib
         switch (et)
         {
         case QueryField::tbool:
-        {
             return SQL_C_BIT;
-        }
         case QueryField::tuint8:
-        {
             return SQL_C_TINYINT;
-        }
         case QueryField::tint16:
-        {
             return SQL_C_SHORT;
-        }
         case QueryField::tint32:
-        {
             return SQL_C_LONG;
-        }
         case QueryField::tint64:
-        {
             return SQL_C_SBIGINT;
-        }
         case QueryField::tfloat:
-        {
             return SQL_C_FLOAT;
-        }
         case QueryField::tdouble:
-        {
             return SQL_C_DOUBLE;
-        }
         case QueryField::tguid:
-        {
             return SQL_C_GUID;
-        }
         case QueryField::tnumeric:
-        {
             return SQL_C_NUMERIC;
-        }
         case QueryField::tstring:
-        {
             return SQL_C_CHAR;
-        }
         case QueryField::tbinary:
-        {
             return SQL_C_BINARY;
-        }
         case QueryField::tdate:
-        {
             return SQL_C_DATE;
-        }
         case QueryField::ttime:
-        {
             return SQL_C_TIME;
-        }
         case QueryField::ttimestamp:
-        {
             return SQL_C_TIMESTAMP;
-        }
         default:
             return SQL_C_DEFAULT;
         }
@@ -458,7 +427,7 @@ namespace klib
         qr.rows.push_back(rw);
     }
 
-    double GetDoubleFromHexStruct(SQL_NUMERIC_STRUCT& numeric)
+    double KOdbcClient::GetDoubleFromHexStruct(SQL_NUMERIC_STRUCT& numeric)
     {
         long value = 0;
         int lastVal = 1;
@@ -481,7 +450,6 @@ namespace klib
         }
 
         return (double)(value / (double)divisor);
-
     }
 
     void KOdbcClient::ParseStruct(QueryValue& qv, const QueryHeader::iterator& it)
