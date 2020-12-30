@@ -14,7 +14,7 @@ namespace klib {
     {
     public:
         KTcpServer()
-            :m_fd(0), KEventObject<SocketType>("KTcpServer Thread")
+            :m_fd(0), KEventObject<SocketType>("KTcpServer Thread"), m_maxClient(50)
         {
 
         }
@@ -44,6 +44,20 @@ namespace klib {
             if (it != m_connections.end())
                 return it->second && it->second->IsConnected() && it->second->Send(dat);
             return false;
+        }
+
+        bool Post(int cid, const std::string& dat)
+        {
+            KLockGuard<KMutex>  lock(m_connMtx);
+            typename std::map<int, KTcpConnection<ProcessorType>* >::iterator it = m_connections.find(cid);
+            if (it != m_connections.end())
+                return it->second && it->second->IsConnected() && it->second->Send(dat);
+            return false;
+        }
+
+        virtual void SetMaxClient(uint32_t c)
+        {
+            m_maxClient = c;
         }
 
     private:
@@ -133,7 +147,7 @@ namespace klib {
             KLockGuard<KMutex>  lock(m_connMtx);
 
 
-            if (m_connections.size() < 40)
+            if (m_connections.size() < m_maxClient)
             {
                 KTcpConnection<ProcessorType>* c = NewConnection();
                 if (c->Start(ipport, fd))
@@ -200,7 +214,7 @@ namespace klib {
         std::string m_ip;
         uint16_t m_port;
         bool m_autoReconnect;
-
+        uint32_t m_maxClient;
         KMutex m_connMtx;
         std::map<int, KTcpConnection<ProcessorType>*> m_connections;
     };

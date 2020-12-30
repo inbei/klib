@@ -22,7 +22,7 @@ namespace klib {
             std::cout << m_ipport << " disconnected" << std::endl;
         }
 
-        bool Start(const std::string& ipport, SocketType fd)
+        virtual bool Start(const std::string& ipport, SocketType fd)
         {
             m_ipport = ipport;
             m_fd = fd;
@@ -55,7 +55,7 @@ namespace klib {
             return true;
         }
 
-        void Stop()
+        virtual void Stop()
         {
             KEventObject<SocketType>::Stop();
             while (!KTcpWriter::IsEmpty())
@@ -66,14 +66,19 @@ namespace klib {
             ProcessorType::Stop();
         }
 
-        void WaitForStop()
+        virtual void WaitForStop()
         {
             KEventObject<SocketType>::WaitForStop();
             KTcpWriter::WaitForStop();
             ProcessorType::WaitForStop();
         }
 
-        bool Send(const KBuffer& msg)
+        virtual bool Send(const std::string& msg)
+        {
+            return false;
+        }
+
+        virtual bool Send(const KBuffer& msg)
         {
             if (IsConnected())
                 return KTcpWriter::Post(msg);
