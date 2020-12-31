@@ -382,6 +382,7 @@ namespace klib
                 divisor = divisor * 10;
 
             val = (double)(value / (double)divisor);
+            return true;
         }
     };
 

@@ -184,4 +184,21 @@ namespace klib {
         return sent;
     }
 
+
+    void KTcpBase::ReuseAddress(SocketType fd)
+    {
+        // set reuse address
+        int on = 1;
+        ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
+            reinterpret_cast<const char*>(&on), sizeof(on));
+    }
+
+    void KTcpBase::DisableNagle(SocketType fd)
+    {
+        // disable Nagle
+        int on = 1;
+        ::setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+            reinterpret_cast<const char*>(&on), sizeof(on));
+    }
+
 };

@@ -27,6 +27,8 @@ namespace klib {
             m_ipport = ipport;
             m_fd = fd;
 
+            DisableNagle(fd);
+
             if (!AddSocket(fd, ipport))
                 return false;
 

@@ -85,6 +85,9 @@ namespace klib {
         void CloseSocket(SocketType fd) const;
         int PollSocket();
 
+        void ReuseAddress(SocketType fd);
+        void DisableNagle(SocketType fd);
+
     private:
         bool SetSocketNonBlock(SocketType fd) const;
 

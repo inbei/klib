@@ -319,6 +319,10 @@ namespace klib
                 m.payload.Release();
                 resp.Release();
             }
+            else
+            {
+                std::cout << msg << std::endl;
+            }
         }
 
         virtual void OnWebsocket(const std::vector<KBuffer>& msgs) // binary web socket

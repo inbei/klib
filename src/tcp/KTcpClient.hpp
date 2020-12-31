@@ -151,14 +151,7 @@ namespace klib {
             if ((m_fd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
                 return false;
 
-            // set reuse address
-            int on = 1;
-            if (::setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR,
-                reinterpret_cast<const char*>(&on), sizeof(on)) != 0)
-            {
-                CloseSocket(m_fd);
-                return false;
-            }
+            DisableNagle(m_fd);
 
             sockaddr_in server;
             server.sin_family = AF_INET;
