@@ -69,10 +69,17 @@ namespace klib
         {
             name = r.name;
             type = r.type;
-            valbuf = new char[r.bufsize]();
-            memmove(valbuf, r.valbuf, r.bufsize);
             bufsize = r.bufsize;
             valsize = r.valsize;
+            if (valsize > 0 && r.valbuf != NULL)
+            {
+                valbuf = new char[valsize]();
+                memmove(valbuf, r.valbuf, valsize);
+            }
+            else
+            {
+                valbuf = NULL;
+            }
             precision = r.precision;
             nullable = r.nullable;
         }
@@ -422,16 +429,19 @@ namespace klib
             Release();
         }
 
-        bool BindParam(int pCount, ...);
+        // %d int32_t， %lld int64_t， %s string %f float %llf  double  %c char *//
+        bool BindParam(const char *fmt, ...);
 
         bool Execute();
 
-        bool Next(QueryRow& row);
+        bool Next();
+
+        inline const QueryRow& GetRow() { return m_buffer; }
 
     private:
         void Release();
 
-        bool InitializeBuffer(SQLHANDLE stmt, QueryRow& header);
+        bool InitializeBuffer(SQLHANDLE stmt, QueryRow& buffer);
 
         void DescribeField(const FieldDescription& cd, QueryValue& r);
 

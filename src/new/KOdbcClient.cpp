@@ -23,8 +23,10 @@ namespace klib
         SQLSMALLINT     msglen;
     };
 
-    bool KOdbcSql::BindParam(int pCount, ...)
+    bool KOdbcSql::BindParam(const char* fmt, ...)
     {
+        static const std::string longfmt("ld");
+        static const std::string doublefmt("lf");
         SQLHANDLE& stmt = m_stmt;
         // Check to see if there are any parameters. If so, process them. 
         SQLSMALLINT numPara = 0;
@@ -35,20 +37,75 @@ namespace klib
         SQLUINTEGER   colsize;
         int i = 1;
         va_list args;
-        va_start(args, pCount);
-        for (; i <= numPara; ++i)
+        va_start(args, fmt);
+        int pos = 0;
+        size_t slen = strlen(fmt);
+        for (; i <= numPara && pos < slen; ++i)
         {
             SQLRETURN r = SQLDescribeParam(stmt, i, &sqltype, &colsize, &decimaldigits, &nullable);
             if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
                 break;
             // Bind the memory to the parameter. Assume that we only have input parameters. 
-            char* src = va_arg(args, char*);
-            uint16_t sz = va_arg(args, uint16_t);
-            r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
-                sqltype, colsize, decimaldigits, src, sz, 0);
+            while (pos < slen && fmt[pos] == ' ') ++pos;
+            if (!(pos < slen && fmt[pos++] == '%'))break;
+            // %d int32_t£¬ %lld int64_t£¬ %s string %f float %llf  double  %c char *//
+            switch (fmt[pos++])
+            {
+            case 'd':
+            {
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_LONG/*EnumToCType(SqlTypeToEnum(sqltype))*/,
+                    SQL_INTEGER, colsize, decimaldigits, (char*)&va_arg(args, int32_t), sizeof(int32_t), 0);
+                break;
+            }
+            case 'f':
+            {
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                    sqltype, colsize, decimaldigits, (char*)&va_arg(args, float), sizeof(float), 0);
+                break;
+            }
+            case 'l':
+            {
+                if (pos + 2 > slen) goto end;
+                std::string flag = std::string(fmt + pos, 2);
+                if (flag == longfmt)
+                {
+                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                        sqltype, colsize, decimaldigits, (char*)&va_arg(args, int64_t), sizeof(int64_t), 0);
+                }
+                else if (flag == doublefmt)
+                {
+                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                        sqltype, colsize, decimaldigits, (char*)&va_arg(args, double), sizeof(double), 0);
+                }
+                else
+                {
+                    goto end;
+                }
+                pos += 2;
+                break;
+            }
+            case 'c':
+            {
+                char* c = va_arg(args, char*);
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                    sqltype, colsize, decimaldigits, c, strlen(c), 0);
+                break;
+            }
+            case 's':
+            {
+                const std::string& s = va_arg(args, std::string);
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                    sqltype, colsize, decimaldigits, const_cast<char *>(s.c_str()), s.size(), 0);
+                break;
+            }
+            default:
+                goto end;
+            }
             if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
                 break;
         }
+
+        end:
         va_end(args);
         return numPara + 1 == i;
     }
@@ -60,16 +117,11 @@ namespace klib
         return KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r) && InitializeBuffer(stmt, m_buffer);
     }
 
-    bool KOdbcSql::Next(QueryRow& rw)
+    bool KOdbcSql::Next()
     {
         if (m_buffer.dat.empty())
             return false;
-
-        if (SQLFetch(m_stmt) == SQL_NO_DATA)
-            return false;
-
-        rw.Clone(m_buffer);
-        return true;
+        return (SQLFetch(m_stmt) != SQL_NO_DATA);
     }
 
     void KOdbcSql::Release()
@@ -163,12 +215,12 @@ namespace klib
             //SQLGUID
             return QueryValue::tguid;
         case SQL_DATE:
+        case 91://mysql
             //DATE_STRUCT
             return QueryValue::tdate;
         case SQL_TIME:
             //TIME_STRUCT
             return QueryValue::ttime;
-        case 91://mysql
         case SQL_TIMESTAMP:
         case 93:
             //TIMESTAMP_STRUCT
