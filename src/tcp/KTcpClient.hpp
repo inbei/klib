@@ -13,7 +13,7 @@ namespace klib {
     {
     public:
         KTcpClient()
-            :m_fd(0), KEventObject<SocketType>("KTcpClient Thread")
+            :m_fd(0), KEventObject<SocketType>("KTcpClient Thread"),m_autoReconnect(false)
         {
 
         }
@@ -57,6 +57,7 @@ namespace klib {
             if (!ProcessorType::Start(this))
             {
                 KTcpWriter::Stop();
+                KTcpWriter::WaitForStop();
                 return false;
             }
 
@@ -64,6 +65,8 @@ namespace klib {
             {
                 ProcessorType::Stop();
                 KTcpWriter::Stop();
+                ProcessorType::WaitForStop();
+                KTcpWriter::WaitForStop();
                 return false;
             }
 
@@ -74,11 +77,7 @@ namespace klib {
         void Stop()
         {
             KEventObject<SocketType>::Stop();
-            while (!KTcpWriter::IsEmpty())
-                KTime::MSleep(3);
             KTcpWriter::Stop();
-            while (!ProcessorType::IsEmpty())
-                KTime::MSleep(3);
             ProcessorType::Stop();
         }
 
@@ -107,12 +106,12 @@ namespace klib {
         {
             if (!IsConnected())
             {
-                if (!Connect(m_it->first, m_it->second))
+                if (m_autoReconnect && !Connect(m_it->first, m_it->second))
                 {
-                    KTime::MSleep(1000);
                     if (++m_it == m_hostip.end())
                         m_it = m_hostip.begin();
                 }
+                KTime::MSleep(5000);
             }
             else
             {

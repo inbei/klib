@@ -13,6 +13,7 @@ namespace klib {
     {
     public:
         KTcpWriter();
+        ~KTcpWriter();
         bool Start(KTcpBase* base);
 
     protected:

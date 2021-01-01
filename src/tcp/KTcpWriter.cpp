@@ -25,6 +25,20 @@ namespace klib {
         const_cast<KBuffer&>(ev).Release();
     }
 
+
+    KTcpWriter::~KTcpWriter()
+    {
+        std::vector<KBuffer> events;
+        KEventObject<KBuffer>::Flush(events);
+        std::vector<KBuffer>::iterator it = events.begin();
+        while (it != events.end())
+        {
+            it->Release();
+            ++it;
+        }
+        events.clear();
+    }
+
     bool KTcpWriter::IsReady() const
     {
         assert(m_base != NULL);

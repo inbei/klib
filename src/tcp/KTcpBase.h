@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 #include <sys/poll.h>
+#include <netinet/tcp.h>
 #else
 #error "WINDOWS AIX HPUX LINUX supported only"
 #endif // defined(WIN32)

@@ -230,9 +230,9 @@ namespace klib
             }
         }
 
-        virtual bool NeedPrepare() const { return true; }
+        virtual bool NeedFirstResponse() const { return true; }
 
-        virtual void Prepare(const std::vector<KBuffer>& ev)
+        virtual void FirstResponse(const std::vector<KBuffer>& ev)
         {
             std::string req(ev[0].GetData(), ev[0].GetSize());
             SocketType fd = m_base->GetSocket();
@@ -273,7 +273,7 @@ namespace klib
                 if (m_base->WriteSocket(fd, resp.c_str(), resp.size()) == resp.size())
                 {
                     std::cout << "handshake with client successfully\n";
-                    KTcpProcessor<KWebsocketMessage>::Prepare(ev);
+                    KTcpProcessor<KWebsocketMessage>::FirstResponse(ev);
                 }
 
             }
@@ -286,11 +286,11 @@ namespace klib
                 if (respKey == wskey)
                 {
                     std::cout << "handshake with server successfully\n";
-                    KTcpProcessor<KWebsocketMessage>::Prepare(ev);
+                    KTcpProcessor<KWebsocketMessage>::FirstResponse(ev);
                 }
             }
 
-            if (!IsPrepared())
+            if (!IsFirstResponseReady())
                 m_base->DeleteSocket(fd);
 
             std::vector<KBuffer>& bufs = const_cast<std::vector<KBuffer>&>(ev);

@@ -129,6 +129,21 @@ namespace klib
 
         virtual ~KTcpProcessor()
         {
+            std::vector<std::vector<KBuffer> > dats;
+            KEventObject<std::vector<KBuffer> >::Flush(dats);
+            std::vector<std::vector<KBuffer> >::iterator it = dats.begin();
+            while (it != dats.end())
+            {
+                std::vector<KBuffer>::iterator nit = it->begin();
+                while (nit != it->end())
+                {
+                    nit->Release();
+                    ++nit;
+                }
+                it->clear();
+                ++it;
+            }
+            dats.clear();
             m_remain.Release();
         }
 
@@ -168,20 +183,20 @@ namespace klib
 
         virtual bool IsServer() const { return false; }
 
-        virtual bool NeedPrepare() const { return false; }
+        virtual bool NeedFirstResponse() const { return false; }
 
-        virtual void Prepare(const std::vector<KBuffer>& ev) { m_ready = true; }
+        virtual void FirstResponse(const std::vector<KBuffer>& ev) { m_ready = true; }
 
-        inline bool IsPrepared() const { return m_ready; }
+        inline bool IsFirstResponseReady() const { return m_ready; }
 
     private:
         virtual void ProcessEvent(const std::vector<KBuffer>& ev)
         {
             if (!ev.empty())
             {
-                if (NeedPrepare() && !IsPrepared())
+                if (NeedFirstResponse() && !IsFirstResponseReady())
                 {
-                    Prepare(ev);
+                    FirstResponse(ev);
                 }
                 else
                 {

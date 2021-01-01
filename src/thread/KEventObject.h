@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <map>
+#include <vector>
 
 namespace klib {
     /*
@@ -95,6 +96,11 @@ namespace klib {
 
 		}
 
+		inline void Flush(typename std::vector<EventType>& events)
+		{
+			m_eventQueue.GetAll(events);
+		}
+
         inline void Clear()
         {
             m_eventQueue.Clear();
@@ -115,21 +121,24 @@ namespace klib {
 			return m_eventQueue.Size();
 		}
 
-		bool Post(const EventType& ev)
+		virtual bool Post(const EventType& ev)
 		{
-			return m_eventQueue.PushBack(ev);
+			if(IsRunning())
+				return m_eventQueue.PushBack(ev);
+			return false;
 		}
 
-		void PostForce(const EventType& ev)
+		virtual void PostForce(const EventType& ev)
 		{
-			m_eventQueue.PushBackForce(ev);
+			if(IsRunning())
+				m_eventQueue.PushBackForce(ev);
 		}
 
         static bool Post(uint32_t id, const EventType& ev)
         {
 			KLockGuard<KMutex> lock(s_eobjmtx);
 			std::map<uint32_t, KEventBase*>::iterator it = s_eobjmap.find(id);
-			if (it != s_eobjmap.end())
+			if (it != s_eobjmap.end() && it->second->IsRunning())
 			{
 				KEventBase* b = it->second;
 				return dynamic_cast<KEventObject<EventType>*>(b)->Post(ev);
@@ -141,7 +150,7 @@ namespace klib {
         {
 			KLockGuard<KMutex> lock(s_eobjmtx);
 			std::map<uint32_t, KEventBase*>::iterator it = s_eobjmap.find(id);
-			if (it != s_eobjmap.end())
+			if (it != s_eobjmap.end() && it->second.IsRunning())
 			{
 				KEventBase* b = it->second;
 				return dynamic_cast<KEventObject<EventType>*>(b)->PostForce(ev);

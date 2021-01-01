@@ -42,6 +42,7 @@ namespace klib {
             {
                 DeleteSocket(fd);
                 KTcpWriter::Stop();
+                KTcpWriter::WaitForStop();
                 return false;
             }
 
@@ -50,6 +51,8 @@ namespace klib {
                 DeleteSocket(fd);
                 ProcessorType::Stop();
                 KTcpWriter::Stop();
+                ProcessorType::WaitForStop();
+                KTcpWriter::WaitForStop();
                 return false;
             }
 
@@ -60,11 +63,7 @@ namespace klib {
         virtual void Stop()
         {
             KEventObject<SocketType>::Stop();
-            while (!KTcpWriter::IsEmpty())
-                KTime::MSleep(3);
             KTcpWriter::Stop();
-            while (!ProcessorType::IsEmpty())
-                KTime::MSleep(3);
             ProcessorType::Stop();
         }
 
