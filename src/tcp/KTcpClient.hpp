@@ -123,24 +123,9 @@ namespace klib {
         virtual void OnSocketEvent(SocketType fd, short evt)
         {
             if (evt & epollin)
-            {
-                std::vector<KBuffer> dat;
-                if (ReadSocket(fd, dat) < 0)
-                    DeleteSocketNoLock(fd);
-                else if (!ProcessorType::Post(dat))
-                {
-                    std::vector<KBuffer>::iterator it = dat.begin();
-                    while (it != dat.end())
-                    {
-                        it->Release();
-                        ++it;
-                    }
-                }
-            }
+                ReadSocket(fd);
             else if (evt & epollhup || evt & epollerr)
-            {
                 DeleteSocketNoLock(fd);
-            }
         }
 
         virtual SocketType GetSocket() const { return m_fd; }
@@ -165,6 +150,23 @@ namespace klib {
             std::ostringstream os;
             os << ip << ":" << port;
             return AddSocket(m_fd, os.str());
+        }
+
+        void ReadSocket(SocketType fd)
+        {
+            std::vector<KBuffer> dat;
+            if (ReadSocket(fd, dat) < 0)
+                DeleteSocketNoLock(fd);
+
+            if (!dat.empty() && !ProcessorType::Post(dat))
+            {
+                std::vector<KBuffer>::iterator it = dat.begin();
+                while (it != dat.end())
+                {
+                    it->Release();
+                    ++it;
+                }
+            }
         }
 
         int ReadSocket(SocketType fd, std::vector<KBuffer>& dat) const
