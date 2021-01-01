@@ -79,7 +79,7 @@ namespace klib {
 		KPthread m_eventThread;
 		AtomicInteger<uint32_t> m_objectID;
 		KMutex m_wkMtx;
-		volatile bool m_running;
+		AtomicBool m_running;
 
 		static KMutex s_eobjmtx;
 		static AtomicInteger<uint32_t> s_eobjid;

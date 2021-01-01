@@ -1,4 +1,4 @@
-﻿#include "tcp/KTcpProcessorWebsocket.h"
+#include "tcp/KTcpProcessorWebsocket.h"
 
 namespace klib
 {

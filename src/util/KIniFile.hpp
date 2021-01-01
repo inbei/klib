@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifndef __INIFILE_HPP__
 #define __INIFILE_HPP__

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #if defined(WIN32)
 #include <WS2tcpip.h>
 #endif

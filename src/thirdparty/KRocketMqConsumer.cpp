@@ -1,4 +1,4 @@
-﻿#include "thirdparty/KRocketMqConsumer.h"
+#include "thirdparty/KRocketMqConsumer.h"
 
 namespace thirdparty {
     KRocketMqConsumer* KRocketMqConsumer::m_self = NULL;

@@ -8,6 +8,7 @@
 #include "thread/KLockGuard.h"
 #include "thread/KException.h"
 #include "thread/KError.h"
+#include "thread/KAtomic.h"
 
 namespace klib {
     class KPthread
@@ -125,12 +126,8 @@ namespace klib {
 
         void Join()
         {
-			int ds;
-			int rc = pthread_attr_getdetachstate(&m_attr, &ds);
-			if (rc == 0 && ds == PTHREAD_CREATE_JOINABLE)
-			{
-				pthread_join(m_tid, NULL);
-			}
+            pthread_cancel(m_tid);
+            pthread_join(m_tid, NULL);
         }
 
         inline bool IsRunning() const
@@ -238,7 +235,7 @@ namespace klib {
         pthread_t m_tid;
         std::string m_name;
         KMutex m_tmtx;
-        volatile bool m_running;
+        AtomicBool m_running;
     };
 };
 #endif // !_PTHREAD_HPP_

@@ -1,4 +1,4 @@
-﻿#ifndef _KTCPWRITER_HPP_
+#ifndef _KTCPWRITER_HPP_
 #define _KTCPWRITER_HPP_
 #if defined(WIN32)
 #include <WS2tcpip.h>

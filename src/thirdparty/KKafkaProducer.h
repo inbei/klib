@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "librdkafka/rdkafkacpp.h"
 #include "thread/KMutex.h"

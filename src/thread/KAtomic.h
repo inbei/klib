@@ -182,14 +182,36 @@ namespace klib {
     class AtomicBool
     {
     public:
-        AtomicBool(bool v = false):m_dat(v ? 1 : 0){}
-        inline operator bool() const{ return (int(m_dat) != 0 ? true : false); }
-        inline AtomicBool& operator=(bool v){ m_dat = (v ? 1 : 0); return *this; }
-        inline bool operator==(bool v) const{ return (operator bool() == v); }
-        inline bool operator==(const AtomicBool& rh) const{ return (m_dat == rh.m_dat); }
+        AtomicBool(bool v = false)
+        {
+            KLockGuard<KMutex> lock(m_bmtx);
+            m_flag = v;
+        }
+        inline operator bool() const
+        {
+            KLockGuard<KMutex> lock(m_bmtx);
+            return m_flag;
+        }
+        inline AtomicBool& operator=(bool v)
+        {
+            KLockGuard<KMutex> lock(m_bmtx);
+            m_flag = v;
+            return *this;
+        }
+        inline bool operator==(bool v) const
+        { 
+            KLockGuard<KMutex> lock(m_bmtx);
+            return m_flag == v;
+        }
+        inline bool operator==(const AtomicBool& rh) const
+        {
+            KLockGuard<KMutex> lock(m_bmtx);
+            return m_flag == rh.m_flag;
+        }
 
     private:
-        AtomicInteger<int> m_dat;
+        KMutex m_bmtx;
+        volatile bool m_flag;
     };
 };
 

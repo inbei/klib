@@ -1,4 +1,4 @@
-﻿#include "thirdparty/KRedisClient.h"
+#include "thirdparty/KRedisClient.h"
 #include "util/KStringUtility.h"
 namespace thirdparty {
     KRedisClient::KRedisClient()

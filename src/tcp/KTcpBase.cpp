@@ -1,4 +1,4 @@
-﻿#include "tcp/KTcpBase.h"
+#include "tcp/KTcpBase.h"
 #include "util/KTime.h"
 namespace klib {
     klib::KTcpBase::KTcpBase() :m_connected(false)

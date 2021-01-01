@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "tcp/KTcpProcessor.hpp"
 #include "util/KStringUtility.h"
 #include "util/KBase64.h"
@@ -95,13 +95,13 @@ namespace klib
         */
         uint8_t opcode : 4;
 
-        uint8_t mask : 1; //表示是否要对数据载荷进行掩码异或操作, 1 yes, 0 no 
+        uint8_t mask : 1; //��ʾ�Ƿ�Ҫ�������غɽ�������������, 1 yes, 0 no 
 
         /*
-        表示数据载荷的长度
-        0~125：数据的长度等于该值；
-        126：后续 2 个字节代表一个 16 位的无符号整数，该无符号整数的值为数据的长度；
-        127：后续 8 个字节代表一个 64 位的无符号整数（最高位为 0），该无符号整数的值为数据的长度
+        ��ʾ�����غɵĳ���
+        0~125�����ݵĳ��ȵ��ڸ�ֵ��
+        126������ 2 ���ֽڴ���һ�� 16 λ���޷������������޷���������ֵΪ���ݵĳ��ȣ�
+        127������ 8 ���ֽڴ���һ�� 64 λ���޷������������λΪ 0�������޷���������ֵΪ���ݵĳ���
         */
         uint8_t plen : 7;
 
@@ -112,10 +112,10 @@ namespace klib
         } extplen;
 
         /*
-        当 mask 为 1，则携带了 4 字节的 Masking-key；
-        当 mask 为 0，则没有 Masking-key。
-        掩码算法：按位做循环异或运算，先对该位的索引取模来获得 Masking-key 中对应的值 x，然后对该位与 x 做异或，从而得到真实的 byte 数据。
-        注意：掩码的作用并不是为了防止数据泄密，而是为了防止早期版本的协议中存在的代理缓存污染攻击（proxy cache poisoning attacks）等问题
+        �� mask Ϊ 1����Я���� 4 �ֽڵ� Masking-key��
+        �� mask Ϊ 0����û�� Masking-key��
+        �����㷨����λ��ѭ��������㣬�ȶԸ�λ������ȡģ����� Masking-key �ж�Ӧ��ֵ x��Ȼ��Ը�λ�� x ����򣬴Ӷ��õ���ʵ�� byte ���ݡ�
+        ע�⣺��������ò�����Ϊ�˷�ֹ����й�ܣ�����Ϊ�˷�ֹ���ڰ汾��Э���д��ڵĴ���������Ⱦ������proxy cache poisoning attacks��������
         */
         char maskkey[4]; // 0 or 4 bytes
         KBuffer payload;

@@ -1,4 +1,4 @@
-﻿#ifndef _KTCPBASE_HPP_
+#ifndef _KTCPBASE_HPP_
 #define _KTCPBASE_HPP_
 
 
