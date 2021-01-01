@@ -102,7 +102,7 @@ namespace klib {
 #endif
         KMutex m_fdsMtx;
         std::vector<pollfd> m_fds;
-        AtomicBool m_connected;
+        volatile bool m_connected;
     };
 };
 

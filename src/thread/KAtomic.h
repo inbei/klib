@@ -178,41 +178,6 @@ namespace klib {
         KMutex m_intMtx;
 #endif
     };
-
-    class AtomicBool
-    {
-    public:
-        AtomicBool(bool v = false)
-        {
-            KLockGuard<KMutex> lock(m_bmtx);
-            m_flag = v;
-        }
-        inline operator bool() const
-        {
-            KLockGuard<KMutex> lock(m_bmtx);
-            return m_flag;
-        }
-        inline AtomicBool& operator=(bool v)
-        {
-            KLockGuard<KMutex> lock(m_bmtx);
-            m_flag = v;
-            return *this;
-        }
-        inline bool operator==(bool v) const
-        { 
-            KLockGuard<KMutex> lock(m_bmtx);
-            return m_flag == v;
-        }
-        inline bool operator==(const AtomicBool& rh) const
-        {
-            KLockGuard<KMutex> lock(m_bmtx);
-            return m_flag == rh.m_flag;
-        }
-
-    private:
-        KMutex m_bmtx;
-        volatile bool m_flag;
-    };
 };
 
 #endif // !_ATOMIC_HPP_

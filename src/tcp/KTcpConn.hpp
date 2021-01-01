@@ -95,7 +95,8 @@ namespace klib {
         {
             if (IsConnected())
             {
-                PollSocket();
+                if (PollSocket() < 1)
+                    ReadSocket(m_fd);
                 KEventObject<SocketType>::Post(1);
             }
         }
@@ -103,23 +104,25 @@ namespace klib {
         virtual void OnSocketEvent(SocketType fd, short evt)
         {
             if (evt & epollin)
-            {
-                std::vector<KBuffer> dat;
-                if (ReadSocket(fd, dat) < 0)
-                    DeleteSocketNoLock(fd);
-                else if (!ProcessorType::Post(dat))
-                {
-                    std::vector<KBuffer>::iterator it = dat.begin();
-                    while (it != dat.end())
-                    {
-                        it->Release();
-                        ++it;
-                    }
-                }
-            }
+                ReadSocket(fd);
             else if (evt & epollhup || evt & epollerr)
-            {
                 DeleteSocketNoLock(fd);
+        }
+
+        void ReadSocket(SocketType fd)
+        {
+            std::vector<KBuffer> dat;
+            if (ReadSocket(fd, dat) < 0)
+                DeleteSocketNoLock(fd);
+
+            if (!dat.empty() && !ProcessorType::Post(dat))
+            {
+                std::vector<KBuffer>::iterator it = dat.begin();
+                while (it != dat.end())
+                {
+                    it->Release();
+                    ++it;
+                }
             }
         }
 

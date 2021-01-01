@@ -9,7 +9,7 @@ namespace thirdparty {
     using namespace klib;
     class KEventCb : public RdKafka::EventCb {
     public:
-        KEventCb(AtomicBool& running)
+        KEventCb(volatile bool& running)
             :m_running(running)
         {
 
@@ -35,7 +35,7 @@ namespace thirdparty {
         }
 
     private:
-        AtomicBool& m_running;
+        volatile bool & m_running;
     };
 
     struct KafkaConf
@@ -104,6 +104,6 @@ namespace thirdparty {
         KEventCb* m_eventcb;
         KafkaProducer m_producer;
         KafkaConf m_conf;
-        AtomicBool m_running;
+        volatile bool m_running;
     };
 };

@@ -74,14 +74,14 @@ namespace klib {
             return true;
         }
 
-        void Stop()
+        virtual void Stop()
         {
             KEventObject<SocketType>::Stop();
             KTcpWriter::Stop();
             ProcessorType::Stop();
         }
 
-        void WaitForStop()
+        virtual void WaitForStop()
         {
             KEventObject<SocketType>::WaitForStop();
             KTcpWriter::WaitForStop();

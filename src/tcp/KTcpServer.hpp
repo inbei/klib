@@ -14,7 +14,8 @@ namespace klib {
     {
     public:
         KTcpServer()
-            :m_fd(0), KEventObject<SocketType>("KTcpServer Thread"), m_maxClient(50)
+            :m_fd(0), KEventObject<SocketType>("KTcpServer Thread"), 
+            m_maxClient(50),m_cleanThread("Clean Thread")
         {
 
         }
@@ -27,14 +28,31 @@ namespace klib {
 
             if (!KEventObject<SocketType>::Start())
                 return false;
-            KEventObject<SocketType>::Post(0);
-            return true;
+
+            try
+            {
+                m_cleanThread.Run(this, &KTcpServer::CleanZombies, 1);
+                KEventObject<SocketType>::Post(0);
+                return true;
+            }
+            catch (const std::exception&e)
+            {
+                KEventObject<SocketType>::Stop();
+                KEventObject<SocketType>::WaitForStop();
+            }
+            return false;
         }
 
-        void Stop()
+        virtual void Stop()
         {
             KEventObject<SocketType>::Stop();
             CleanConnections();
+        }
+
+        virtual void WaitForStop()
+        {
+            KEventObject<SocketType>::WaitForStop();
+            m_cleanThread.Join();
         }
 
         bool Post(int cid, const KBuffer& dat)
@@ -70,8 +88,7 @@ namespace klib {
             }
             else
             {
-                if (PollSocket() <= 0)
-                    CleanZombies();
+                PollSocket();
             }
             KEventObject<SocketType>::Post(1);
         }
@@ -179,31 +196,40 @@ namespace klib {
             m_connections.clear();
         }
 
-        void CleanZombies()
+        int CleanZombies(int)
         {
-            KLockGuard<KMutex>  lock(m_connMtx);
-            std::vector<KTcpConnection<ProcessorType>* > corpses;
-            typename std::map<int, KTcpConnection<ProcessorType>* >::iterator it = m_connections.begin();
-            while (it != m_connections.end())
+            while (IsRunning())
             {
-                KTcpConnection<ProcessorType>* c = it->second;
-                if (c->IsConnected())
-                    ++it;
-                else
                 {
-                    corpses.push_back(c);
-                    m_connections.erase(it++);
-                    c->Stop();
+                    KLockGuard<KMutex>  lock(m_connMtx);
+                    std::vector<KTcpConnection<ProcessorType>* > corpses;
+                    typename std::map<int, KTcpConnection<ProcessorType>* >::iterator it = m_connections.begin();
+                    while (it != m_connections.end())
+                    {
+                        KTcpConnection<ProcessorType>* c = it->second;
+                        if (c->IsConnected())
+                            ++it;
+                        else
+                        {
+                            corpses.push_back(c);
+                            m_connections.erase(it++);
+                            c->Stop();
+                        }
+                    }
+                    printf("CleanZombies start %d\n", m_connections.size());
+                    typename std::vector<KTcpConnection<ProcessorType>* >::const_iterator cit = corpses.begin();
+                    while (cit != corpses.end())
+                    {
+                        KTcpConnection<ProcessorType>* c = *cit;
+                        c->WaitForStop();
+                        delete c;
+                        ++cit;
+                    }
+                    printf("CleanZombies end %d\n", m_connections.size());
                 }
+                KTime::MSleep(1000);
             }
-            typename std::vector<KTcpConnection<ProcessorType>* >::const_iterator cit = corpses.begin();
-            while (cit != corpses.end())
-            {
-                KTcpConnection<ProcessorType>* c = *cit;
-                c->WaitForStop();
-                delete c;
-                ++cit;
-            }
+            return 0;
         }
 
     private:
@@ -212,6 +238,7 @@ namespace klib {
         uint16_t m_port;
         bool m_autoReconnect;
         uint32_t m_maxClient;
+        KPthread m_cleanThread;
         KMutex m_connMtx;
         std::map<int, KTcpConnection<ProcessorType>*> m_connections;
     };

@@ -235,7 +235,7 @@ namespace klib {
         pthread_t m_tid;
         std::string m_name;
         KMutex m_tmtx;
-        AtomicBool m_running;
+        volatile bool m_running;
     };
 };
 #endif // !_PTHREAD_HPP_
