@@ -95,7 +95,6 @@ namespace klib {
 
         virtual void OnSocketEvent(SocketType fd, short evt)
         {
-            std::cout << __FUNCTION__  << m_connections.size() << std::endl;
             if (evt & epollin)
                 AcceptSocket(fd);
         }
@@ -140,7 +139,6 @@ namespace klib {
             SocketType s = 0;
             sockaddr_in caddr = { 0 };
             SocketLength addrlen = sizeof(caddr);
-            std::cout << __FUNCTION__ << "START" << m_connections.size() << std::endl;
 #if defined(WIN32)
             while ((s = ::accept(fd, (struct sockaddr*)&caddr, &addrlen)) != INVALID_SOCKET)
 #else
@@ -153,7 +151,6 @@ namespace klib {
                 std::cout << ipport << " connected" << std::endl;
                 AddConnection(s, ipport);
             }
-            std::cout << __FUNCTION__ << "end" << m_connections.size() << std::endl;
         }
 
         void AddConnection(SocketType fd, const std::string& ipport)

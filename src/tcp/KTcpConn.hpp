@@ -96,7 +96,7 @@ namespace klib {
             if (IsConnected())
             {
                 if (PollSocket() < 1)
-                    ReadSocket(m_fd);
+                    ReadSocket(m_fd, true);
                 KEventObject<SocketType>::Post(1);
             }
         }
@@ -109,11 +109,16 @@ namespace klib {
                 DeleteSocketNoLock(fd);
         }
 
-        void ReadSocket(SocketType fd)
+        void ReadSocket(SocketType fd, bool lock = false)
         {
             std::vector<KBuffer> dat;
             if (ReadSocket(fd, dat) < 0)
-                DeleteSocketNoLock(fd);
+            {
+                if (lock)
+                    DeleteSocket(fd);
+                else
+                    DeleteSocketNoLock(fd);
+            }
 
             if (!dat.empty() && !ProcessorType::Post(dat))
             {

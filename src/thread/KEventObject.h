@@ -181,6 +181,7 @@ namespace klib {
 						}
 						catch (...)
 						{
+							assert(false);
 							printf("KEventObject unknown exception\n");
 						}
 					}

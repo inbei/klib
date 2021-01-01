@@ -127,7 +127,11 @@ namespace klib {
         void Join()
         {
             pthread_cancel(m_tid);
-            pthread_join(m_tid, NULL);
+            int rc = 0;
+            if ((rc = pthread_join(m_tid, NULL)) != 0)
+                printf("thread exit failed, error:[%s]\n", GetErrStr(rc));
+            else
+                printf("thread exit success\n");
         }
 
         inline bool IsRunning() const
@@ -228,6 +232,22 @@ namespace klib {
 
             delete dat;
             return 0;
+        }
+
+        const char* GetErrStr(int rc) const
+        {
+            switch (rc)
+            {
+            case EDEADLK:
+                return "A deadlock was detected (e.g., two threads tried to join with each other);"
+                    " or thread specifies the calling thread";
+            case EINVAL:
+                return "Another thread is already waiting to join with this thread";
+            case ESRCH:
+                return "No thread with the ID thread could be found";
+            default:
+                return "Unknown thread error";
+            }
         }
 
     private:
