@@ -150,7 +150,7 @@ namespace klib {
         {
 			KLockGuard<KMutex> lock(s_eobjmtx);
 			std::map<uint32_t, KEventBase*>::iterator it = s_eobjmap.find(id);
-			if (it != s_eobjmap.end() && it->second.IsRunning())
+			if (it != s_eobjmap.end() && it->second->IsRunning())
 			{
 				KEventBase* b = it->second;
 				return dynamic_cast<KEventObject<EventType>*>(b)->PostForce(ev);
