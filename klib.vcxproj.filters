@@ -75,20 +75,14 @@
     <ClCompile Include="src\thread\KMutex.cpp">
       <Filter>thread</Filter>
     </ClCompile>
-    <ClCompile Include="src\tcp\KTcpBase.cpp">
-      <Filter>tcp</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tcp\KTcpProcessorModbus.cpp">
-      <Filter>tcp</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tcp\KTcpProcessorWebsocket.cpp">
-      <Filter>tcp</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tcp\KTcpWriter.cpp">
-      <Filter>tcp</Filter>
-    </ClCompile>
     <ClCompile Include="src\new\KOdbcClient.cpp">
       <Filter>new</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tcp\KTcpModbus.cpp">
+      <Filter>tcp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tcp\KTcpWebsocket.cpp">
+      <Filter>tcp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -164,28 +158,10 @@
     <ClInclude Include="src\thread\KQueue.h">
       <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="src\tcp\KTcpBase.h">
-      <Filter>tcp</Filter>
-    </ClInclude>
     <ClInclude Include="src\tcp\KTcpClient.hpp">
       <Filter>tcp</Filter>
     </ClInclude>
-    <ClInclude Include="src\tcp\KTcpConn.hpp">
-      <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tcp\KTcpProcessor.hpp">
-      <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tcp\KTcpProcessorModbus.h">
-      <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tcp\KTcpProcessorWebsocket.h">
-      <Filter>tcp</Filter>
-    </ClInclude>
     <ClInclude Include="src\tcp\KTcpServer.hpp">
-      <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tcp\KTcpWriter.h">
       <Filter>tcp</Filter>
     </ClInclude>
     <ClInclude Include="src\new\KBarrier.hpp">
@@ -202,6 +178,18 @@
     </ClInclude>
     <ClInclude Include="src\new\KOdbcClient.h">
       <Filter>new</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpNetwork.h">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpModbus.h">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpWebsocket.h">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpConnection.hpp">
+      <Filter>tcp</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

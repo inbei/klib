@@ -20,10 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\new\KOdbcClient.cpp" />
-    <ClCompile Include="src\tcp\KTcpBase.cpp" />
-    <ClCompile Include="src\tcp\KTcpProcessorModbus.cpp" />
-    <ClCompile Include="src\tcp\KTcpProcessorWebsocket.cpp" />
-    <ClCompile Include="src\tcp\KTcpWriter.cpp" />
+    <ClCompile Include="src\tcp\KTcpModbus.cpp" />
+    <ClCompile Include="src\tcp\KTcpWebsocket.cpp" />
     <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp" />
     <ClCompile Include="src\thirdparty\KKafkaProducer.cpp" />
     <ClCompile Include="src\thirdparty\KRedisClient.cpp" />
@@ -46,14 +44,12 @@
     <ClInclude Include="src\new\KPingClient.hpp" />
     <ClInclude Include="src\new\KReadWriteLock.hpp" />
     <ClInclude Include="src\new\KSpinLock.hpp" />
-    <ClInclude Include="src\tcp\KTcpBase.h" />
+    <ClInclude Include="src\tcp\KTcpNetwork.h" />
     <ClInclude Include="src\tcp\KTcpClient.hpp" />
-    <ClInclude Include="src\tcp\KTcpConn.hpp" />
-    <ClInclude Include="src\tcp\KTcpProcessor.hpp" />
-    <ClInclude Include="src\tcp\KTcpProcessorModbus.h" />
-    <ClInclude Include="src\tcp\KTcpProcessorWebsocket.h" />
+    <ClInclude Include="src\tcp\KTcpConnection.hpp" />
+    <ClInclude Include="src\tcp\KTcpModbus.h" />
+    <ClInclude Include="src\tcp\KTcpWebsocket.h" />
     <ClInclude Include="src\tcp\KTcpServer.hpp" />
-    <ClInclude Include="src\tcp\KTcpWriter.h" />
     <ClInclude Include="src\thirdparty\KInfluxDbClient.h" />
     <ClInclude Include="src\thirdparty\KKafkaProducer.h" />
     <ClInclude Include="src\thirdparty\KRedisClient.h" />
