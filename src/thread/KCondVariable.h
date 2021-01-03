@@ -36,7 +36,11 @@ namespace klib {
 
 		timespec ts;
 		KTime::GetTime(ts, ms);
+        //pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        pthread_testcancel();
 		int rc = pthread_cond_timedwait(&m_pcond, &lock.m_tmtx.m_pmtx, &ts);
+        pthread_testcancel();
+        //pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 #if defined(WIN32)
 		if (rc != 0 && rc != WSAETIMEDOUT && rc != 138)// 138 means timeout
             throw KException(__FILE__, __LINE__, KError::WinErrorStr(rc).c_str());
@@ -52,7 +56,11 @@ namespace klib {
     {
         if (!lock.Acquired())
             throw KException(__FILE__, __LINE__, "not acquired");
+        //pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        pthread_testcancel();
         int rc = pthread_cond_wait(&m_pcond, &lock.m_tmtx.m_pmtx);
+        pthread_testcancel();
+        //pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
         if (rc != 0)
             throw KException(__FILE__, __LINE__, KError::StdErrorStr(rc).c_str());
     };

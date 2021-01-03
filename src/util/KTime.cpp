@@ -1,6 +1,6 @@
 #include "util/KTime.h"
 #include "thread/KError.h"
-
+#include "thread/KPthread.h"
 namespace klib {
     bool KTime::NowDateTime(DateTime& datetime)
     {
@@ -180,6 +180,8 @@ namespace klib {
 
     void KTime::MSleep(int millisec)
     {
+        //pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        pthread_testcancel();
 #if defined(WIN32)
         Sleep(millisec);
 #else
@@ -190,6 +192,8 @@ namespace klib {
         }
         usleep(millisec * 1000);
 #endif
+        pthread_testcancel();
+        //pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     }
 
     void KTime::GetDateTimeElement(const std::string& fmt, const char* keyword, const char* intfmt, uint32_t value, char* buf)

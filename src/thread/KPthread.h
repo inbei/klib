@@ -126,7 +126,7 @@ namespace klib {
 
         void Join()
         {
-            pthread_cancel(m_tid);
+            //pthread_cancel(m_tid);
             int rc = 0;
             if ((rc = pthread_join(m_tid, NULL)) != 0)
                 printf("thread exit failed, error:[%s]\n", GetErrStr(rc));
@@ -158,10 +158,16 @@ namespace klib {
 #endif
 		}
 
+        static void TestCancel()
+        {
+            pthread_testcancel();
+        }
+
     private:
         template<typename ObjectType, typename RetType, typename ArgType>
         static void* Work(void* arg)
         {
+            //pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 			typedef RetType(ObjectType::* RunFunc)(ArgType);
 			typedef void(ObjectType::* LogFunc)(const std::string&);
 			struct PthreadData
@@ -200,6 +206,7 @@ namespace klib {
         template<typename RetType, typename ArgType>
         static void* Work(void* arg)
         {
+            //pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 			typedef RetType(*RunFunc)(ArgType);
 			typedef void(*LogFunc)(const std::string&);
 			struct PthreadData
