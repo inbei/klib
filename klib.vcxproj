@@ -44,12 +44,16 @@
     <ClInclude Include="src\new\KPingClient.hpp" />
     <ClInclude Include="src\new\KReadWriteLock.hpp" />
     <ClInclude Include="src\new\KSpinLock.hpp" />
+    <ClInclude Include="src\tcp\KModbusClient.hpp" />
+    <ClInclude Include="src\tcp\KModbusServer.hpp" />
     <ClInclude Include="src\tcp\KTcpNetwork.h" />
     <ClInclude Include="src\tcp\KTcpClient.hpp" />
     <ClInclude Include="src\tcp\KTcpConnection.hpp" />
     <ClInclude Include="src\tcp\KTcpModbus.h" />
     <ClInclude Include="src\tcp\KTcpWebsocket.h" />
     <ClInclude Include="src\tcp\KTcpServer.hpp" />
+    <ClInclude Include="src\tcp\KWebsocketClient.hpp" />
+    <ClInclude Include="src\tcp\KWebsocketServer.hpp" />
     <ClInclude Include="src\thirdparty\KInfluxDbClient.h" />
     <ClInclude Include="src\thirdparty\KKafkaProducer.h" />
     <ClInclude Include="src\thirdparty\KRedisClient.h" />

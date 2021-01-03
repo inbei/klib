@@ -191,5 +191,17 @@
     <ClInclude Include="src\tcp\KTcpConnection.hpp">
       <Filter>tcp</Filter>
     </ClInclude>
+    <ClInclude Include="src\tcp\KModbusClient.hpp">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KModbusServer.hpp">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KWebsocketClient.hpp">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KWebsocketServer.hpp">
+      <Filter>tcp</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
