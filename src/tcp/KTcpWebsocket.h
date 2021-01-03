@@ -1,9 +1,10 @@
 #pragma once
-#include "tcp/KTcpProcessor.hpp"
+#include "tcp/KTcpConnection.hpp"
 #include "util/KStringUtility.h"
 #include "util/KBase64.h"
 #include "util/KSHA1.h"
 #include "util/KEndian.h"
+#include "tcp/KTcpNetwork.h"
 namespace klib
 {
     class KWebsocketMessage :public KTcpMessage
@@ -122,38 +123,20 @@ namespace klib
     };
 
     template<>
-    int ParseBlock(const KBuffer& dat, KWebsocketMessage& msg, KBuffer& left);
+    int ParsePacket(const KBuffer& dat, KWebsocketMessage& msg, KBuffer& left);
 
-    class KTcpProcessorWebsocket :public KTcpProcessor<KWebsocketMessage>
+    class KTcpWebsocket :public KTcpConnection<KWebsocketMessage>
     {
     public:
-        KTcpProcessorWebsocket()
+        KTcpWebsocket(KTcpNetwork<KWebsocketMessage>* poller)
+            :KTcpConnection<KWebsocketMessage>(poller)
         {
 
         }
 
-        virtual bool Handshake() // client
-        {
-            /*
-            GET / HTTP/1.1
-            Upgrade: websocket
-            Connection: Upgrade
-            Sec-WebSocket-Key: sN9cRrP/n9NdMgdcy2VJFQ==
-            Sec-WebSocket-Version: 13
-            */
-            m_secKey = "helloshit";
-            std::string req;
-            req.append("GET / HTTP/1.1\r\n");
-            req.append("Upgrade: websocket\r\n");
-            req.append("Connection: Upgrade\r\n");
-            req.append("Sec-WebSocket-Key: ");
-            req.append(m_secKey + "\r\n");
-            req.append("Sec-WebSocket-Version: 13\r\n\r\n");
+        
 
-            return m_base->WriteSocket(m_base->GetSocket(), req.c_str(), req.size()) == req.size();
-        }
-
-        virtual void Serialize(const KWebsocketMessage& msg, KBuffer& result) const
+        void Serialize(const KWebsocketMessage& msg, KBuffer& result) const
         {
             const KBuffer& payload = msg.payload;
             size_t psz = payload.GetSize();
@@ -219,29 +202,60 @@ namespace klib
         }
 
     protected:
-        virtual void OnMessages(const std::vector<KWebsocketMessage>& msgs)
+        virtual void OnBinary(const KBuffer& dat)// binary message
         {
-            std::vector<KWebsocketMessage>& ms = const_cast<std::vector<KWebsocketMessage>&>(msgs);
-            std::vector<KWebsocketMessage>::iterator it = ms.begin();
-            while (it != ms.end())
-            {
-                MergeMessage(*it, m_partial);
-                ++it;
-            }
+
         }
 
-        virtual bool NeedFirstResponse() const { return true; }
-
-        virtual void FirstResponse(const std::vector<KBuffer>& ev)
+        virtual void OnText(const std::string& dat) // text message
         {
+
+        }
+
+    private:
+        virtual void OnConnected(NetworkMode mode, const std::string& ipport)
+        {
+            KTcpConnection<KWebsocketMessage>::OnConnected(mode, ipport);
+        }
+
+        virtual void OnDisconnected(NetworkMode mode, const std::string& ipport, SocketType fd)
+        {
+            KTcpConnection<KWebsocketMessage>::OnDisconnected(mode, ipport, fd);
+            m_partial.Clear();
+        }
+
+        virtual bool OnAuthRequest() const// client
+        {
+            /*
+            GET / HTTP/1.1
+            Upgrade: websocket
+            Connection: Upgrade
+            Sec-WebSocket-Key: sN9cRrP/n9NdMgdcy2VJFQ==
+            Sec-WebSocket-Version: 13
+            */
+            m_secKey = "helloshit";
+            std::string req;
+            req.append("GET / HTTP/1.1\r\n");
+            req.append("Upgrade: websocket\r\n");
+            req.append("Connection: Upgrade\r\n");
+            req.append("Sec-WebSocket-Key: ");
+            req.append(m_secKey + "\r\n");
+            req.append("Sec-WebSocket-Version: 13\r\n\r\n");
+
+            return WriteSocket(GetSocket(), req.c_str(), req.size()) == req.size();
+        }
+
+        virtual bool OnAuthResponse(const std::vector<KBuffer>& ev) const
+        {
+            bool rc = false;
             std::string req(ev[0].GetData(), ev[0].GetSize());
-            SocketType fd = m_base->GetSocket();
-            if (IsServer())// server
+            SocketType fd = GetSocket();
+            if (GetMode() == NmServer)// server
             {
                 // get key
                 std::string wskey;
                 if (!GetHandshakeKey(req, "Sec-WebSocket-Key", wskey))
-                    return;
+                    goto end;
 
                 std::string protocol;
                 GetHandshakeKey(req, "Sec-WebSocket-Protocol", protocol);
@@ -270,12 +284,11 @@ namespace klib
                 }
                 resp.append("Upgrade: websocket\r\n\r\n");
 
-                if (m_base->WriteSocket(fd, resp.c_str(), resp.size()) == resp.size())
+                if (WriteSocket(fd, resp.c_str(), resp.size()) == resp.size())
                 {
-                    std::cout << "handshake with client successfully\n";
-                    KTcpProcessor<KWebsocketMessage>::FirstResponse(ev);
+                    printf("handshake with client successfully\n");
+                    rc = true;
                 }
-
             }
             else // client
             {
@@ -285,14 +298,12 @@ namespace klib
                 GetHandshakeResponseKey(respKey);
                 if (respKey == wskey)
                 {
-                    std::cout << "handshake with server successfully\n";
-                    KTcpProcessor<KWebsocketMessage>::FirstResponse(ev);
+                    printf("handshake with server successfully\n");
+                    rc = true;
                 }
             }
 
-            if (!IsFirstResponseReady())
-                m_base->DeleteSocket(fd);
-
+            end:
             std::vector<KBuffer>& bufs = const_cast<std::vector<KBuffer>&>(ev);
             std::vector<KBuffer>::iterator it = bufs.begin();
             while (it != bufs.end())
@@ -300,37 +311,21 @@ namespace klib
                 it->Release();
                 ++it;
             }
+
+            return rc;
         }
 
-        virtual void OnWebsocket(const std::string& msg)// text web socket
+        virtual void OnMessage(const std::vector<KWebsocketMessage>& msgs)
         {
-            if (IsServer())
+            std::vector<KWebsocketMessage>& ms = const_cast<std::vector<KWebsocketMessage>&>(msgs);
+            std::vector<KWebsocketMessage>::iterator it = ms.begin();
+            while (it != ms.end())
             {
-                KWebsocketMessage m;
-                m.Initialize("xxxx");
-                KBuffer resp;
-                Serialize(m, resp);
-                static int i = 0;
-                if (m_base->WriteSocket(m_base->GetSocket(), resp.GetData(), resp.GetSize()) != resp.GetSize())
-                    std::cout << "response failed\n";
-                else
-                    ++i;
-                std::cout << "server:" << i << std::endl;
-                m.payload.Release();
-                resp.Release();
-            }
-            else
-            {
-                std::cout << msg << std::endl;
+                MergeMessage(*it, m_partial);
+                ++it;
             }
         }
 
-        virtual void OnWebsocket(const std::vector<KBuffer>& msgs) // binary web socket
-        {
-
-        }
-
-    private:
         bool GetHandshakeKey(const std::string& reqstr, const std::string& keyword, std::string& wskey) const
         {
             std::istringstream s(reqstr);
@@ -376,12 +371,10 @@ namespace klib
                         AppendBuffer(msg, partial);
                         if (partial.opcode == KWebsocketMessage::opbinary)
                         {
-                            std::vector<KBuffer> msgs;
-                            msgs.push_back(partial.payload);
-                            OnWebsocket(msgs);
+                            OnBinary(partial.payload);
                         }
                         else
-                            OnWebsocket(std::string(partial.payload.GetData(), partial.payload.GetSize()));
+                            OnText(std::string(partial.payload.GetData(), partial.payload.GetSize()));
                         partial.payload.Release();
                         partial.Clear();
                     }
@@ -389,12 +382,10 @@ namespace klib
                     {
                         if (msg.opcode == KWebsocketMessage::opbinary)
                         {
-                            std::vector<KBuffer> msgs;
-                            msgs.push_back(msg.payload);
-                            OnWebsocket(msgs);
+                            OnBinary(msg.payload);
                         }
                         else
-                            OnWebsocket(std::string(msg.payload.GetData(), msg.payload.GetSize()));
+                            OnText(std::string(msg.payload.GetData(), msg.payload.GetSize()));
                         msg.payload.Release();
                     }
                 }
@@ -409,8 +400,9 @@ namespace klib
             }
             case KWebsocketMessage::opclose:
             {
-                printf("web socket recv close request\n");
-                m_base->DeleteSocket(m_base->GetSocket());
+                printf("web socket recv close request start\n");
+                Disconnect(GetSocket());
+                printf("web socket recv close request end\n");
                 msg.payload.Release();
                 break;
             }
@@ -428,6 +420,6 @@ namespace klib
 
     private:
         KWebsocketMessage m_partial;
-        std::string m_secKey;// client
+        mutable std::string m_secKey;// client
     };
 };

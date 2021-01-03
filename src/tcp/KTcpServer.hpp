@@ -4,239 +4,71 @@
 #endif
 #include <sstream>
 #include "thread/KEventObject.h"
-#include "tcp/KTcpBase.h"
-#include "tcp/KTcpConn.hpp"
+#include "tcp/KTcpNetwork.h"
 
 namespace klib {
 
-    template<typename ProcessorType>
-    class KTcpServer :public KEventObject<SocketType>, public KTcpBase
+    template<typename MessageType>
+    class KTcpServer :public KTcpNetwork<MessageType>
     {
     public:
-        KTcpServer()
-            :m_fd(0), KEventObject<SocketType>("KTcpServer Thread"), 
-            m_maxClient(50),m_cleanThread("Clean Thread")
+        bool Start(const std::string& hosts, bool needAuth = false)
         {
-
-        }
-
-        bool Start(const std::string& ip, uint16_t port, bool autoReconnect = true)
-        {
-            m_ip = ip;
-            m_port = port;
-            m_autoReconnect = autoReconnect;
-
-            if (!KEventObject<SocketType>::Start())
-                return false;
-
-            try
+            std::vector<std::string> brokers;
+            klib::KStringUtility::SplitString(hosts, ",", brokers);
+            std::vector<std::string>::const_iterator it = brokers.begin();
+            while (it != brokers.end())
             {
-                m_cleanThread.Run(this, &KTcpServer::CleanZombies, 1);
-                KEventObject<SocketType>::Post(0);
-                return true;
-            }
-            catch (const std::exception&e)
-            {
-                KEventObject<SocketType>::Stop();
-                KEventObject<SocketType>::WaitForStop();
-            }
-            return false;
-        }
-
-        virtual void Stop()
-        {
-            KEventObject<SocketType>::Stop();
-            CleanConnections();
-        }
-
-        virtual void WaitForStop()
-        {
-            KEventObject<SocketType>::WaitForStop();
-            m_cleanThread.Join();
-        }
-
-        bool Post(int cid, const KBuffer& dat)
-        {
-            KLockGuard<KMutex>  lock(m_connMtx);
-            typename std::map<int, KTcpConnection<ProcessorType>* >::iterator it = m_connections.find(cid);
-            if (it != m_connections.end())
-                return it->second && it->second->IsConnected() && it->second->Send(dat);
-            return false;
-        }
-
-        bool Post(int cid, const std::string& dat)
-        {
-            KLockGuard<KMutex>  lock(m_connMtx);
-            typename std::map<int, KTcpConnection<ProcessorType>* >::iterator it = m_connections.find(cid);
-            if (it != m_connections.end())
-                return it->second && it->second->IsConnected() && it->second->Send(dat);
-            return false;
-        }
-
-        virtual void SetMaxClient(uint32_t c)
-        {
-            m_maxClient = c;
-        }
-
-    private:
-        virtual void ProcessEvent(const SocketType& ev)
-        {
-            if (!IsConnected())
-            {
-                if (!Listen(m_ip, m_port))
-                    KTime::MSleep(1000);
-            }
-            else
-            {
-                PollSocket();
-            }
-            KEventObject<SocketType>::Post(1);
-        }
-
-        virtual void OnSocketEvent(SocketType fd, short evt)
-        {
-            if (evt & epollin)
-                AcceptSocket(fd);
-        }
-
-        virtual SocketType GetSocket() const { return m_fd; }
-
-        virtual KTcpConnection<ProcessorType>* NewConnection() { return new KTcpConnection<ProcessorType>; }
-
-    private:
-        bool Listen(const std::string& ip, uint16_t port)
-        {
-            m_fd = ::socket(AF_INET, SOCK_STREAM, 0);
-            if (m_fd < 0)
-                return false;
-
-            ReuseAddress(m_fd);
-            DisableNagle(m_fd);
-
-            sockaddr_in server;
-            server.sin_family = AF_INET;
-            server.sin_port = htons(port);
-            server.sin_addr.s_addr = inet_addr(ip.c_str()); // htonl(INADDR_ANY);
-            if (::bind(m_fd, (sockaddr*)(&server), sizeof(server)) != 0)
-            {
-                CloseSocket(m_fd);
-                return false;
-            }
-
-            if (::listen(m_fd, 200) != 0)
-            {
-                CloseSocket(m_fd);
-                return false;
-            }
-
-            std::ostringstream os;
-            os << ip << ":" << port;
-            return AddSocket(m_fd, os.str());
-        }
-
-        void AcceptSocket(SocketType fd)
-        {
-            SocketType s = 0;
-            sockaddr_in caddr = { 0 };
-            SocketLength addrlen = sizeof(caddr);
-#if defined(WIN32)
-            while ((s = ::accept(fd, (struct sockaddr*)&caddr, &addrlen)) != INVALID_SOCKET)
-#else
-            while ((s = ::accept(fd, (struct sockaddr*)&caddr, &addrlen)) > 0)
-#endif
-            {
-                std::ostringstream os;
-                os << inet_ntoa(caddr.sin_addr) << ":" << ntohs(caddr.sin_port);
-                std::string ipport = os.str();
-                std::cout << ipport << " connected" << std::endl;
-                AddConnection(s, ipport);
-            }
-        }
-
-        void AddConnection(SocketType fd, const std::string& ipport)
-        {
-            //std::cout << __FUNCTION__ << "start" << m_connections.size() << std::endl;
-            KLockGuard<KMutex>  lock(m_connMtx);
-            if (m_connections.size() < m_maxClient)
-            {
-                KTcpConnection<ProcessorType>* c = NewConnection();
-                if (c->Start(ipport, fd))
-                    m_connections[fd] = c;
+                const std::string& broker = *it;
+                std::vector<std::string> ipandport;
+                klib::KStringUtility::SplitString(broker, ":", ipandport);
+                if (ipandport.size() != 2)
+                {
+                    printf("Invalid broker:[%s]\n", broker.c_str());
+                }
                 else
                 {
-                    printf("Create connection thread failed\n");
-                    delete c;
+                    uint16_t port = atoi(ipandport[1].c_str());
+                    if (port == 0)
+                        printf("Invalid broker:[%s]\n", broker.c_str());
+                    else
+                        m_hostip[ipandport[0]] = port;
                 }
+                ++it;
             }
+
+            if (m_hostip.empty())
+            {
+                printf("Invalid brokers:[%s]\n", hosts.c_str());
+                return false;
+            }
+
+            m_it = m_hostip.begin();
+            return KTcpNetwork<MessageType>::Start(m_it->first, m_it->second, true, needAuth);
+        }
+
+
+    private:
+        virtual std::pair<std::string, uint16_t> GetConfig() const
+        {
+            if (IsConnected())
+                return m_it;
             else
             {
-                printf("Max connection count is %d\n", m_maxClient);
-                klib::KTime::MSleep(100);
-                CloseSocket(fd);
-            }
-            //std::cout << __FUNCTION__ << "end" << m_connections.size() << std::endl;
-        }
-
-        void CleanConnections()
-        {
-            KLockGuard<KMutex>  lock(m_connMtx);
-            typename std::map<int, KTcpConnection<ProcessorType>* >::iterator it = m_connections.begin();
-            if (it != m_connections.end())
-                it->second->Stop();
-
-            it = m_connections.begin();
-            if (it != m_connections.end())
-            {
-                it->second->WaitForStop();
-                delete it->second;
-            }
-            m_connections.clear();
-        }
-
-        int CleanZombies(int)
-        {
-            while (IsRunning())
-            {
+                if (++m_it != m_hostip.end())
                 {
-                    KLockGuard<KMutex>  lock(m_connMtx);
-                    std::vector<KTcpConnection<ProcessorType>* > corpses;
-                    typename std::map<int, KTcpConnection<ProcessorType>* >::iterator it = m_connections.begin();
-                    while (it != m_connections.end())
-                    {
-                        KTcpConnection<ProcessorType>* c = it->second;
-                        if (c->IsConnected())
-                            ++it;
-                        else
-                        {
-                            corpses.push_back(c);
-                            m_connections.erase(it++);
-                            c->Stop();
-                        }
-                    }
-                    printf("CleanZombies start %d\n", m_connections.size());
-                    typename std::vector<KTcpConnection<ProcessorType>* >::const_iterator cit = corpses.begin();
-                    while (cit != corpses.end())
-                    {
-                        KTcpConnection<ProcessorType>* c = *cit;
-                        c->WaitForStop();
-                        delete c;
-                        ++cit;
-                    }
-                    printf("CleanZombies end %d\n", m_connections.size());
+                    return m_it;
                 }
-                KTime::MSleep(1000);
+                else
+                {
+                    m_it = m_hostip.begin();
+                    return m_it;
+                }
             }
-            return 0;
         }
 
     private:
-        SocketType m_fd;
-        std::string m_ip;
-        uint16_t m_port;
-        bool m_autoReconnect;
-        uint32_t m_maxClient;
-        KPthread m_cleanThread;
-        KMutex m_connMtx;
-        std::map<int, KTcpConnection<ProcessorType>*> m_connections;
+        std::map<std::string, uint16_t> m_hostip;
+        std::map<std::string, uint16_t>::const_iterator m_it;
     };
 };

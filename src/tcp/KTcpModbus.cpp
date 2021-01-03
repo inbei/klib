@@ -1,9 +1,9 @@
-#include "tcp/KTcpProcessorModbus.h"
+#include "tcp/KTcpModbus.h"
 
 namespace klib
 {
     template<>
-    int ParseBlock(const KBuffer& dat, KModbusMessage& msg, KBuffer& left)
+    int ParsePacket(const KBuffer& dat, KModbusMessage& msg, KBuffer& left)
     {
         size_t hsz = msg.GetHeaderSize() + sizeof(msg.dev) + sizeof(msg.func);
         if (dat.GetSize() < hsz)
@@ -23,7 +23,7 @@ namespace klib
 
         if (!msg.IsValid())
         {
-            std::cout << "invalid modbus packet\n";
+            printf("invalid modbus packet\n");
             return ProtocolError;
         }
 

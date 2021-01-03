@@ -2,7 +2,8 @@
 #if defined(WIN32)
 #include <WS2tcpip.h>
 #endif
-#include "tcp/KTcpProcessor.hpp"
+#include "tcp/KTcpConnection.hpp"
+#include "tcp/KTcpNetwork.h"
 #include "util/KEndian.h"
 namespace klib
 {
@@ -71,13 +72,14 @@ namespace klib
     };
 
     template<>
-    int ParseBlock(const KBuffer& dat, KModbusMessage& msg, KBuffer& left);
+    int ParsePacket(const KBuffer& dat, KModbusMessage& msg, KBuffer& left);
 
-    class KTcpProcessorModbus :public KTcpProcessor<KModbusMessage>
+    class KTcpModbus :public KTcpConnection<KModbusMessage>
     {
     public:
-        KTcpProcessorModbus()
-            :m_seq(0), m_func(0x04), m_dev(0xff)
+        KTcpModbus(KTcpNetwork<KModbusMessage>* poller)
+            :m_seq(0), m_func(0x04), m_dev(0xff),
+            KTcpConnection<KModbusMessage>(poller)
         {
 
         }
@@ -169,18 +171,18 @@ namespace klib
         }
 
     protected:
-        virtual void OnMessages(const std::vector<KModbusMessage>& msgs)
+        virtual void OnMessage(const std::vector<KModbusMessage>& msgs)
         {
             std::vector<KModbusMessage>& ms = const_cast<std::vector<KModbusMessage>&>(msgs);
             std::vector<KModbusMessage>::iterator it = ms.begin();
             while (it != ms.end())
             {
                 if (it->ToRequest())
-                    std::cout << "request header size:" << it->GetHeaderSize() << ", payload size:" << it->GetPayloadSize() << std::endl;
+                    printf("request header size:[%d], payload size:[%d]\n", it->GetHeaderSize(), it->GetPayloadSize());
                 else
                 {
                     it->ToResponse();
-                    std::cout << "response header size:" << it->GetHeaderSize() << ", payload size:" << it->GetPayloadSize() << std::endl;
+                    printf("response header size:[%d], payload size:[%d]\n", it->GetHeaderSize(), it->GetPayloadSize());
                 }
                 ++it;
             }

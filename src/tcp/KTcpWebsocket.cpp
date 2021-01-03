@@ -1,9 +1,9 @@
-#include "tcp/KTcpProcessorWebsocket.h"
+#include "tcp/KTcpWebsocket.h"
 
 namespace klib
 {
     template<>
-    int ParseBlock(const KBuffer& dat, KWebsocketMessage& msg, KBuffer& left)
+    int ParsePacket(const KBuffer& dat, KWebsocketMessage& msg, KBuffer& left)
     {
         char* src = dat.GetData();
         size_t ssz = dat.GetSize();
