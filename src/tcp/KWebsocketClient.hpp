@@ -8,7 +8,7 @@
 
 namespace klib
 {
-    class KWebsocketClient :public klib::KTcpClient<klib::KWebsocketMessage>
+    class KWebsocketClient :public KTcpClient<KWebsocketMessage>
     {
     public:
 
