@@ -16,7 +16,7 @@ namespace klib
             KWebsocketMessage wmsg;
             wmsg.Initialize(msg);
             klib::KBuffer buf;
-            klib::KTcpWebsocket::Serialize(wmsg, buf);
+            wmsg.Serialize(buf);
             std::vector<KBuffer> bufs;
             bufs.push_back(buf);
             SendDataToConnection(fd, SocketEvent::SeSent, bufs);

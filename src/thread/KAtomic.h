@@ -178,6 +178,19 @@ namespace klib {
         KMutex m_intMtx;
 #endif
     };
+	
+	class AtomicBool
+    {
+    public:
+        AtomicBool(bool v = false):m_dat(v ? 1 : 0){}
+        inline operator bool() const{ return (int(m_dat) != 0 ? true : false); }
+        inline AtomicBool& operator=(bool v){ m_dat = (v ? 1 : 0); return *this; }
+        inline bool operator==(bool v) const{ return (operator bool() == v); }
+        inline bool operator==(const AtomicBool& rh) const{ return (m_dat == rh.m_dat); }
+
+    private:
+        AtomicInteger<int> m_dat;
+    };
 };
 
 #endif // !_ATOMIC_HPP_

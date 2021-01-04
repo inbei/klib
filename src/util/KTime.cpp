@@ -36,7 +36,7 @@ namespace klib {
         return false;
     }
 
-    std::string KTime::FormatDateTime(const std::string timeString)
+    std::string KTime::FormatDateTime(const std::string &timeString)
     {
         std::string timeStr(timeString);
         if (timeStr.size() < 17)
@@ -45,7 +45,7 @@ namespace klib {
         }
         // yyyy-mm-dd hh:nn:ss.ccc
         char buf[24] = { 0 };
-        const char* src = timeString.c_str();
+        const char* src = timeStr.c_str();
         size_t dstOffset = 0;
         size_t srcOffset = 0;
         memmove(buf + dstOffset, src + srcOffset, 4);

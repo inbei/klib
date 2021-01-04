@@ -8,16 +8,31 @@
 
 namespace klib
 {
-    class KWebsocketClient :public KTcpClient<KModbusMessage>
+    class KModbusClient :public KTcpClient<KModbusMessage>
     {
     public:
+        KModbusClient()
+            :m_seq(0)
+        {
 
+        }
 
     protected:
         virtual KTcpConnection<KModbusMessage>* NewConnection(SocketType fd, const std::string& ipport)
         {
             return new KTcpModbus(this);
         }
+
+        uint16_t GetSeq()
+        {
+            uint16_t seq = m_seq++;
+            if (seq == 0xffff)
+                m_seq = 0;
+            return seq;
+        }
+
+    private:
+        uint16_t m_seq;
     };
 };
 

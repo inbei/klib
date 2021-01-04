@@ -14,10 +14,10 @@ namespace klib
     public:
         bool Send(SocketType fd, const KBuffer& msg)
         {
-            KModbusMessage wmsg;
-            wmsg.InitializeResponse(0, 0xff, 0x04, msg.GetSize(), msg);
+            KModbusMessage wmsg(0xff, 0x04);
+            wmsg.InitializeResponse(0, msg.GetSize(), msg);
             klib::KBuffer buf;
-            klib::KTcpModbus::Serialize(wmsg, buf);
+            wmsg.Serialize(buf);
             std::vector<KBuffer> bufs;
             bufs.push_back(buf);
             SendDataToConnection(fd, SocketEvent::SeSent, bufs);

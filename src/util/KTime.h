@@ -41,7 +41,7 @@ namespace klib {
         */
         static bool NowDateTime(const std::string& fmt, std::string& datetime);
         // 格式化时间
-        static std::string FormatDateTime(const std::string timeString);
+        static std::string FormatDateTime(const std::string &timeString);
         // 获取当前时间毫秒数
         static void NowMillisecond(uint64_t& millisec);
         // 获取当前时间微秒数
