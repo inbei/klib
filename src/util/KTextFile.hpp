@@ -411,6 +411,12 @@ namespace klib {
     class KTextFileMT :public KTextFile
     {
     public:
+        KTextFileMT(size_t maxsize, uint16_t duration)
+            :KTextFile(maxsize, duration)
+        {
+
+        }
+
         virtual void Initialize(const std::string& path, const std::string& filename, bool timestamp)
         {
             KLockGuard<KMutex> lock(m_fileMutex);
@@ -487,8 +493,8 @@ namespace klib {
     class KTextFileAsyn :public KEventObject<FileData>
     {
     public:
-        KTextFileAsyn()
-            :KEventObject<FileData>("KTextFileAsyn Thread")
+        KTextFileAsyn(size_t maxsize, uint16_t duration)
+            :KEventObject<FileData>("KTextFileAsyn Thread"),m_file(maxsize, duration)
         {
 
         }

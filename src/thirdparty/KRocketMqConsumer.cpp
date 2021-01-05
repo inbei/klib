@@ -29,7 +29,7 @@ namespace thirdparty {
             && SetPushConsumerNameServerAddress(m_consumer, brokers.c_str()) == 0
             && StartPushConsumer(m_consumer) == 0)
         {
-            fprintf(stdout, "KRocketMqConsumer brokers:[%s], topic:[%d], groupid:[%s] start success\n",
+            printf("KRocketMqConsumer brokers:[%s], topic:[%d], groupid:[%s] start success\n",
                 brokers.c_str(), topics.size(), groupid.c_str());
             return true;
         }

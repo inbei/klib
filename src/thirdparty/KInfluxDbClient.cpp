@@ -281,7 +281,7 @@ namespace thirdparty {
         }
         catch (const std::exception& e)
         {
-            fprintf(stdout, "KInfluxdbCli exception:[%s]\n", e.what());
+            printf("KInfluxdbCli exception:[%s]\n", e.what());
         }
         return (rc / 100 == 2);
     }
