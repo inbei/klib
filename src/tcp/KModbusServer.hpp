@@ -20,8 +20,7 @@ namespace klib
             wmsg.Serialize(buf);
             std::vector<KBuffer> bufs;
             bufs.push_back(buf);
-            SendDataToConnection(fd, SocketEvent::SeSent, bufs);
-            return true;
+            return SendDataToConnection(fd, SocketEvent::SeSent, bufs);
         }
 
     protected:
