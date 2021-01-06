@@ -309,6 +309,8 @@ namespace klib {
 
         void Connect(const std::string& ipport, SocketType fd)
         {
+            if (GetMode() == NmServer)
+                m_auth.authSent = true;
             m_ipport = ipport;
             m_fd = fd;
             OnConnected(GetMode(), ipport);
