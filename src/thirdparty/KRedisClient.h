@@ -93,7 +93,7 @@ namespace thirdparty {
 
         virtual ~KRedisClient();
 
-        bool Initialize(const std::vector<RedisConfig>& confs);
+        void Initialize(const std::vector<RedisConfig>& confs);
 
         const RedisConfig& GetCurrentConf() const { return m_currentConf; }
 

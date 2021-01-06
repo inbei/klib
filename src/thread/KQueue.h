@@ -131,21 +131,6 @@ namespace klib {
 				m_emptyCond.NotifyAll();
         }
 
-        void PushFrontForce(const ElementType& v)
-        {
-			bool qempty = false;
-			{
-				KLockGuard<KMutex> lock(m_queueMutex);
-				qempty = QueueBase::empty();
-				if (QueueBase::size() == m_queueMaxSize)
-					QueueBase::pop_front();
-				QueueBase::push_front(v);
-			}
-
-			if (qempty)
-				m_emptyCond.NotifyAll();
-        }
-
         /*
         * Description: 从前面取出一个元素， ms < 0 一直等待直到有元素时再取并返回true，
         * ms >= 0 等待 ms 毫秒，期间如果一直没有元素则返回false，否则取出元素返回true

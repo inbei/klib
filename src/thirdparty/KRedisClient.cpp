@@ -12,10 +12,9 @@ namespace thirdparty {
         Close();
     }
 
-    bool KRedisClient::Initialize(const std::vector<RedisConfig>& confs)
+    void KRedisClient::Initialize(const std::vector<RedisConfig>& confs)
     {
         m_confs = confs;
-        return true;
     }
 
     bool KRedisClient::CheckConnection(uint16_t times /*= 0*/)
