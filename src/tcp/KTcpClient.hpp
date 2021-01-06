@@ -47,13 +47,13 @@ namespace klib {
 
         void Disconnect()
         {
-            DisconnectConnection(GetSocket());
+            DisconnectConnection(KTcpNetwork<MessageType>::GetSocket());
         }
 
     protected:
         virtual std::pair<std::string, uint16_t> GetConfig() const
         {
-            if (IsConnected())
+            if (KTcpNetwork<MessageType>::IsConnected())
                 return *m_it;
             else
             {
