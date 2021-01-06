@@ -355,6 +355,14 @@ namespace klib {
             SetState(NsDisconnected);
             m_poller->DeleteSocket(fd);
             // clear data
+            std::vector<SocketEvent> events;
+            Flush(events);
+            std::vector<SocketEvent>::iterator it = events.begin();
+            while (it != events.end())
+            {
+                m_poller->Release(it->dat1);
+                ++it;
+            }
             printf("%s disconnected\n", ipport.c_str());
         }
 
