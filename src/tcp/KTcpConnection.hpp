@@ -7,12 +7,14 @@
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <sys/pollset.h>
+#include <netinet/tcp.h>
 #elif defined(HPUX)
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/mpctl.h>
 #include <sys/poll.h>
+#include <netinet/tcp.h>
 #elif defined(LINUX)
 #include <fcntl.h>
 #include <arpa/inet.h>
