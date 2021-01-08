@@ -1,14 +1,15 @@
 #include "KActivemqConsumer.h"
 
 namespace thirdparty {
-    KActivemqConsumer::KActivemqConsumer(const std::string& brokerURI, const std::string& destURI)
+    KActivemqConsumer::KActivemqConsumer(const std::vector<std::string>& brokers, const std::string& destURI)
         : m_connection(NULL),
         m_session(NULL),
         m_destination(NULL),
-        m_brokerURI(brokerURI),
         m_destURI(destURI),
+        m_consumer(NULL),
         m_state(CSDisconnected)
     {
+        m_brokerURI = GetBrokerUrl(brokers);
     }
 
     void KActivemqConsumer::Initialize()
@@ -61,6 +62,25 @@ namespace thirdparty {
         Release(m_consumer);
         printf("<%s> Consumer stopped.\n", __FUNCTION__);
         m_state = CSDisconnected;
+    }
+
+    std::string KActivemqConsumer::GetBrokerUrl(const std::vector<std::string>& ips) const
+    {
+        std::ostringstream os;
+        os << "failover:(";
+        std::vector<std::string>::const_iterator it = ips.begin();
+        while (it != ips.end())
+        {
+            os << "tcp://" << *it << ":61616?jms.prefetchPolicy.all=10";
+            if (++it != ips.end())
+                os << ",";
+        }
+        os << ")?";
+        os << "randomize=false&nested.wireFormat.maxInactivityDuration=3000&nested.connectionTimeout=2000"
+            << "&maxReconnectAttempts=2&timeout=2000&initialReconnectDelay=50&startupMaxReconnectAttempts=2"
+            << "&maxReconnectDelay=100";
+
+        return os.str();
     }
 
     bool KActivemqConsumer::Start()

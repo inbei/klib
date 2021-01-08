@@ -32,7 +32,7 @@ namespace thirdparty {
     {
     public:
         enum ConsumerState { CSDisconnected = 0, CSConnected = 1, CSException = 2 };
-        KActivemqConsumer(const std::string& brokerURI, const std::string& destURI);
+        KActivemqConsumer(const std::vector<std::string>& brokers, const std::string& destURI);
 
         static void Initialize();
         static void Shutdown();
@@ -76,6 +76,7 @@ namespace thirdparty {
 
     private:
         virtual void Cleanup();
+        std::string GetBrokerUrl(const std::vector<std::string>& ips) const;
 
     protected:
         Connection* m_connection;
