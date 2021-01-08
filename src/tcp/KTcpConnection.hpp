@@ -338,6 +338,8 @@ namespace klib {
         inline bool IsDisconnected() const { return m_state == NsDisconnected; }
 
         inline SocketType GetSocket() const { return m_fd; }
+
+        inline  const std::string& GetAddress() const { return m_ipport; }
         
     protected:
         inline NetworkMode GetMode() const { return static_cast<NetworkMode>(int32_t(m_mode)); }

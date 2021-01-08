@@ -91,6 +91,14 @@ namespace klib {
 
         inline SocketType GetSocket() const { return m_fd; }
         
+        const std::string& GetConnectionInfo(SocketType fd)
+        {
+            KLockGuard<KMutex> lock(m_connMtx);
+            typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.find(fd);
+            if (it != m_connections.end())
+                return it->second->GetAddress();
+            return std::string();
+        }
     protected:        
         virtual KTcpConnection<MessageType>* NewConnection(SocketType fd, const std::string& ipport)
         {
