@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <map>
 #include <iostream>
 #include "thread/KBuffer.h"
 #include "thread/KMutex.h"
@@ -422,7 +423,42 @@ namespace klib
         KOdbcSql(SQLHANDLE stmt)
             :m_stmt(stmt)
         {
+            m_sqlType2cType[SQL_CHAR] = SQL_C_CHAR;
+            m_sqlType2cType[SQL_VARCHAR] = SQL_C_CHAR;
+            m_sqlType2cType[SQL_LONGVARCHAR] = SQL_C_CHAR;
+            m_sqlType2cType[SQL_NUMERIC] = SQL_C_CHAR;
+            m_sqlType2cType[SQL_DECIMAL] = SQL_C_CHAR;
+            m_sqlType2cType[SQL_WCHAR] = SQL_C_WCHAR;
+            m_sqlType2cType[SQL_WVARCHAR] = SQL_C_WCHAR;
+            m_sqlType2cType[SQL_WLONGVARCHAR] = SQL_C_WCHAR;
+            m_sqlType2cType[SQL_BIT] = SQL_C_BIT;            
+            m_sqlType2cType[SQL_REAL] = SQL_C_FLOAT;
+            m_sqlType2cType[SQL_GUID] = SQL_C_GUID;
+            m_sqlType2cType[SQL_FLOAT] = SQL_C_DOUBLE;
+            m_sqlType2cType[SQL_DOUBLE] = SQL_C_DOUBLE;
+            m_sqlType2cType[SQL_BINARY] = SQL_C_BINARY;
+            m_sqlType2cType[SQL_VARBINARY] = SQL_C_BINARY;
+            m_sqlType2cType[SQL_LONGVARBINARY] = SQL_C_BINARY;
+            m_sqlType2cType[SQL_TYPE_DATE] = SQL_C_TYPE_DATE;
+            m_sqlType2cType[SQL_TYPE_TIME] = SQL_C_TYPE_TIME;
+            m_sqlType2cType[SQL_TYPE_TIMESTAMP] = SQL_C_TYPE_TIMESTAMP;
+            m_sqlType2cType[SQL_TINYINT] = SQL_C_TINYINT;
+            m_sqlType2cType[SQL_SMALLINT] = SQL_C_SHORT;
+            m_sqlType2cType[SQL_INTEGER] = SQL_C_LONG;
+            m_sqlType2cType[SQL_BIGINT] = SQL_C_SBIGINT;
 
+            m_cType2sqlType[SQL_C_CHAR] = SQL_CHAR;
+            m_cType2sqlType[SQL_C_WCHAR] = SQL_WCHAR;
+            m_cType2sqlType[SQL_C_BIT] = SQL_BIT;
+            m_cType2sqlType[SQL_C_FLOAT] = SQL_REAL;
+            m_cType2sqlType[SQL_C_DOUBLE] = SQL_DOUBLE;
+            m_cType2sqlType[SQL_C_BINARY] = SQL_BINARY;
+            m_cType2sqlType[SQL_C_GUID] = SQL_GUID;
+
+            m_cType2sqlType[SQL_C_TINYINT] = SQL_TINYINT;
+            m_cType2sqlType[SQL_C_SHORT] = SQL_SMALLINT;
+            m_cType2sqlType[SQL_C_LONG] = SQL_INTEGER;
+            m_cType2sqlType[SQL_C_SBIGINT] = SQL_BIGINT;
         }
 
         ~KOdbcSql()
@@ -453,6 +489,8 @@ namespace klib
     private:
         SQLHANDLE m_stmt;
         QueryRow m_buffer;
+        std::map<SQLSMALLINT, SQLSMALLINT> m_sqlType2cType;
+        std::map<SQLSMALLINT, SQLSMALLINT> m_cType2sqlType;
     };
 
     class KOdbcClient
