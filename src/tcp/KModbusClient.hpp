@@ -6,6 +6,10 @@
 #include "tcp/KTcpClient.hpp"
 #include "tcp/KTcpModbus.h"
 
+/**
+modbus 客户端类
+**/
+
 namespace klib
 {
     class KModbusClient :public KTcpClient<KModbusMessage>
@@ -18,11 +22,21 @@ namespace klib
         }
 
     protected:
+        /************************************
+        * Method:    创建连接
+        * Returns:   返回连接
+        * Parameter: fd socket ID
+        * Parameter: ipport IP和端口
+        *************************************/
         virtual KTcpConnection<KModbusMessage>* NewConnection(SocketType fd, const std::string& ipport)
         {
             return new KTcpModbus(this);
         }
 
+        /************************************
+        * Method:    获取序列号
+        * Returns:   返回序列号
+        *************************************/
         uint16_t GetSeq()
         {
             uint16_t seq = m_seq++;

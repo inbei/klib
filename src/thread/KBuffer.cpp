@@ -39,11 +39,9 @@ namespace klib {
             if (m_dat == NULL)
             {
                 char* tmp = (char*)malloc(tsz);
-                memset(tmp, 0, tsz);
                 if (tmp == NULL)
-                {
                     return false;
-                }
+                memset(tmp, 0, tsz);
                 memmove(tmp, m_dat, m_size);
                 free(m_dat);
                 memmove(&tmp[m_size], d, sz);

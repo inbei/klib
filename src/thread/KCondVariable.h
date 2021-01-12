@@ -5,7 +5,9 @@
 #include "util/KTime.h"
 #include "thread/KError.h"
 #include <pthread.h>
-
+/**
+条件变量类
+**/
 namespace klib {
     class KCondVariable
     {
@@ -14,13 +16,32 @@ namespace klib {
 
         ~KCondVariable();
 
+        /************************************
+        * Method:    通知
+        * Returns:   
+        *************************************/
         void Notify() const;
 
+        /************************************
+        * Method:    通知所有
+        * Returns:   
+        *************************************/
         void NotifyAll() const;
 
+        /************************************
+        * Method:    等待
+        * Returns:   
+        * Parameter: lock
+        *************************************/
         template <typename Lock>
         void Wait(const Lock& lock) const;
 
+        /************************************
+        * Method:    等待ms毫秒
+        * Returns:   
+        * Parameter: lock
+        * Parameter: ms
+        *************************************/
         template <typename Lock>
         bool TimedWait(const Lock& lock, const size_t& ms) const;
 

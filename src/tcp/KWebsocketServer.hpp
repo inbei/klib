@@ -5,12 +5,20 @@
 #endif
 #include "tcp/KTcpServer.hpp"
 #include "tcp/KTcpWebsocket.h"
-
+/**
+websocket服务端
+**/
 namespace klib
 {
     class KWebsocketServer :public klib::KTcpServer<KWebsocketMessage>
     {
     public:
+        /************************************
+        * Method:    发送数据给客户端
+        * Returns:   
+        * Parameter: fd
+        * Parameter: msg
+        *************************************/
         bool Send(SocketType fd, const std::string& msg)
         {
             KWebsocketMessage wmsg;

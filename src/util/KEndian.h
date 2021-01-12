@@ -4,55 +4,42 @@
 #define _ENDIAN_HPP_
 #include <stdint.h>
 #include <string.h>
+/**
+大小端类
+**/
 namespace klib {
     class KEndian
     {
     public:
         /************************************
-        * Description: 判断本机大小端
-        * Method:    IsLittleEndian
-        * FullName:  KEndian::IsLittleEndian
-        * Access:    public static
-        * Returns:   bool
-        * Qualifier:
-        ************************************/
+        * Method:    判断本机大小端
+        * Returns:   
+        *************************************/
         static bool IsLittleEndian();
 
         /************************************
-        * Description: 数字转换成大端
-        * Method:    ToBigEndian
-        * FullName:  KEndian::ToBigEndian
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: const NumType & num
-        * Parameter: char * dest
-        ************************************/
+        * Method:    数字转换成大端
+        * Returns:   
+        * Parameter: num
+        * Parameter: dest
+        *************************************/
         template<typename NumType> static void ToBigEndian(const NumType& num, uint8_t* dest);
 
         /************************************
-        * Description: 数字转换成小端
-        * Method:    ToLittleEndian
-        * FullName:  KEndian::ToLittleEndian
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: const NumType & num
-        * Parameter: char * dest
-        ************************************/
+        * Method:    数字转换成小端
+        * Returns:   
+        * Parameter: num
+        * Parameter: dest
+        *************************************/
         template<typename NumType>
         static void ToLittleEndian(const NumType& num, uint8_t* dest);
 
         /************************************
-        * Description: 将网络字节流转换成数字
-        * Method:    FromNetwork
-        * FullName:  KEndian::FromNetwork
-        * Access:    public static
-        * Returns:   void
-        * Qualifier:
-        * Parameter: const char * src
-        * Parameter: NumType & num
-        ************************************/
+        * Method:    将网络字节流转换成数字
+        * Returns:   
+        * Parameter: src
+        * Parameter: num
+        *************************************/
         template<typename NumType>
         static void FromNetwork(const uint8_t* src, NumType& num);
 #if !defined(AIX)

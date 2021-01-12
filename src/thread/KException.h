@@ -7,6 +7,9 @@
 #endif
 #include <sstream>
 #include <cstdio>
+/**
+“Ï≥£¿‡
+**/
 namespace klib {
     class KException :public std::runtime_error
     {

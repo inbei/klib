@@ -5,6 +5,9 @@
 #include "tcp/KTcpConnection.hpp"
 #include "tcp/KTcpNetwork.h"
 #include "util/KEndian.h"
+/**
+modbus数据处理类
+**/
 namespace klib
 {
 #define MaxRegisterCount 32765
@@ -20,8 +23,22 @@ namespace klib
         };
         friend int ParsePacket<KModbusMessage>(const KBuffer& dat, KModbusMessage& msg, KBuffer& left);
 
+        /************************************
+        * Method:    获取消息体大小
+        * Returns:   
+        *************************************/
         virtual size_t GetPayloadSize() const { return len; }
+        /************************************
+        * Method:    获取消息头大小
+        * Returns:   
+        *************************************/
         virtual size_t GetHeaderSize() const { return sizeof(seq) + sizeof(ver) + sizeof(len); }
+        /************************************
+        * Method:    判断消息是否有效
+        * Returns:   
+        * Parameter: dev 设备ID
+        * Parameter: func 功能码
+        *************************************/
         virtual bool IsValid(uint16_t dev, uint16_t func) {
 
             return ver == 0
@@ -30,6 +47,10 @@ namespace klib
                 && (MaxModbusAddress - saddr + 1 >= count)
                 && saddr < MaxModbusAddress;
         }
+        /************************************
+        * Method:    判断消息是否有效
+        * Returns:   
+        *************************************/
         virtual bool IsValid() {
 
             return ver == 0
@@ -38,12 +59,20 @@ namespace klib
                 && saddr < MaxModbusAddress;
         }
 
+        /************************************
+        * Method:    清理缓存
+        * Returns:   
+        *************************************/
         virtual void Clear() { len = 0; dev = 0; func = 0; }
 
         KModbusMessage()
             :dev(0), func(0), messageType(ModbusNull),
             seq(0), ver(0), len(0), saddr(0), count(0), ler(0) {}
 
+        /************************************
+        * Method:    解析为请求
+        * Returns:   成功返回true失败false
+        *************************************/
         bool ParseRequest()
         {
             if (sizeof(saddr) + sizeof(count) == payload.GetSize())
@@ -58,6 +87,10 @@ namespace klib
             return false;
         }
 
+        /************************************
+        * Method:    解析为响应
+        * Returns:   
+        *************************************/
         void ParseResponse()
         {
             char* src = payload.GetData();
@@ -76,6 +109,13 @@ namespace klib
             :dev(dev & 0xff), func(0xff & func), messageType(ModbusNull),
             seq(0), ver(0), len(0), saddr(0), count(0), ler(0) {}
 
+        /************************************
+        * Method:    初始化为请求
+        * Returns:   
+        * Parameter: seq 序列号
+        * Parameter: saddr 开始地址
+        * Parameter: count 寄存器个数
+        *************************************/
         void InitializeRequest(uint16_t seq, uint16_t saddr, uint16_t count)
         {
             messageType = ModbusRequest;
@@ -86,6 +126,13 @@ namespace klib
             this->count = count;
         }
 
+        /************************************
+        * Method:    初始化为响应
+        * Returns:   
+        * Parameter: seq 序列号
+        * Parameter: ler 字节数
+        * Parameter: buf 消息内容
+        *************************************/
         void InitializeResponse(uint16_t seq, uint16_t ler, const KBuffer& buf)
         {
             messageType = ModbusResponse;
@@ -96,15 +143,48 @@ namespace klib
             dat = buf;
         };
 
+        /************************************
+        * Method:    获取消息体
+        * Returns:   返回消息体
+        *************************************/
         const KBuffer& GetPayload() const { return payload; }
+        /************************************
+        * Method:    获取响应数据
+        * Returns:   番长数据
+        *************************************/
         const KBuffer& GetData() const { return dat; }
 
+        /************************************
+        * Method:    释放消息体
+        * Returns:   
+        *************************************/
         void ReleasePayload() { payload.Release(); }
+        /************************************
+        * Method:    释放数据
+        * Returns:   
+        *************************************/
         void ReleaseData() { dat.Release(); }
+        /************************************
+        * Method:    获取序列号
+        * Returns:   返回序列号
+        *************************************/
         inline uint16_t GetSeq() const { return seq; }
+        /************************************
+        * Method:    获取开始地址
+        * Returns:   返回地址
+        *************************************/
         inline uint16_t GetStartAddress() const { return saddr; }
+        /************************************
+        * Method:    获取寄存器个数
+        * Returns:   返回个数
+        *************************************/
         inline uint16_t GetCount() const { return count; }
 
+        /************************************
+        * Method:    序列化消息
+        * Returns:   
+        * Parameter: result
+        *************************************/
         virtual void Serialize(KBuffer& result)
         {
             switch (messageType)
@@ -190,6 +270,11 @@ namespace klib
         }
 
     protected:
+        /************************************
+        * Method:    新的modbus消息
+        * Returns:   
+        * Parameter: msgs 新消息
+        *************************************/
         virtual void OnMessage(const std::vector<KModbusMessage>& msgs)
         {
             std::vector<KModbusMessage>& ms = const_cast<std::vector<KModbusMessage>&>(msgs);
@@ -209,6 +294,11 @@ namespace klib
             }
         }  
 
+        /************************************
+        * Method:    原始数据
+        * Returns:   
+        * Parameter: ev 数据
+        *************************************/
         virtual void OnMessage(const std::vector<KBuffer>& ev)
         {
             printf("%s recv raw message, count:[%d]\n", ev.size());

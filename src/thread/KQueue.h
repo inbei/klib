@@ -6,7 +6,9 @@
 #include "thread/KLockGuard.h"
 #include "thread/KCondVariable.h"
 #include "thread/KAtomic.h"
-
+/**
+队列
+**/
 namespace klib {
     template<typename ElementType>
     class KQueue :private std::deque<ElementType>
@@ -29,7 +31,7 @@ namespace klib {
 			KLockGuard<KMutex> lock(m_queueMutex);
         }
 
-        // 从后面批量追加元素，如果空间不够则返回false，否则放入元素返回true
+        // 从后面批量追加元素，如果空间不够则返回false，否则放入元素返回true //
         template<typename ContainerType>
         bool PushBackBatch(const ContainerType& dat)
         {
@@ -116,6 +118,11 @@ namespace klib {
 			return rc;
 		}
 
+        /************************************
+        * Method:    强制追加元素
+        * Returns:   
+        * Parameter: v
+        *************************************/
         void PushBackForce(const ElementType& v)
         {
 			bool qempty = false;
@@ -165,26 +172,34 @@ namespace klib {
 			return rc;
         }
 
+		/************************************
+		* Method:    获取队列大小
+		* Returns:   
+		*************************************/
 		inline size_t Size() const
         {
 			KLockGuard<KMutex> lock(m_queueMutex);
 			return QueueBase::size();
         }
 
+		/************************************
+		* Method:    清空队列
+		* Returns:   
+		*************************************/
 		inline void Clear()
         {
 			KLockGuard<KMutex> lock(m_queueMutex);
 			QueueBase::clear();
         }
 
-        // 查看指定的元素
+        // 查看指定的元素 //
 		inline ElementType& Peek(size_t i)
         {
 			KLockGuard<KMutex> lock(m_queueMutex);
 			return QueueBase::operator [](i);
         }
 
-        // 查看所有元素
+        // 查看所有元素 //
         template<typename ContainerType>
 		inline void PeekAll(ContainerType& dat)
         {
@@ -193,7 +208,7 @@ namespace klib {
 				ContainerType(QueueBase::begin(), QueueBase::end()).swap(dat);
         }
 
-		// 取出所有元素
+		// 取出所有元素 //
 		template<typename ContainerType>
 		inline void GetAll(ContainerType& dat)
 		{
@@ -205,7 +220,7 @@ namespace klib {
 			}
 		}
 
-		// 取出部分元素
+		// 取出部分元素 //
 		template<typename ContainerType>
 		inline void GetPart(size_t count, ContainerType& dat)
 		{

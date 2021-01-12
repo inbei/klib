@@ -7,12 +7,22 @@
 #include "tcp/KTcpNetwork.h"
 #include "util/KStringUtility.h"
 
+/**
+tcp服务端类
+**/
+
 namespace klib {
 
     template<typename MessageType>
     class KTcpServer :public KTcpNetwork<MessageType>
     {
     public:
+        /************************************
+        * Method:    启动服务端
+        * Returns:   成功返回true失败返回false
+        * Parameter: hosts 格式："1.1.1.1:1234,2.2.2.2:2345"
+        * Parameter: needAuth  是否需要授权
+        *************************************/
         bool Start(const std::string& hosts, bool needAuth = false)
         {
             std::vector<std::string> brokers;
@@ -49,6 +59,10 @@ namespace klib {
         }
 
     protected:
+        /************************************
+        * Method:    获取配置
+        * Returns:   返回配置
+        *************************************/
         virtual std::pair<std::string, uint16_t> GetConfig() const
         {
             if (KTcpNetwork<MessageType>::IsConnected())

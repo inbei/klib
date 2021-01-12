@@ -22,6 +22,10 @@ namespace klib {
                 m_tmtx.Unlock();
         }
 
+        /************************************
+        * Method:    上锁
+        * Returns:   
+        *************************************/
         inline void Acquire() const
         {
 			if (m_acquired)
@@ -30,6 +34,10 @@ namespace klib {
 			m_acquired = true;
         }
 
+        /************************************
+        * Method:    尝试上锁
+        * Returns:   
+        *************************************/
         inline bool TryAcquire() const
         {
 			if (m_acquired)
@@ -38,6 +46,10 @@ namespace klib {
 			return m_acquired;
         }
 
+        /************************************
+        * Method:    解锁
+        * Returns:   
+        *************************************/
         inline void Release() const
         {
 			if (!m_acquired)

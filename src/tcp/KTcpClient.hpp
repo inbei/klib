@@ -4,12 +4,22 @@
 #endif
 #include "util/KStringUtility.h"
 #include "tcp/KTcpNetwork.h"
+/**
+tcp 客户端类
+**/
+
 namespace klib {
 
     template<typename MessageType>
     class KTcpClient :public KTcpNetwork<MessageType>
     {
     public:
+        /************************************
+        * Method:    启动客户端
+        * Returns:   成功返回true否则返回false
+        * Parameter: hosts 格式：1.1.1.1:12345,2.2.2.2:23456
+        * Parameter: needAuth 是否需要授权
+        *************************************/
         bool Start(const std::string& hosts, bool needAuth = false)
         {
             std::vector<std::string> brokers;
@@ -45,12 +55,20 @@ namespace klib {
             return KTcpNetwork<MessageType>::Start(m_it->first, m_it->second, false, needAuth);
         }
 
+        /************************************
+        * Method:    临时断开连接，由于自带重连功能，所以又会连接上
+        * Returns:   
+        *************************************/
         void Disconnect()
         {
             DisconnectConnection(KTcpNetwork<MessageType>::GetSocket());
         }
 
     protected:
+        /************************************
+        * Method:    GetConfig获取配置
+        * Returns:   返回IP和端口
+        *************************************/
         virtual std::pair<std::string, uint16_t> GetConfig() const
         {
             if (KTcpNetwork<MessageType>::IsConnected())

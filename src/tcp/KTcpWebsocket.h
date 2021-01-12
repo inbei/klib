@@ -5,6 +5,9 @@
 #include "util/KSHA1.h"
 #include "util/KEndian.h"
 #include "tcp/KTcpNetwork.h"
+/**
+websocket数据处理类
+**/
 namespace klib
 {
     class KWebsocketMessage :public KTcpMessage
@@ -27,6 +30,10 @@ namespace klib
 
         }
 
+        /************************************
+        * Method:    获取消息体大小
+        * Returns:   
+        *************************************/
         virtual size_t GetPayloadSize() const
         {
             if (plen == 126)
@@ -36,6 +43,11 @@ namespace klib
             else
                 return plen;
         }
+
+        /************************************
+        * Method:    获取消息头大小
+        * Returns:   
+        *************************************/
         virtual size_t GetHeaderSize() const
         {
             if (plen == 126)
@@ -46,6 +58,11 @@ namespace klib
                 return sizeof(uint16_t) + (mask ? sizeof(maskkey) : 0);
 
         }
+
+        /************************************
+        * Method:    判断消息是否有效
+        * Returns:   
+        *************************************/
         virtual bool IsValid()
         {
             return (reserved == 0 && (opcode == opmore
@@ -62,6 +79,11 @@ namespace klib
             plen = 0;
         }
 
+        /************************************
+        * Method:    设置payload大小
+        * Returns:   
+        * Parameter: sz
+        *************************************/
         void SetPayloadSize(size_t sz)
         {
             if (sz < 126)
@@ -78,6 +100,11 @@ namespace klib
             }
         }
 
+        /************************************
+        * Method:    初始化消息
+        * Returns:   
+        * Parameter: msg
+        *************************************/
         void Initialize(const std::string& msg)
         {
             fin = finlast;
@@ -89,6 +116,11 @@ namespace klib
             payload.ApendBuffer(msg.c_str(), msg.size());
         }
 
+        /************************************
+        * Method:    序列化消息
+        * Returns:   
+        * Parameter: result
+        *************************************/
         virtual void Serialize(KBuffer& result)
         {
             size_t psz = payload.GetSize();
@@ -201,27 +233,54 @@ namespace klib
         }
 
     protected:
+        /************************************
+        * Method:    二进制消息触发
+        * Returns:   
+        * Parameter: dat
+        *************************************/
         virtual void OnBinary(const KBuffer& dat)// binary message
         {
 
         }
 
+        /************************************
+        * Method:    文本消息触发
+        * Returns:   
+        * Parameter: dat
+        *************************************/
         virtual void OnText(const std::string& dat) // text message
         {
 
         }
 
+        /************************************
+        * Method:    连接触发
+        * Returns:   
+        * Parameter: mode
+        * Parameter: ipport
+        *************************************/
         virtual void OnConnected(NetworkMode mode, const std::string& ipport)
         {
             KTcpConnection<KWebsocketMessage>::OnConnected(mode, ipport);
         }
 
+        /************************************
+        * Method:    断开触发
+        * Returns:   
+        * Parameter: mode
+        * Parameter: ipport
+        * Parameter: fd
+        *************************************/
         virtual void OnDisconnected(NetworkMode mode, const std::string& ipport, SocketType fd)
         {
             KTcpConnection<KWebsocketMessage>::OnDisconnected(mode, ipport, fd);
             m_partial.Clear();
         }
 
+        /************************************
+        * Method:    请求授权触发
+        * Returns:   
+        *************************************/
         virtual bool OnAuthRequest() const// client
         {
             /*
@@ -243,6 +302,11 @@ namespace klib
             return WriteSocket(GetSocket(), req.c_str(), req.size()) == req.size();
         }
 
+        /************************************
+        * Method:    响应授权触发
+        * Returns:   
+        * Parameter: ev
+        *************************************/
         virtual bool OnAuthResponse(const std::vector<KBuffer>& ev) const
         {
             bool rc = false;
@@ -308,6 +372,11 @@ namespace klib
             return rc;
         }
 
+        /************************************
+        * Method:    新消息触发
+        * Returns:   
+        * Parameter: msgs
+        *************************************/
         virtual void OnMessage(const std::vector<KWebsocketMessage>& msgs)
         {
             std::vector<KWebsocketMessage>& ms = const_cast<std::vector<KWebsocketMessage>&>(msgs);
@@ -319,6 +388,11 @@ namespace klib
             }
         }
 
+        /************************************
+        * Method:    二进制数据触发
+        * Returns:   
+        * Parameter: ev
+        *************************************/
         virtual void OnMessage(const std::vector<KBuffer>& ev)
         {
             printf("%s recv raw message, count:[%d]\n", ev.size());
@@ -326,6 +400,13 @@ namespace klib
         }
 
     private:
+        /************************************
+        * Method:    获取key
+        * Returns:   
+        * Parameter: reqstr
+        * Parameter: keyword
+        * Parameter: wskey
+        *************************************/
         bool GetHandshakeKey(const std::string& reqstr, const std::string& keyword, std::string& wskey) const
         {
             std::istringstream s(reqstr);
@@ -343,6 +424,11 @@ namespace klib
             return !wskey.empty();
         }
 
+        /************************************
+        * Method:    获取响应key
+        * Returns:   
+        * Parameter: wskey
+        *************************************/
         void GetHandshakeResponseKey(std::string& wskey) const
         {
             wskey += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -356,6 +442,12 @@ namespace klib
             wskey = KBase64::Encode(reinterpret_cast<const char*>(msgdigest), 20);
         }
 
+        /************************************
+        * Method:    合并分片消息
+        * Returns:   
+        * Parameter: msg 消息
+        * Parameter: partial 消息片
+        *************************************/
         void MergeMessage(KWebsocketMessage& msg, KWebsocketMessage& partial)
         {
             switch (msg.opcode)
@@ -411,6 +503,12 @@ namespace klib
             }
         }
 
+        /************************************
+        * Method:    追加消息
+        * Returns:   
+        * Parameter: msg 消息
+        * Parameter: partial 消息片
+        *************************************/
         void AppendBuffer(KWebsocketMessage& msg, KWebsocketMessage& partial) const
         {
             partial.payload.ApendBuffer(msg.payload.GetData(), msg.payload.GetSize());

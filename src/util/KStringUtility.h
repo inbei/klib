@@ -5,33 +5,35 @@
 #include <sstream>
 #include <iconv.h>
 #include <stdint.h>
-
+/**
+字符串处理类
+**/
 namespace klib {
     class KStringUtility
     {
     public:
-        // 插入字符串
+        // 插入字符串 //
         static void Insert(const std::string& key, const std::string& is, std::string& src);
-        // 替换字符串
+        // 替换字符串 //
         static void Replace(const std::string& news, const std::string& olds, std::string& src);
-        // 分割字符串，使用字符串delim任意一个字符作为分隔符
+        // 分割字符串，使用字符串delim任意一个字符作为分隔符 //
         template <typename StringContainer>
         static void SplitString(const std::string& src, const std::string& delim, StringContainer& dest, bool reserveempty = false);
-        // 分割字符串，使用整个字符串delim作为分隔符
+        // 分割字符串，使用整个字符串delim作为分隔符 //
         template <typename StringContainer>
         static void SplitString2(const std::string& src, const std::string& delim, StringContainer& dest, bool reserveempty = false);
-        // 合并字符串
+        // 合并字符串 //
         template <typename StringContainer>
         static std::string JoinString(const StringContainer& src, const std::string& delim);
-        // 去掉字符串两边的空白字符
+        // 去掉字符串两边的空白字符 //
         static std::string TrimString(const std::string& s);
-        // 字符串转换成utf8
+        // 字符串转换成utf8 //
         static bool ToUTF8(const std::string& instr, std::string& outstr);
-        // 转换成大写
+        // 转换成大写 //
         static std::string ToUpper(const std::string& str);
-        // 转换成小写
+        // 转换成小写 //
         static std::string ToLower(const std::string& str);
-        // 
+        // 数字转字符串 //
         static std::string DoubleToString(double dval);
         static std::string FloatToString(float fval);
         static std::string Int64ToString(int64_t ival);

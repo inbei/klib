@@ -2,7 +2,9 @@
 #define _MUTEX_HPP_
 
 #include <pthread.h>
-
+/**
+互斥量
+**/
 namespace klib {
     class KCondVariable;
     class KMutex
@@ -12,10 +14,22 @@ namespace klib {
 
         ~KMutex();
 
+        /************************************
+        * Method:    上锁
+        * Returns:   
+        *************************************/
         void Lock() const;
 
+        /************************************
+        * Method:    解锁
+        * Returns:   
+        *************************************/
         void Unlock() const;
 
+        /************************************
+        * Method:    尝试加锁
+        * Returns:   
+        *************************************/
         bool TryLock() const;
 
     private:

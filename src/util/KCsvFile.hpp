@@ -5,10 +5,18 @@
 #include <vector>
 #include <stdio.h>
 #include "util/KStringUtility.h"
+/**
+csv文件解析类
+**/
 namespace klib {
 	class KCsvFile
 	{
 	public:
+		/************************************
+		* Method:    解析csv文件
+		* Returns:   
+		* Parameter: filepath
+		*************************************/
 		bool ParseFile(const std::string& filepath)
 		{
 			FILE* fd = fopen(filepath.c_str(), "r");
@@ -40,6 +48,12 @@ namespace klib {
 			return false;
 		}
 
+		/************************************
+		* Method:    获取第rindex行的数据
+		* Returns:   
+		* Parameter: rindex
+		* Parameter: row
+		*************************************/
 		bool GetRowData(size_t rindex, std::vector<std::string>& row)
 		{
 			if (rindex < m_csvDat.size())
@@ -50,6 +64,10 @@ namespace klib {
 			return false;
 		}
 
+		/************************************
+		* Method:    获取行数
+		* Returns:   
+		*************************************/
 		size_t GetRowCount()
 		{
 			return m_csvDat.size();
@@ -57,6 +75,12 @@ namespace klib {
 
 
 	private:
+		/************************************
+		* Method:    读取一行数据
+		* Returns:   
+		* Parameter: fd
+		* Parameter: line
+		*************************************/
 		bool ReadLine(FILE* fd, std::string& line)
 		{
 			line.clear();

@@ -8,6 +8,9 @@
 
 #include "thread/KMutex.h"
 #include "thread/KLockGuard.h"
+/**
+原子操作类
+**/
 
 namespace klib {
     template<typename VariantType>

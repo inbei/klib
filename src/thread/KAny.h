@@ -19,53 +19,53 @@ namespace klib {
         class ValueHolderBase
         {
         public:
-            // 析构函数
+            // 析构函数 //
             virtual ~ValueHolderBase() {}
-            // 复制函数
+            // 复制函数 //
             virtual ValueHolderBase* Clone() const = 0;
             virtual void Copy(ValueHolderBase* r) = 0;
-            // 获取数据类型函数，默认类型void
+            // 获取数据类型函数，默认类型void //
             virtual const std::type_info& TypeInfo() const = 0;
         };
 
-        // 数据存储类
+        // 数据存储类 //
         template<typename ValueType>
         class ValueHolder : public ValueHolderBase
         {
-        public:
-            // 构造函数
+        public: 
+            // 构造函数 //
             ValueHolder(const ValueType& val) : m_value(val){}
-            // 复制数据
+            // 复制数据 //
             virtual ValueHolderBase* Clone() const { return new ValueHolder<ValueType>(m_value); }
-            // 拷贝同类型数据
+            // 拷贝同类型数据 //
             virtual void Copy(ValueHolderBase* r)
             {
                 ValueHolder<ValueType>* s = dynamic_cast<ValueHolder<ValueType>*>(r);
                 m_value = s->GetValue();
             }
-            // 获取数据类型
+            // 获取数据类型 //
             virtual const std::type_info& TypeInfo() const{ return typeid(ValueType); }
-            // 获取数据
+            // 获取数据 //
             const ValueType& GetValue() { return m_value; }
             void SetValue(const ValueType& v) { m_value = v; }
         private:
             ValueType m_value;
         };
     public:
-        // 默认构造
+        // 默认构造 //
         KAny() :m_dat(NULL) {}
-        // 构造函数
+        // 构造函数 //
         template<typename ValueType>
         KAny(const ValueType& v) :m_dat(new ValueHolder<ValueType>(v)) {}
-        // 拷贝构造
+        // 拷贝构造 //
 		KAny(const KAny& rhs) 
         {
 			if (rhs.m_dat)
 				m_dat = rhs.m_dat->Clone();
 		}
-        // 析构函数
+        // 析构函数 //
         virtual ~KAny(){ Release(); }
-        // 赋值操作符重载
+        // 赋值操作符重载 //
         template<typename ValueType>
 		KAny& operator=(const ValueType& v)
 		{
@@ -81,7 +81,7 @@ namespace klib {
 			}
 			return *this;
 		}
-        // 赋值操作符重载
+        // 赋值操作符重载 //
         KAny& operator=(const KAny& rhs)
         {
 			if (this == &rhs)
@@ -96,14 +96,14 @@ namespace klib {
             }
 			return *this;
         }
-        // 获取数据类型
+        // 获取数据类型 //
         virtual const std::type_info& TypeInfo() const
         {
 			if (!m_dat)
 				return typeid(void);
 			return m_dat->TypeInfo();
         }
-        // 将数据转换为指定类型
+        // 将数据转换为指定类型 //
         template<typename ValueType>
         static const ValueType& AnyCast(const KAny& a)
         {
@@ -118,7 +118,7 @@ namespace klib {
         }
 
     private:
-		// 释放资源
+		// 释放资源 //
         void Release()
         {
 			if (m_dat)

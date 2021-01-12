@@ -9,7 +9,9 @@
 #include "thread/KException.h"
 #include "thread/KError.h"
 #include "thread/KAtomic.h"
-
+/**
+线程类
+**/
 namespace klib {
     class KPthread
     {
@@ -35,6 +37,15 @@ namespace klib {
 			}
         }
 
+        /************************************
+        * Method:    启动线程执行成员函数
+        * Returns:   
+        * Parameter: obj 对象指针
+        * Parameter: rf 函数指针
+        * Parameter: arg 函数参数
+        * Parameter: lf 记录日志的成员函数
+        * Parameter: ret 返回值指针
+        *************************************/
         template<typename ObjectType, typename RetType, typename ArgType>
          int Run(ObjectType* obj, RetType(ObjectType::* rf)(ArgType), ArgType arg, void(ObjectType::* lf)(const std::string&) = NULL, RetType* ret = NULL)
         {
@@ -83,6 +94,14 @@ namespace klib {
             return Success;
         }
 
+        /************************************
+        * Method:    启动线程执行全局函数或静态函数
+        * Returns:   
+        * Parameter: rf 函数指针
+        * Parameter: arg 函数参数
+        * Parameter: lf 记录日志的函数
+        * Parameter: ret 返回值
+        *************************************/
         template<typename RetType, typename ArgType>
         int Run(RetType(*rf)(ArgType), ArgType arg, void(*lf)(const std::string&) = NULL, RetType* ret = NULL)
         {
@@ -124,6 +143,10 @@ namespace klib {
 			return Success;
         }
 
+        /************************************
+        * Method:    等待线程结束
+        * Returns:   
+        *************************************/
         void Join()
         {
             //pthread_cancel(m_tid);
@@ -134,12 +157,20 @@ namespace klib {
                 printf("thread exit success\n");
         }
 
+        /************************************
+        * Method:    线程是否运行中
+        * Returns:   
+        *************************************/
         inline bool IsRunning() const
 		{
 			KLockGuard<KMutex> lock(m_tmtx);
 			return m_running;;
 		}
 
+        /************************************
+        * Method:    获取当前线程ID
+        * Returns:   
+        *************************************/
         static uint32_t GetThreadId()
         {
 #ifdef WIN32
@@ -149,6 +180,11 @@ namespace klib {
 #endif
         }
 
+		/************************************
+		* Method:    获取线程ID
+		* Returns:   
+		* Parameter: pid
+		*************************************/
 		static uint32_t GetThreadId(pthread_t pid)
 		{
 #ifdef WIN32
@@ -158,12 +194,21 @@ namespace klib {
 #endif
 		}
 
+        /************************************
+        * Method:    测试取消点
+        * Returns:   
+        *************************************/
         static void TestCancel()
         {
             pthread_testcancel();
         }
 
     private:
+        /************************************
+        * Method:    执行成员函数
+        * Returns:   
+        * Parameter: arg
+        *************************************/
         template<typename ObjectType, typename RetType, typename ArgType>
         static void* Work(void* arg)
         {
@@ -203,6 +248,11 @@ namespace klib {
             return 0;
         }
 
+        /************************************
+        * Method:    执行全局或静态函数
+        * Returns:   
+        * Parameter: arg
+        *************************************/
         template<typename RetType, typename ArgType>
         static void* Work(void* arg)
         {
@@ -241,6 +291,11 @@ namespace klib {
             return 0;
         }
 
+        /************************************
+        * Method:    获取错误信息
+        * Returns:   
+        * Parameter: rc
+        *************************************/
         const char* GetErrStr(int rc) const
         {
             switch (rc)

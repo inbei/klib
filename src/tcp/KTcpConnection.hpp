@@ -36,6 +36,11 @@
 #include "thread/KMutex.h"
 #include "thread/KEventObject.h"
 #include "util/KTime.h"
+
+/**
+tcp数据处理类
+**/
+
 namespace klib {
 
 #if defined(WIN32)
@@ -66,25 +71,64 @@ namespace klib {
 #define BlockSize 40960
 #define MaxEvent 40
 
+    /**
+    tcp 消息类
+    **/
     class KTcpMessage// rewrite this class
     {
     public:
+        /************************************
+        * Method:    获取消息payload大小
+        * Returns:   返回大小
+        *************************************/
         virtual size_t GetPayloadSize() const { return 0; }
+        /************************************
+        * Method:    获取消息头大小
+        * Returns:   返回大小
+        *************************************/
         virtual size_t GetHeaderSize() const { return 0; }
+        /************************************
+        * Method:    判断消息是否有效
+        * Returns:   有效返回true否则返回false
+        *************************************/
         virtual bool IsValid() { return false; }
+        /************************************
+        * Method:    清理消息缓存
+        * Returns:   
+        *************************************/
         virtual void Clear() {  }
-
+        /************************************
+        * Method:    序列化消息
+        * Returns:   
+        * Parameter: result 序列化结果
+        *************************************/
         virtual void Serialize(KBuffer& result) {}
     };
 
+    // 协议错误、成功、头短、payload太短 //
     enum { ProtocolError = 0, ParseSuccess = 1, ShortHeader = 2, ShortPayload = 3 };
 
+    /************************************
+    * Method:    解析数据包
+    * Returns:   解析返回协议错误、成功、头部太短和payload太短
+    * Parameter: dat 数据包
+    * Parameter: msg 消息
+    * Parameter: left 数据包剩余数据
+    *************************************/
     template<typename MessageType>
     int ParsePacket(const KBuffer& dat, MessageType& msg, KBuffer& left)
     {
         return ProtocolError;
     }
 
+    /************************************
+    * Method:    解析数据包
+    * Returns:   
+    * Parameter: dats 数据包
+    * Parameter: msgs 消息
+    * Parameter: remain 剩余数据
+    * Parameter: autoRelease 自动释放
+    *************************************/
     template<typename MessageType>
     void Parse(const std::vector<KBuffer>& dats, std::vector<MessageType>& msgs, KBuffer& remain, bool autoRelease = true)
     {
@@ -175,10 +219,16 @@ namespace klib {
         }
     }
 
+    /**
+    授权信息
+    **/
     struct Authorization
     {
+        // 是否需要授权 // 
         bool need;
+        // 发送授权是否成功 //
         bool authSent;
+        // 接受授权是否成功 //
         bool authRecv;
 
         Authorization(bool need = false)
@@ -189,29 +239,44 @@ namespace klib {
         inline void Reset() { authSent = false; authRecv = false; }
     };
 
+    /**
+    socket 事件
+    **/
     struct SocketEvent
     {
         enum EventType
         {
+            // 未知、接受数据、发送数据 //
             SeUndefined, SeRecv, SeSent
         };
 
         SocketType fd;
         EventType ev;
+        // 二进制数据 //
         std::vector<KBuffer> dat1;
+        // 字符串数据 //
         std::string dat2;
     };
 
     enum NetworkState
     {
+        // 连接上，断开，就绪 //
         NsUndefined, NsPeerConnected, NsDisconnected, NsReadyToWork
     };
 
     enum NetworkMode
     {
+        // 未知、客户端、服务端 //
         NmUndefined, NmClient, NmServer
     };
 
+    /************************************
+    * Method:    写socket
+    * Returns:   
+    * Parameter: fd socket
+    * Parameter: dat 数据缓存
+    * Parameter: sz 数据长度
+    *************************************/
     static int WriteSocket(SocketType fd, const char* dat, size_t sz)
     {
         if (sz < 1 || dat == NULL || fd < 1)
@@ -243,6 +308,12 @@ namespace klib {
         return sent;
     }
 
+    /************************************
+    * Method:    读socket
+    * Returns:   返回读取字节数
+    * Parameter: fd socket
+    * Parameter: dat 数据
+    *************************************/
     static int ReadSocket(SocketType fd, std::vector<KBuffer>& dat)
     {
         int bytes = 0;
@@ -297,6 +368,14 @@ namespace klib {
             
         }
 
+        /************************************
+        * Method:    启动
+        * Returns:   成功返回true失败false
+        * Parameter: mode 模式
+        * Parameter: ipport IP和端口
+        * Parameter: fd socket
+        * Parameter: needAuth 是否需要授权
+        *************************************/
         bool Start(NetworkMode mode, const std::string& ipport, SocketType fd, bool needAuth = false)
         {
             m_mode = mode;
@@ -309,6 +388,12 @@ namespace klib {
             return false;
         }
 
+        /************************************
+        * Method:    连接
+        * Returns:   
+        * Parameter: ipport IP和端口
+        * Parameter: fd socket
+        *************************************/
         void Connect(const std::string& ipport, SocketType fd)
         {
             if (GetMode() == NmServer)
@@ -318,11 +403,20 @@ namespace klib {
             OnConnected(GetMode(), ipport);
         }
 
+        /************************************
+        * Method:    断开连接
+        * Returns:   
+        * Parameter: fd socket
+        *************************************/
         void Disconnect(SocketType fd)
         {
             OnDisconnected(GetMode(), m_ipport, fd);
         }
 
+        /************************************
+        * Method:    是否连接上
+        * Returns:   是返回true否则返回false
+        *************************************/
         inline bool IsConnected() const
         {
             switch (GetState())
@@ -335,23 +429,59 @@ namespace klib {
             }
         }
 
+        /************************************
+        * Method:    是否断开
+        * Returns:   是返回true否则返回false
+        *************************************/
         inline bool IsDisconnected() const { return m_state == NsDisconnected; }
 
+        /************************************
+        * Method:    获取socket
+        * Returns:   socket
+        *************************************/
         inline SocketType GetSocket() const { return m_fd; }
 
+        /************************************
+        * Method:    获取IP和端口
+        * Returns:   返回IP和端口
+        *************************************/
         inline  const std::string& GetAddress() const { return m_ipport; }
         
     protected:
+        /************************************
+        * Method:    获取模式
+        * Returns:   返回模式
+        *************************************/
         inline NetworkMode GetMode() const { return static_cast<NetworkMode>(int32_t(m_mode)); }
+        /************************************
+        * Method:    获取状态
+        * Returns:   返回状态
+        *************************************/
         inline NetworkState GetState() const { return static_cast<NetworkState>(int32_t(m_state)); }
+        /************************************
+        * Method:    设置状态
+        * Returns:   
+        * Parameter: s 状态
+        *************************************/
         inline void SetState(NetworkState s) const { m_state = s; }
-
+        /************************************
+        * Method:    连接触发操作
+        * Returns:   
+        * Parameter: mode 模式
+        * Parameter: ipport IP和端口
+        *************************************/
         virtual void OnConnected(NetworkMode mode, const std::string& ipport)
         {
             SetState(NsPeerConnected);
             printf("%s connected\n", ipport.c_str());
         }
-
+        /************************************
+        * Method:    断开触发操作
+        * Returns:   
+        * Parameter: mode 模式
+        * Parameter: ipport IP和端口
+        * Parameter: fd socket
+        *************************************/
         virtual void OnDisconnected(NetworkMode mode, const std::string& ipport, SocketType fd)
         {
             m_auth.Reset();
@@ -369,26 +499,48 @@ namespace klib {
             }
             printf("%s disconnected\n", ipport.c_str());
         }
-
+        /************************************
+        * Method:    新消息触发操作
+        * Returns:   
+        * Parameter: msgs 新消息
+        *************************************/
         virtual void OnMessage(const std::vector<MessageType>& msgs)
         {
             printf("%s recv struct message, count:[%d]\n", msgs.size());
         }
+        /************************************
+        * Method:    二进制数据触发操作
+        * Returns:   
+        * Parameter: ev 数据
+        *************************************/
         virtual void OnMessage(const std::vector<KBuffer>& ev)
         {
             printf("%s recv raw message, count:[%d]\n", ev.size());
         }
-
+        /************************************
+        * Method:    触发授权请求
+        * Returns:   授权成功返回true否则返回false
+        *************************************/
         virtual bool OnAuthRequest() const
         {
             return !m_auth.need;
         }
+        /************************************
+        * Method:    触发授权响应
+        * Returns:   授权成功返回true否则返回false
+        * Parameter: ev 授权请求数据
+        *************************************/
         virtual bool OnAuthResponse(const std::vector<KBuffer>& ev) const
         {
             return !m_auth.need;
         }
 
     private:
+        /************************************
+        * Method:    处理事件
+        * Returns:   
+        * Parameter: ev 事件
+        *************************************/
         virtual void ProcessEvent(const SocketEvent& ev)
         {
             std::vector<KBuffer>& bufs = const_cast<std::vector<KBuffer> &>(ev.dat1);
@@ -462,7 +614,12 @@ namespace klib {
                 m_poller->Release(bufs);
             }
         }
-
+        /************************************
+        * Method:    解析数据
+        * Returns:   
+        * Parameter: fd socket
+        * Parameter: bufs 数据
+        *************************************/
         void ParseData(SocketType fd, std::vector<KBuffer>& bufs)
         {
             if (m_auth.need && !m_auth.authRecv)
@@ -488,15 +645,19 @@ namespace klib {
         }
 
     private:
+        // IP端口 //
         std::string m_ipport;
+        // socket //
         SocketType m_fd;
-
+        // 模式 //
         AtomicInteger<int32_t> m_mode;
-
+        // 剩余数据 //
         KBuffer m_remain;
+        // 状态 //
         mutable AtomicInteger<int32_t> m_state;
+        // 授权 //
         Authorization m_auth;
-
+        // 连接 //
         KTcpNetwork<MessageType>* m_poller;
     };
 };

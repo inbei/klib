@@ -34,6 +34,10 @@ namespace klib {
 				s_eobjmap.erase(it);
 		}
 
+		/************************************
+		* Method:    启动
+		* Returns:   
+		*************************************/
 		virtual bool Start()
 		{
 			KLockGuard<KMutex> lock(m_wkMtx);
@@ -41,23 +45,39 @@ namespace klib {
 				== KPthread::Success));
 		}
 
+		/************************************
+		* Method:    停止
+		* Returns:   
+		*************************************/
 		virtual void Stop()
 		{
 			KLockGuard<KMutex> lock(m_wkMtx);
 			m_running = false;
 		}
 
+		/************************************
+		* Method:    等待停止
+		* Returns:   
+		*************************************/
 		virtual void WaitForStop()
 		{
 			m_eventThread.Join();
 		}
 
+		/************************************
+		* Method:    是否运行中
+		* Returns:   
+		*************************************/
 		inline bool IsRunning() const
 		{
 			KLockGuard<KMutex> lock(m_wkMtx);
 			return m_running;
 		}
 
+		/************************************
+		* Method:    是否就绪
+		* Returns:   
+		*************************************/
 		virtual bool IsReady() const { return true; }
 
 		inline uint32_t GetID() const
@@ -96,31 +116,57 @@ namespace klib {
 
 		}
 
+		/************************************
+		* Method:    取出所有数据
+		* Returns:   
+		* Parameter: events
+		*************************************/
 		inline void Flush(typename std::vector<EventType>& events)
 		{
 			m_eventQueue.GetAll(events);
 		}
 
+        /************************************
+        * Method:    清空数据
+        * Returns:   
+        *************************************/
         inline void Clear()
         {
             m_eventQueue.Clear();
         }
 
+        /************************************
+        * Method:    是否是空的
+        * Returns:   
+        *************************************/
         inline bool IsEmpty() const
         {
             return m_eventQueue.IsEmpty();
         }
 
+		/************************************
+		* Method:    是否满了
+		* Returns:   
+		*************************************/
 		inline bool IsFull() const
 		{
 			return m_eventQueue.IsFull();
 		}
 
+		/************************************
+		* Method:    队列大小
+		* Returns:   
+		*************************************/
 		inline size_t Size() const
 		{
 			return m_eventQueue.Size();
 		}
 
+		/************************************
+		* Method:    消息入队
+		* Returns:   
+		* Parameter: ev 事件
+		*************************************/
 		virtual bool Post(const EventType& ev)
 		{
 			if(IsRunning())
@@ -128,12 +174,23 @@ namespace klib {
 			return false;
 		}
 
+		/************************************
+		* Method:    强势插入队列
+		* Returns:   
+		* Parameter: ev 事件
+		*************************************/
 		virtual void PostForce(const EventType& ev)
 		{
 			if(IsRunning())
 				m_eventQueue.PushBackForce(ev);
 		}
 
+        /************************************
+        * Method:    消息入队
+        * Returns:   
+        * Parameter: id
+        * Parameter: ev 事件
+        *************************************/
         static bool Post(uint32_t id, const EventType& ev)
         {
 			KLockGuard<KMutex> lock(s_eobjmtx);
@@ -146,6 +203,12 @@ namespace klib {
 			return false;
         }
 
+        /************************************
+        * Method:    强势插入队列
+        * Returns:   
+        * Parameter: id
+        * Parameter: ev 事件
+        *************************************/
         static void PostForce(uint32_t id, const EventType& ev)
         {
 			KLockGuard<KMutex> lock(s_eobjmtx);

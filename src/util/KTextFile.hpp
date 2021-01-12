@@ -24,7 +24,9 @@
 #include "thread/KAny.h"
 #include "thread/KEventObject.h"
 #include "util/KTime.h"
-
+/**
+日志文件类
+**/
 namespace klib {
 #define HexBlockSize 48
 #define HexBufferSize (HexBlockSize * 3 + 2)
@@ -91,6 +93,13 @@ namespace klib {
             Close();
         }
 
+        /************************************
+        * Method:    初始化
+        * Returns:   
+        * Parameter: path 路径
+        * Parameter: filename 文件名
+        * Parameter: timestamp 是否记录时间
+        *************************************/
         virtual void Initialize(const std::string& path, const std::string& filename, bool timestamp = false)
         {
             m_timestamp = timestamp;
@@ -105,6 +114,10 @@ namespace klib {
             BackUp(date, dateStr.substr(0, dateStr.size() - 3), GetMinute(date));
         }
 
+        /************************************
+        * Method:    关闭文件
+        * Returns:   
+        *************************************/
         virtual void Close()
         {
             if (m_file)
@@ -113,6 +126,10 @@ namespace klib {
             }
         }
 
+        /************************************
+        * Method:    
+        * Returns:   
+        *************************************/
         void Flush()
         {
             if (m_file)
@@ -121,11 +138,21 @@ namespace klib {
             }
         }
 
+        /************************************
+        * Method:    获取文件路径
+        * Returns:   
+        *************************************/
         std::string GetFilePath() const
         {
             return m_filePath;
         }
 
+        /************************************
+        * Method:    写入数据
+        * Returns:   
+        * Parameter: format
+        * Parameter: 
+        *************************************/
         size_t WriteString(const char* format, ...)
         {
             if (!(format && strlen(format) > 0))
@@ -151,6 +178,12 @@ namespace klib {
             WriteFile(m_file, format, dateStr, date, m_timestamp);
         }
 
+        /************************************
+        * Method:    按16进制写入数据
+        * Returns:   
+        * Parameter: dat
+        * Parameter: sz
+        *************************************/
         size_t WriteHexString(const char* dat, size_t sz)
         {
             std::string hex;
@@ -158,6 +191,11 @@ namespace klib {
             return WriteString("%s", hex.c_str());
         }
 
+        /************************************
+        * Method:    删除文件
+        * Returns:   
+        * Parameter: pathName
+        *************************************/
         static bool Remove(const std::string& pathName)
         {
             if (IsExist(pathName))
@@ -167,6 +205,12 @@ namespace klib {
             return true;
         }
 
+        /************************************
+        * Method:    读取文件所有内容
+        * Returns:   
+        * Parameter: fp
+        * Parameter: buf
+        *************************************/
         static bool ReadAll(const std::string& fp, KBuffer& buf)
         {
             FILE* f = fopen(fp.c_str(), "r");
@@ -186,6 +230,11 @@ namespace klib {
             return false;
         }
 
+        /************************************
+        * Method:    获取磁盘剩余容量比例
+        * Returns:   
+        * Parameter: path
+        *************************************/
         static float GetDiskFreeRatio(const std::string& path)
         {
             double dratio = -1;
@@ -206,6 +255,11 @@ namespace klib {
             return float(dratio * 100);
         }
 
+        /************************************
+        * Method:    磁盘是否满
+        * Returns:   
+        * Parameter: path
+        *************************************/
         static bool IsDiskFull(const std::string& path)
         {
             if (100 - GetDiskFreeRatio(path) < 0.1)
@@ -215,6 +269,11 @@ namespace klib {
             return false;
         }
 
+        /************************************
+        * Method:    路径是否存在
+        * Returns:   
+        * Parameter: path
+        *************************************/
         static bool IsExist(const std::string& path)
         {
 #ifdef WIN32
@@ -224,6 +283,11 @@ namespace klib {
 #endif
         }
 
+        /************************************
+        * Method:    执行shell命令
+        * Returns:   
+        * Parameter: cmd
+        *************************************/
         static bool Exec(const std::string& cmd)
         {
 #ifdef WIN32
@@ -243,6 +307,11 @@ namespace klib {
             return false;
         }
 
+        /************************************
+        * Method:    创建目录
+        * Returns:   
+        * Parameter: path
+        *************************************/
         static bool Mkdir(const std::string& path)
         {
             if (IsExist(path))
@@ -265,6 +334,14 @@ namespace klib {
             return false;
         }
 
+        /************************************
+        * Method:    转换成16进制
+        * Returns:   
+        * Parameter: dat
+        * Parameter: sz
+        * Parameter: dst
+        * Parameter: hex
+        *************************************/
         static void ToHexString(const char* dat, size_t sz, char* dst, std::string& hex)
         {
             hex.clear();
@@ -290,6 +367,13 @@ namespace klib {
             }
         }
 
+        /************************************
+        * Method:    获取文件basename
+        * Returns:   
+        * Parameter: name
+        * Parameter: suffix
+        * Parameter: filename
+        *************************************/
         static void GetFileBaseName(const std::string& name, std::string& suffix, std::string& filename)
         {
             size_t pos = name.find_last_of('.');
@@ -305,6 +389,11 @@ namespace klib {
         }
 
     protected:
+        /************************************
+        * Method:    打开文件
+        * Returns:   
+        * Parameter: mode
+        *************************************/
         virtual bool Open(const char* mode)
         {
             if (m_seedName.empty())
@@ -326,6 +415,10 @@ namespace klib {
             return true;
         }
 
+        /************************************
+        * Method:  获取文件大小  
+        * Returns:   
+        *************************************/
         size_t Size()
         {
             if (m_file)
@@ -340,6 +433,13 @@ namespace klib {
             return 0;
         }
 
+        /************************************
+        * Method:    备份文件
+        * Returns:   
+        * Parameter: date
+        * Parameter: dateStr
+        * Parameter: minute
+        *************************************/
         void BackUp(const DateTime& date, const std::string& dateStr, uint16_t minute)
         {
             std::string suffix, baseName;
@@ -365,6 +465,12 @@ namespace klib {
             m_filePath = m_path + PathSeparator + m_currentName;
         }
 
+        /************************************
+        * Method:    判断是否需要备份
+        * Returns:   
+        * Parameter: dateStr
+        * Parameter: date
+        *************************************/
         void CheckBackUp(std::string& dateStr, DateTime& date)
         {
             KTime::NowDateTime("yyyymmddhhnnssccc", dateStr, date);
@@ -375,11 +481,20 @@ namespace klib {
             }
         }
 
+        /************************************
+        * Method:    获取当前分钟
+        * Returns:   
+        * Parameter: date
+        *************************************/
         inline uint16_t GetMinute(const DateTime& date)
         {
             return (date.minute / m_duration * m_duration);
         }
 
+        /************************************
+        * Method:    关闭文件
+        * Returns:   
+        *************************************/
         void CloseFile()
         {
             fclose(m_file);
@@ -508,11 +623,19 @@ namespace klib {
 
         void Close()
         {
-            // 等待消息处理完
-            while (!KEventObject<FileData>::IsEmpty())
-                KTime::MSleep(5);
             KEventObject<FileData>::Stop();
             KEventObject<FileData>::WaitForStop();
+            // 清理 //
+            std::vector<FileData> dats;
+            KEventObject<FileData>::Flush(dats);
+            std::vector<FileData>::iterator it = dats.begin();
+            while (it != dats.end())
+            {
+                if (it->rdat)
+                    free(it->rdat);
+                it->bdat.Release();
+                ++it;
+            }
             m_file.Close();
         }
 

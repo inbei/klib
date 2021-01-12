@@ -20,7 +20,9 @@
 #include <sstream>
 #include <set>
 #include <algorithm>
-
+/**
+redis客户端类
+**/
 namespace thirdparty {
     using namespace klib;
 #define  RedisBatchSize 1000
@@ -93,36 +95,122 @@ namespace thirdparty {
 
         virtual ~KRedisClient();
 
+        /************************************
+        * Method:   初始化redis 
+        * Returns:   
+        * Parameter: confs
+        *************************************/
         void Initialize(const std::vector<RedisConfig>& confs);
 
+        /************************************
+        * Method:    获取当前连接的IP和端口
+        * Returns:   
+        *************************************/
         const RedisConfig& GetCurrentConf() const { return m_currentConf; }
 
+        /************************************
+        * Method:    检查连接状态，非连接状态会尝试连接times次数
+        * Returns:   
+        * Parameter: times 尝试次数
+        *************************************/
         bool CheckConnection(uint16_t times = 0);
 
+        /************************************
+        * Method:    登录
+        * Returns:   
+        *************************************/
         bool Auth();
 
+        /************************************
+        * Method:    切换数据库
+        * Returns:   
+        * Parameter: index
+        *************************************/
         bool Select(uint16_t index);
 
+        /************************************
+        * Method:    清空redis
+        * Returns:   
+        *************************************/
         bool Flushdb();
 
+        /************************************
+        * Method:    批量删除
+        * Returns:   
+        * Parameter: pattern
+        *************************************/
         bool Remove(const std::string& pattern);
 
+        /************************************
+        * Method:    批量删除
+        * Returns:   
+        * Parameter: kys
+        *************************************/
         int Remove(const std::vector<std::string>& kys);
 
+        /************************************
+        * Method:    集合添加元素
+        * Returns:   
+        * Parameter: key
+        * Parameter: elements
+        *************************************/
         bool Sadd(const std::string& key, const std::set<std::string>& elements);
 
+        /************************************
+        * Method:    获取集合中的元素
+        * Returns:   
+        * Parameter: key 集合名称
+        * Parameter: vals 元素
+        *************************************/
         bool Smembers(const std::string& key, std::vector<std::string>& vals);
 
+        /************************************
+        * Method:    管道执行
+        * Returns:   
+        * Parameter: cmds
+        * Parameter: replies
+        *************************************/
         bool PipelineCmd(const std::vector<std::string>& cmds, std::vector<redisReply*>& replies);
 
+        /************************************
+        * Method:    管道执行
+        * Returns:   
+        * Parameter: cmds
+        * Parameter: replies
+        *************************************/
         bool PipelineCmd(const std::vector<RedisArgvCmd>& cmds, std::vector<redisReply*>& replies);
 
+        /************************************
+        * Method:    批量写入key,value
+        * Returns:   
+        * Parameter: std::map<std::string
+        * Parameter: keyvals
+        *************************************/
         bool Mset(const std::map<std::string, std::string>& keyvals);
 
+        /************************************
+        * Method:    批量获取key
+        * Returns:   
+        * Parameter: kys
+        * Parameter: vals
+        *************************************/
         bool Mget(const std::vector<std::string>& kys, std::vector<std::string>& vals);
 
+        /************************************
+        * Method:    批量写入hash字段
+        * Returns:   
+        * Parameter: key
+        * Parameter: fieldValues
+        *************************************/
         bool Hmset(const std::string& key, const std::map<std::string, std::string>& fieldValues);
 
+        /************************************
+        * Method:    批量获取hash字段
+        * Returns:   
+        * Parameter: key
+        * Parameter: fields
+        * Parameter: values
+        *************************************/
         bool Hmget(const std::string& key, std::vector<std::string>& fields, std::vector<std::string>& values);
         /*
         判断当前连接的redis是否是master

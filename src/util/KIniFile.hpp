@@ -6,12 +6,19 @@
 #include <map>
 #include <vector>
 #include "util/KStringUtility.h"
-
+/**
+INI文件解析类
+**/
 namespace klib
 {
     class KIniFile
     {
     public:
+        /************************************
+        * Method:    解析INI文件
+        * Returns:   
+        * Parameter: filepath
+        *************************************/
         bool ParseFile(const std::string& filepath)
         {
             FILE* fd = fopen(filepath.c_str(), "r");
@@ -55,6 +62,13 @@ namespace klib
             return false;
         }
 
+        /************************************
+        * Method:    根据分组和key获取值
+        * Returns:   
+        * Parameter: group
+        * Parameter: key
+        * Parameter: val
+        *************************************/
         bool GetValue(const std::string& group, const std::string& key, std::string& val)
         {
             std::map<std::string, std::map<std::string, std::string> >::iterator it = m_iniDat.find(group);
@@ -70,6 +84,10 @@ namespace klib
             return false;
         }
 
+        /************************************
+        * Method:    获取全部数据
+        * Returns:   
+        *************************************/
         const std::map<std::string, std::map<std::string, std::string> >& GetData() const { return m_iniDat; }
 
 

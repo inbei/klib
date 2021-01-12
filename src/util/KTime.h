@@ -11,7 +11,9 @@
 #include <unistd.h>
 #endif // WIN32
 #include <stdint.h>
-
+/**
+时间类
+**/
 namespace klib {
     struct DateTime
     {
@@ -27,7 +29,7 @@ namespace klib {
     class KTime
     {
     public:
-        // 获取当前时间
+        // 获取当前时间 //
         static bool NowDateTime(DateTime& datetime);
         static bool NowDateTime(const std::string& fmt, std::string& datetime, DateTime& dt);
         /*
@@ -40,19 +42,19 @@ namespace klib {
         * ccc millisecond
         */
         static bool NowDateTime(const std::string& fmt, std::string& datetime);
-        // 格式化时间
+        // 格式化时间  yyyy-mm-dd hh:nn:ss.ccc //
         static std::string FormatDateTime(const std::string &timeString);
-        // 获取当前时间毫秒数
+        // 获取当前时间毫秒数 //
         static void NowMillisecond(uint64_t& millisec);
-        // 获取当前时间微秒数
+        // 获取当前时间微秒数 //
         static void NowMicrosecond(uint64_t& microsec);
-        // 获取当前时间秒数
+        // 获取当前时间秒数 // 
         static void NowSecond(time_t& seconds);
-        // 获取当前timespec时间
+        // 获取当前timespec时间 //
         static void NowTime(timespec& abstime);
-        // 获取当前时间
+        // 获取当前时间 //
         static void GetTime(timespec& abstime, const size_t& millisec);
-        // 睡眠millisec毫秒
+        // 睡眠millisec毫秒 //
         static void MSleep(int millisec);
     private:
         static void GetDateTimeElement(const std::string& fmt, const char* keyword,

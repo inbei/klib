@@ -4,6 +4,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+/**
+缓存类
+**/
 namespace klib {
     class KBuffer
     {
@@ -14,28 +17,28 @@ namespace klib {
 
         ~KBuffer();
 
-        // 重置缓存数据
+        // 重置缓存数据 //
         void Reset();
 
-        // 释放内存
+        // 释放内存 //
         void Release();
 
-        // 将数据追加到缓存最后面
+        // 将数据追加到缓存最后面 //
         bool ApendBuffer(const char* d, size_t sz);
 
-        // 将数据追加到缓存最前面
+        // 将数据追加到缓存最前面 //
         bool PrependBuffer(const char* d, size_t sz);
 
-        // 缓存最大容量
+        // 缓存最大容量 //
         size_t Capacity() const;
 
-        // 获取缓存数据的指针
+        // 获取缓存数据的指针 //
         char* GetData() const;
 
-        // 获取缓存数据大小
+        // 获取缓存数据大小 //
         size_t GetSize() const;
 
-        // 设置缓存数据大小
+        // 设置缓存数据大小 //
         void SetSize(size_t sz);
 
     private:

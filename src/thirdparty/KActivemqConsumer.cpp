@@ -167,7 +167,7 @@ namespace thirdparty {
         const TextMessage* tmsg = dynamic_cast<const TextMessage*>(msg);
         if (tmsg != NULL)
             rc = OnText(tmsg);
-        else// 非法消息
+        else// 闈炴硶娑堟伅
             printf("<%s> Not text message.\n", __FUNCTION__);
 
         if (rc)

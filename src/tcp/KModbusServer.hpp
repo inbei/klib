@@ -7,11 +7,21 @@
 #include "tcp/KTcpServer.hpp"
 #include "tcp/KTcpModbus.h"
 
+/**
+modbus 服务端类
+**/
+
 namespace klib
 {
     class KModbusServer :public KTcpServer<KModbusMessage>
     {
     public:
+        /************************************
+        * Method:    发送数据给客户端
+        * Returns:   成功返回true失败false
+        * Parameter: fd socket ID
+        * Parameter: msg 数据
+        *************************************/
         bool Send(SocketType fd, const KBuffer& msg)
         {
             KModbusMessage wmsg(0xff, 0x04);
@@ -24,6 +34,12 @@ namespace klib
         }
 
     protected:
+        /************************************
+        * Method:    创建新连接
+        * Returns:   返回新连接
+        * Parameter: fd socket ID
+        * Parameter: ipport IP端口
+        *************************************/
         virtual KTcpConnection<KModbusMessage>* NewConnection(SocketType fd, const std::string& ipport)
         {
             return new KTcpModbus(this);

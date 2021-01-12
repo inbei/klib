@@ -1,3 +1,6 @@
+/*
+tcp 连接操作类，包括连接绑定轮询读数据
+*/
 #ifndef _KTCPBASE_HPP_
 #define _KTCPBASE_HPP_
 
@@ -7,6 +10,10 @@ namespace klib {
     class KTcpNetwork: public KEventObject<SocketType>
     {
     public:
+        /************************************
+        * Method:    构造函数
+        * Returns:   
+        *************************************/
         KTcpNetwork()
             :KEventObject<SocketType>("Poll thread", 50),m_connected(false), 
             m_isServer(false),m_needAuth(false),m_maxClient(50)
@@ -20,6 +27,11 @@ namespace klib {
             m_pfd = epoll_create1(0);
 #endif
         }
+
+        /************************************
+        * Method:    析构函数
+        * Returns:   
+        *************************************/
         virtual ~KTcpNetwork()
         {
 #if defined(WIN32)
@@ -31,6 +43,11 @@ namespace klib {
 #endif
         }
 
+        /************************************
+        * Method:    释放内存
+        * Returns:   
+        * Parameter: bufs 待释放的内存
+        *************************************/
         static  void Release(std::vector<KBuffer>& bufs)
         {
             std::vector<KBuffer>::iterator it = bufs.begin();
@@ -42,10 +59,27 @@ namespace klib {
             bufs.clear();
         }
 
+        /************************************
+        * Method:    判断是否连接上
+        * Returns:   连上返回true否则返回false
+        *************************************/
         inline bool IsConnected() const { return m_connected; }
 
+        /************************************
+        * Method:    设置最大连接数
+        * Returns:   
+        * Parameter: mc 连接个数
+        *************************************/
         inline void SetMaxClient(uint16_t mc) { m_maxClient = mc; }
         
+        /************************************
+        * Method:    启动
+        * Returns:   成功返回true失败返回false
+        * Parameter: ip 连接IP
+        * Parameter: port 连接端口
+        * Parameter: isServer 是否是服务器
+        * Parameter: needAuth 是否需要授权
+        *************************************/
         virtual bool Start(const std::string& ip, int32_t port, bool isServer = true, bool needAuth = false)
         {
             m_ip = ip;
@@ -60,6 +94,11 @@ namespace klib {
             return false;
         }
 
+        /************************************
+        * Method:    发送数据给自己
+        * Returns:   发送成功返回true失败返回false
+        * Parameter: bufs 待发送的数据
+        *************************************/
         bool SendDataToSelf(const std::vector<KBuffer>& bufs)
         {
             if (m_isServer)
@@ -67,6 +106,13 @@ namespace klib {
             return SendDataToConnection(m_fd, SocketEvent::SeSent, bufs);
         }
 
+        /************************************
+        * Method:    发送数据给客户端
+        * Returns:   发送成功返回true失败返回false
+        * Parameter: fd 客户端ID
+        * Parameter: et 事件类型
+        * Parameter: bufs 发送的数据
+        *************************************/
         bool SendDataToConnection(SocketType fd, SocketEvent::EventType et,const std::vector<KBuffer>& bufs)
         {
             KLockGuard<KMutex> lock(m_connMtx);
@@ -89,8 +135,17 @@ namespace klib {
             return false;
         }
 
+        /************************************
+        * Method:    获取自己的socket ID
+        * Returns:   返回socket ID
+        *************************************/
         inline SocketType GetSocket() const { return m_fd; }
         
+        /************************************
+        * Method:    获取连接IP
+        * Returns:   返回IP
+        * Parameter: fd 客户端ID
+        *************************************/
         const std::string& GetConnectionInfo(SocketType fd)
         {
             KLockGuard<KMutex> lock(m_connMtx);
@@ -100,15 +155,30 @@ namespace klib {
             return std::string();
         }
     protected:        
+        /************************************
+        * Method:    创建连接
+        * Returns:   返回连接对象
+        * Parameter: fd 客户端ID
+        * Parameter: ipport 客户端连接IP和端口
+        *************************************/
         virtual KTcpConnection<MessageType>* NewConnection(SocketType fd, const std::string& ipport)
         {
             return new KTcpConnection<MessageType>(this);
         }
 
+        /************************************
+        * Method:    获取配置
+        * Returns:   返回配置IP和端口
+        *************************************/
         virtual std::pair<std::string, uint16_t> GetConfig() const {
             return std::pair<std::string, uint16_t>(m_ip, m_port);
         }
 
+        /************************************
+        * Method:    端口连接并清理资源
+        * Returns:   
+        * Parameter: fd 客户端ID
+        *************************************/
         void DisconnectConnection(SocketType fd)
         {
             KLockGuard<KMutex> lock(m_connMtx);
@@ -121,6 +191,11 @@ namespace klib {
         }
 
     private:
+        /************************************
+        * Method:    定时轮询或者重连
+        * Returns:   
+        * Parameter: ev
+        *************************************/
         virtual void ProcessEvent(const SocketType& ev)
         {
             if (m_isServer)
@@ -165,6 +240,12 @@ namespace klib {
             PostForce(0);
         }
 
+        /************************************
+        * Method:    根据客户端ID、IP和端口创建连接
+        * Returns:   
+        * Parameter: fd 客户端ID
+        * Parameter: ipport 客户端IP端口
+        *************************************/
         void CreateConnection(SocketType fd, const std::string& ipport)
         {
             KLockGuard<KMutex> lock(m_connMtx);
@@ -211,6 +292,10 @@ namespace klib {
             }
         }        
         
+        /************************************
+        * Method:    轮询socket ID
+        * Returns:   
+        *************************************/
         int PollSocket()
         {
             int rc = 0;
@@ -250,8 +335,19 @@ namespace klib {
             return rc;
         }
 
+        /************************************
+        * Method:    根据ID是否是自己
+        * Returns:   
+        * Parameter: fd
+        *************************************/
         inline bool IsSelfSocket(SocketType fd) const { return m_fd == fd; }
 
+        /************************************
+        * Method:    处理socket 产生的event
+        * Returns:   
+        * Parameter: fd 客户端ID
+        * Parameter: evt 事件
+        *************************************/
         void ProcessSocketEvent(SocketType fd, short evt)
         {
             if (evt & epollin)
@@ -267,6 +363,11 @@ namespace klib {
             }
         }
 
+        /************************************
+        * Method:    读socket
+        * Returns:   
+        * Parameter: fd socket ID
+        *************************************/
         void ReadSocket2(SocketType fd)
         {
             std::vector<KBuffer> bufs;
@@ -280,6 +381,11 @@ namespace klib {
             }
         }
 
+        /************************************
+        * Method:    删除socket 
+        * Returns:   删除成功返回true否则返回false
+        * Parameter: fd socket ID
+        *************************************/
         bool DeleteSocket(SocketType fd)
         {
             bool rc = false;
@@ -316,6 +422,11 @@ namespace klib {
             return rc;
         }
 
+        /************************************
+        * Method:    接受连接
+        * Returns:   
+        * Parameter: fd socket ID
+        *************************************/
         void AcceptSocket(SocketType fd)
         {
             SocketType nfd = 0;
@@ -341,6 +452,13 @@ namespace klib {
             }
         }
 
+        /************************************
+        * Method:    添加socket 到内存
+        * Returns:   
+        * Parameter: fd socket ID
+        * Parameter: ipport IP和端口
+        * Parameter: createConn 是否创建连接
+        *************************************/
         void AddSocket(SocketType fd, const std::string& ipport, bool createConn = true)
         {
             {
@@ -380,6 +498,12 @@ namespace klib {
                 m_connected = true;
         }
 
+        /************************************
+        * Method:    连接服务器
+        * Returns:   返回socket ID
+        * Parameter: ip 服务器IP
+        * Parameter: port 服务器端口
+        *************************************/
         SocketType Connect(const std::string& ip, uint16_t port) const
         {
             int fd = -1;
@@ -400,6 +524,12 @@ namespace klib {
             return fd;
         }
 
+        /************************************
+        * Method:    监听IP和port端口
+        * Returns:   返回socket ID
+        * Parameter: ip 待监听的IP
+        * Parameter: port 待监听的端口
+        *************************************/
         SocketType Listen(const std::string& ip, uint16_t port) const
         {
             int fd = -1;
@@ -427,6 +557,11 @@ namespace klib {
             return fd;
         }
 
+        /************************************
+        * Method:    关闭socket
+        * Returns:   
+        * Parameter: fd socket ID
+        *************************************/
         void CloseSocket(SocketType fd) const
         {
 #if defined(WIN32)
@@ -436,6 +571,11 @@ namespace klib {
 #endif
         }
 
+        /************************************
+        * Method:    socket 设置为非阻塞模式
+        * Returns:   
+        * Parameter: fd socket ID
+        *************************************/
         bool SetSocketNonBlock(SocketType fd) const
         {
 #ifdef WIN32
@@ -451,6 +591,11 @@ namespace klib {
 #endif // WIN32
         }
 
+        /************************************
+        * Method:    socket 设置reuse属性
+        * Returns:   
+        * Parameter: fd socket ID
+        *************************************/
         void ReuseAddress(SocketType fd) const
         {
             // set reuse address
@@ -459,6 +604,11 @@ namespace klib {
                 reinterpret_cast<const char*>(&on), sizeof(on));
         }
 
+        /************************************
+        * Method:    禁用nagle算法
+        * Returns:   
+        * Parameter: fd socket id
+        *************************************/
         void DisableNagle(SocketType fd) const
         {
             // disable Nagle
@@ -477,18 +627,27 @@ namespace klib {
         int m_pfd;
         epoll_event m_ps[MaxEvent];
 #endif
-        
+        // socket 互斥量 //
         KMutex m_fdsMtx;
+        // socket 集合 //
         std::vector<pollfd> m_fds;
-        
+        // socket id //
         SocketType m_fd;
+        // IP //
         std::string m_ip;
+        // 端口 //
         int32_t m_port;
+        // 是否是服务器 //
         volatile bool m_isServer;
+        // 是否连接上 //
         volatile bool m_connected;
+        // 是否需要授权 //
         volatile bool m_needAuth;
+        // 最大连接个数 //
         uint16_t m_maxClient;
+        // 连接对象互斥量 //
         KMutex m_connMtx;
+        // 连接缓存 //
         std::map<SocketType, KTcpConnection<MessageType>*> m_connections;
     };
 };
