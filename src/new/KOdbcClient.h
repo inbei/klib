@@ -43,15 +43,8 @@ namespace klib
 
     struct QueryValue
     {
-        enum
-        {
-            tnull = 0, tbool, tuint8, tint8, tuint16, tint16, tuint32, tint32,
-            tuint64, tint64, tfloat, tdouble, tnumeric, tguid, tstring, tbinary,
-            tdate, ttime, ttimestamp
-        };
-
         std::string name;
-        uint16_t type;
+        uint16_t ctype;
         char* valbuf;
         int bufsize;
         int valsize;
@@ -59,7 +52,7 @@ namespace klib
         bool nullable;
 
         QueryValue()
-            :bufsize(-1), nullable(true), type(tnull), precision(0), valbuf(NULL), valsize(-1)
+            :bufsize(-1), nullable(true), ctype(SQL_C_DEFAULT), precision(0), valbuf(NULL), valsize(-1)
         {
 
         }
@@ -69,7 +62,7 @@ namespace klib
         void Clone(const QueryValue& r)
         {
             name = r.name;
-            type = r.type;
+            ctype = r.ctype;
             bufsize = r.bufsize;
             valsize = r.valsize;
             if (valsize > 0 && r.valbuf != NULL)
@@ -96,17 +89,17 @@ namespace klib
 
         bool StringVal(std::string& val) const
         {
-            switch (type)
+            switch (ctype)
             {
-            case QueryValue::tdate:
+            case SQL_C_TYPE_DATE:
                 return GetDate(val);
-            case QueryValue::ttime:
+            case SQL_C_TYPE_TIME:
                 return GetTime(val);
-            case QueryValue::ttimestamp:
+            case SQL_C_TYPE_TIMESTAMP:
                 return GetTimestamp(val);
-            case QueryValue::tguid:
+            case SQL_C_GUID:
                 return GetTimestamp(val);
-            case QueryValue::tstring:
+            case SQL_C_CHAR:
                 return GetStr(val);
             default:
                 return false;
@@ -115,21 +108,20 @@ namespace klib
 
         bool DoubleVal(double& val) const
         {
-            switch (type)
+            if (IsNull())
+                return false;
+            switch (ctype)
             {
-            case QueryValue::tfloat:
+            case SQL_C_FLOAT:
             {
-                float fval = 0;
-                if (GetFloat(fval))
-                {
-                    val = fval;
-                    return true;
-                }
+                val = *(float*)(valbuf);
+                return true;
             }
-            case QueryValue::tdouble:
-                return GetDouble(val);
-            case QueryValue::tnumeric:
-                return GetNumeric(val);
+            case SQL_C_DOUBLE:
+            {
+                val = *(double*)(valbuf);
+                return true;
+            }
             default:
                 return false;
             }
@@ -137,40 +129,49 @@ namespace klib
 
         bool IntegerVal(int64_t& val) const
         {
-            switch (type)
+            if (IsNull())
+                return false;
+            switch (ctype)
             {
-            case QueryValue::tint8:
-            case QueryValue::tint16:
-            case QueryValue::tint32:
+            case SQL_C_STINYINT:
             {
-                int32_t tval;
-                if (GetInt32(tval))
-                {
-                    val = tval;
-                    return true;
-                }
+                val = *(int8_t*)(valbuf);
+                return true;
             }
-            case QueryValue::tint64:
-                return GetInt64(val);
-            case QueryValue::tuint8:
-            case QueryValue::tuint16:
-            case QueryValue::tuint32:
+            case SQL_C_SSHORT:
             {
-                uint32_t tval;
-                if (GetUint32(tval))
-                {
-                    val = tval;
-                    return true;
-                }
+                val = *(int16_t*)(valbuf);
+                return true;
             }
-            case QueryValue::tuint64:
+            case SQL_C_SLONG:
             {
-                uint64_t tval;
-                if (GetUint64(tval))
-                {
-                    val = tval;
-                    return true;
-                }
+                val = *(int32_t*)(valbuf);
+                return true;
+            }
+            case SQL_C_SBIGINT:
+            {
+                val = *(int64_t*)(valbuf);
+                return true;
+            }
+            case SQL_C_UTINYINT:
+            {
+                val = *(uint8_t*)(valbuf);
+                return true;
+            }
+            case SQL_C_USHORT:
+            {
+                val = *(uint16_t*)(valbuf);
+                return true;
+            }
+            case SQL_C_ULONG:
+            {
+                val = *(uint32_t*)(valbuf);
+                return true;
+            }
+            case SQL_C_UBIGINT:
+            {
+                val = *(uint64_t*)(valbuf);
+                return true;
             }
             default:
                 return false;
@@ -179,16 +180,14 @@ namespace klib
 
         bool BinaryVal(char* val) const
         {
-            if (QueryValue::tbinary == type)
-                return GetBinary(val);
-            return false;
+            return GetBinary(val);
         }
 
         bool GetBool(bool& val) const
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::tbool)
+            if (ctype != SQL_C_BIT)
                 return false;
             val = 0x01 & valbuf[0];
             return true;
@@ -198,7 +197,7 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::tbinary)
+            if (ctype != SQL_C_BINARY)
                 return false;
             memmove(val, valbuf, valsize);
             return true;
@@ -208,7 +207,7 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::tstring)
+            if (ctype != SQL_C_CHAR)
                 return false;
             std::string(valbuf, valsize).swap(val);
             return true;
@@ -218,7 +217,7 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::tfloat)
+            if (ctype != SQL_C_FLOAT)
                 return false;
             val = *(float*)(valbuf);
             return true;
@@ -228,7 +227,7 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::tdouble)
+            if (ctype != SQL_C_DOUBLE)
                 return false;
             val = *(double*)(valbuf);
             return true;
@@ -238,19 +237,19 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            switch (type)
+            switch (ctype)
             {
-            case QueryValue::tint8:
+            case SQL_C_STINYINT:
             {
                 val = *(int8_t*)(valbuf);
                 return true;
             }
-            case QueryValue::tint16:
+            case SQL_C_SSHORT:
             {
                 val = *(int16_t*)(valbuf);
                 return true;
             }
-            case QueryValue::tint32:
+            case SQL_C_SLONG:
             {
                 val = *(int32_t*)(valbuf);
                 return true;
@@ -264,19 +263,19 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            switch (type)
+            switch (ctype)
             {
-            case QueryValue::tuint8:
+            case SQL_C_UTINYINT:
             {
                 val = *(uint8_t*)(valbuf);
                 return true;
             }
-            case QueryValue::tuint16:
+            case SQL_C_USHORT:
             {
                 val = *(uint16_t*)(valbuf);
                 return true;
             }
-            case QueryValue::tuint32:
+            case SQL_C_ULONG:
             {
                 val = *(uint32_t*)(valbuf);
                 return true;
@@ -290,7 +289,7 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::tint64)
+            if (ctype != SQL_C_SBIGINT)
                 return false;
             val = *(int64_t*)(valbuf);
             return true;
@@ -300,7 +299,7 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::tuint64)
+            if (ctype != SQL_C_UBIGINT)
                 return false;
             val = *(uint64_t*)(valbuf);
             return true;
@@ -310,7 +309,7 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::tguid)
+            if (ctype != SQL_C_GUID)
                 return false;
             char buf[128] = { 0 };
             SQLGUID* guid = reinterpret_cast<SQLGUID*>(valbuf);
@@ -323,7 +322,7 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::tdate)
+            if (ctype != SQL_C_TYPE_DATE)
                 return false;
             char buf[128] = { 0 };
             DATE_STRUCT* date = reinterpret_cast<DATE_STRUCT*>(valbuf);
@@ -336,7 +335,7 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::ttime)
+            if (ctype != SQL_C_TYPE_TIME)
                 return false;
             char buf[128] = { 0 };
             TIME_STRUCT* time = reinterpret_cast<TIME_STRUCT*>(valbuf);
@@ -349,7 +348,7 @@ namespace klib
         {
             if (IsNull())
                 return false;
-            if (type != QueryValue::ttimestamp)
+            if (ctype != SQL_C_TYPE_TIMESTAMP)
                 return false;
             char buf[128] = { 0 };
             TIMESTAMP_STRUCT* timestamp = reinterpret_cast<TIMESTAMP_STRUCT*>(valbuf);
@@ -357,34 +356,7 @@ namespace klib
                 timestamp->hour, timestamp->minute, timestamp->second);
             std::string(buf).swap(val);
             return true;
-        }
-
-        bool GetNumeric(double& val) const
-        {
-            if (IsNull())
-                return false;
-            if (type != QueryValue::tnumeric)
-                return false;
-            SQL_NUMERIC_STRUCT* numeric = reinterpret_cast<SQL_NUMERIC_STRUCT*>(valbuf);
-            long value = 0;
-            int lastVal = 1;
-            for (int i = 0; i < 16; i++)
-            {
-                int currentVal = (int)numeric->val[i];
-                int lsd = currentVal % 16;
-                int msd = currentVal / 16;
-                value += lastVal * lsd;
-                lastVal = lastVal * 16;
-                value += lastVal * msd;
-                lastVal = lastVal * 16;
-            }
-            long divisor = 1;
-            for (int i = 0; i < numeric->scale; i++)
-                divisor = divisor * 10;
-
-            val = (double)(value / (double)divisor);
-            return true;
-        }
+        }        
     };
 
     struct QueryRow
@@ -420,46 +392,9 @@ namespace klib
     class KOdbcSql
     {
     public:
-        KOdbcSql(SQLHANDLE stmt)
-            :m_stmt(stmt)
-        {
-            m_sqlType2cType[SQL_CHAR] = SQL_C_CHAR;
-            m_sqlType2cType[SQL_VARCHAR] = SQL_C_CHAR;
-            m_sqlType2cType[SQL_LONGVARCHAR] = SQL_C_CHAR;
-            m_sqlType2cType[SQL_NUMERIC] = SQL_C_CHAR;
-            m_sqlType2cType[SQL_DECIMAL] = SQL_C_CHAR;
-            m_sqlType2cType[SQL_WCHAR] = SQL_C_WCHAR;
-            m_sqlType2cType[SQL_WVARCHAR] = SQL_C_WCHAR;
-            m_sqlType2cType[SQL_WLONGVARCHAR] = SQL_C_WCHAR;
-            m_sqlType2cType[SQL_BIT] = SQL_C_BIT;            
-            m_sqlType2cType[SQL_REAL] = SQL_C_FLOAT;
-            m_sqlType2cType[SQL_GUID] = SQL_C_GUID;
-            m_sqlType2cType[SQL_FLOAT] = SQL_C_DOUBLE;
-            m_sqlType2cType[SQL_DOUBLE] = SQL_C_DOUBLE;
-            m_sqlType2cType[SQL_BINARY] = SQL_C_BINARY;
-            m_sqlType2cType[SQL_VARBINARY] = SQL_C_BINARY;
-            m_sqlType2cType[SQL_LONGVARBINARY] = SQL_C_BINARY;
-            m_sqlType2cType[SQL_TYPE_DATE] = SQL_C_TYPE_DATE;
-            m_sqlType2cType[SQL_TYPE_TIME] = SQL_C_TYPE_TIME;
-            m_sqlType2cType[SQL_TYPE_TIMESTAMP] = SQL_C_TYPE_TIMESTAMP;
-            m_sqlType2cType[SQL_TINYINT] = SQL_C_TINYINT;
-            m_sqlType2cType[SQL_SMALLINT] = SQL_C_SHORT;
-            m_sqlType2cType[SQL_INTEGER] = SQL_C_LONG;
-            m_sqlType2cType[SQL_BIGINT] = SQL_C_SBIGINT;
+        KOdbcSql(SQLHANDLE stmt);
 
-            m_cType2sqlType[SQL_C_CHAR] = SQL_CHAR;
-            m_cType2sqlType[SQL_C_WCHAR] = SQL_WCHAR;
-            m_cType2sqlType[SQL_C_BIT] = SQL_BIT;
-            m_cType2sqlType[SQL_C_FLOAT] = SQL_REAL;
-            m_cType2sqlType[SQL_C_DOUBLE] = SQL_DOUBLE;
-            m_cType2sqlType[SQL_C_BINARY] = SQL_BINARY;
-            m_cType2sqlType[SQL_C_GUID] = SQL_GUID;
-
-            m_cType2sqlType[SQL_C_TINYINT] = SQL_TINYINT;
-            m_cType2sqlType[SQL_C_SHORT] = SQL_SMALLINT;
-            m_cType2sqlType[SQL_C_LONG] = SQL_INTEGER;
-            m_cType2sqlType[SQL_C_SBIGINT] = SQL_BIGINT;
-        }
+        
 
         ~KOdbcSql()
         {
@@ -482,9 +417,10 @@ namespace klib
 
         void DescribeField(const FieldDescription& cd, QueryValue& r);
 
-        SQLSMALLINT SqlTypeToEnum(SQLSMALLINT ct);
+        SQLSMALLINT GetCType(SQLSMALLINT sqlType, bool bsigned = false);
 
-        SQLSMALLINT EnumToCType(SQLSMALLINT et);
+        SQLSMALLINT GetSqlType(SQLSMALLINT ctype, bool& bsigned);
+
 
     private:
         SQLHANDLE m_stmt;

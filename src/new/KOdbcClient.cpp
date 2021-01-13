@@ -23,6 +23,38 @@ namespace klib
         SQLSMALLINT     msglen;
     };
 
+    KOdbcSql::KOdbcSql(SQLHANDLE stmt) 
+        :m_stmt(stmt)
+    {
+        m_sqlType2cType[SQL_CHAR] = SQL_C_CHAR;
+        m_sqlType2cType[SQL_VARCHAR] = SQL_C_CHAR;
+        m_sqlType2cType[SQL_LONGVARCHAR] = SQL_C_CHAR;
+        m_sqlType2cType[SQL_NUMERIC] = SQL_C_CHAR;
+        m_sqlType2cType[SQL_DECIMAL] = SQL_C_CHAR;
+        m_sqlType2cType[SQL_WCHAR] = SQL_C_WCHAR;
+        m_sqlType2cType[SQL_WVARCHAR] = SQL_C_WCHAR;
+        m_sqlType2cType[SQL_WLONGVARCHAR] = SQL_C_WCHAR;
+        m_sqlType2cType[SQL_BIT] = SQL_C_BIT;
+        m_sqlType2cType[SQL_REAL] = SQL_C_FLOAT;
+        m_sqlType2cType[SQL_GUID] = SQL_C_GUID;
+        m_sqlType2cType[SQL_FLOAT] = SQL_C_DOUBLE;
+        m_sqlType2cType[SQL_DOUBLE] = SQL_C_DOUBLE;
+        m_sqlType2cType[SQL_BINARY] = SQL_C_BINARY;
+        m_sqlType2cType[SQL_VARBINARY] = SQL_C_BINARY;
+        m_sqlType2cType[SQL_LONGVARBINARY] = SQL_C_BINARY;
+        m_sqlType2cType[SQL_TYPE_DATE] = SQL_C_TYPE_DATE;
+        m_sqlType2cType[SQL_TYPE_TIME] = SQL_C_TYPE_TIME;
+        m_sqlType2cType[SQL_TYPE_TIMESTAMP] = SQL_C_TYPE_TIMESTAMP;
+
+        m_cType2sqlType[SQL_C_CHAR] = SQL_CHAR;
+        m_cType2sqlType[SQL_C_WCHAR] = SQL_WCHAR;
+        m_cType2sqlType[SQL_C_BIT] = SQL_BIT;
+        m_cType2sqlType[SQL_C_FLOAT] = SQL_REAL;
+        m_cType2sqlType[SQL_C_DOUBLE] = SQL_DOUBLE;
+        m_cType2sqlType[SQL_C_BINARY] = SQL_BINARY;
+        m_cType2sqlType[SQL_C_GUID] = SQL_GUID;
+    }
+
     bool KOdbcSql::BindParam(const char* fmt, ...)
     {
         static const std::string longfmt("ld");
@@ -59,7 +91,7 @@ namespace klib
             }
             case 'f':
             {
-                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, GetCType(sqltype),
                     sqltype, colsize, decimaldigits, (char*)&va_arg(args, float), sizeof(float), 0);
                 break;
             }
@@ -69,12 +101,12 @@ namespace klib
                 std::string flag = std::string(fmt + pos, 2);
                 if (flag == longfmt)
                 {
-                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, GetCType(sqltype),
                         sqltype, colsize, decimaldigits, (char*)&va_arg(args, int64_t), sizeof(int64_t), 0);
                 }
                 else if (flag == doublefmt)
                 {
-                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, GetCType(sqltype),
                         sqltype, colsize, decimaldigits, (char*)&va_arg(args, double), sizeof(double), 0);
                 }
                 else
@@ -87,14 +119,14 @@ namespace klib
             case 'c':
             {
                 char* c = va_arg(args, char*);
-                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, GetCType(sqltype),
                     sqltype, colsize, decimaldigits, c, strlen(c), 0);
                 break;
             }
             case 's':
             {
                 const std::string& s = va_arg(args, std::string);
-                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, EnumToCType(SqlTypeToEnum(sqltype)),
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, GetCType(sqltype),
                     sqltype, colsize, decimaldigits, const_cast<char *>(s.c_str()), s.size(), 0);
                 break;
             }
@@ -162,7 +194,7 @@ namespace klib
             if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
                 return false;
             DescribeField(cd, buf.dat[i]);
-            r = SQLBindCol(stmt, i + 1, EnumToCType(buf.dat[i].type), buf.dat[i].valbuf, 
+            r = SQLBindCol(stmt, i + 1, buf.dat[i].ctype, buf.dat[i].valbuf,
                 buf.dat[i].bufsize, (SQLLEN*)&(buf.dat[i].valsize));
             if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
                 return false;
@@ -177,94 +209,78 @@ namespace klib
         r.nullable = (cd.nullable == SQL_NO_NULLS ? false : true);
         r.bufsize = cd.colsize;
         r.valbuf = new char[r.bufsize]();
-        r.type = SqlTypeToEnum(cd.sqltype);
+        r.ctype = GetCType(cd.sqltype);
     }
 
-    SQLSMALLINT KOdbcSql::SqlTypeToEnum(SQLSMALLINT ct)
+    SQLSMALLINT KOdbcSql::GetCType(SQLSMALLINT sqlType, bool bsigned /*= false*/)
     {
-        switch (ct)
+        std::map<SQLSMALLINT, SQLSMALLINT>::const_iterator it = m_sqlType2cType.find(sqlType);
+        if (it != m_sqlType2cType.end())
+            return it->second;
+        switch (sqlType)
         {
-        case SQL_BIT:
-            return QueryValue::tbool;
         case SQL_TINYINT:
-            return QueryValue::tuint8;
+            return bsigned ? SQL_C_STINYINT : SQL_C_UTINYINT;
         case SQL_SMALLINT:
-            return QueryValue::tint16;
+            return bsigned ? SQL_C_SSHORT : SQL_C_USHORT;
         case SQL_INTEGER:
-            return QueryValue::tint32;
+            return bsigned ? SQL_C_SLONG : SQL_C_ULONG;
         case SQL_BIGINT:
-            return QueryValue::tint64;
-        case SQL_REAL:
-            return QueryValue::tfloat;
-        case SQL_FLOAT:
-        case SQL_DOUBLE:
-            return QueryValue::tdouble;
-        case SQL_CHAR:
-        case SQL_VARCHAR:
-        case -9:
-            return QueryValue::tstring;
-        case SQL_LONGVARCHAR:
-        case SQL_VARBINARY:
-        case SQL_BINARY:
-            return QueryValue::tbinary;
-        case SQL_DECIMAL:
-        case SQL_NUMERIC:
-            //SQL_NUMERIC_STRUCT
-            return QueryValue::tnumeric;
-        case SQL_GUID:
-            //SQLGUID
-            return QueryValue::tguid;
-        case SQL_DATE:
-        case 91://mysql
-            //DATE_STRUCT
-            return QueryValue::tdate;
-        case SQL_TIME:
-            //TIME_STRUCT
-            return QueryValue::ttime;
-        case SQL_TIMESTAMP:
-        case 93:
-            //TIMESTAMP_STRUCT
-            return QueryValue::ttimestamp;
+            return bsigned ? SQL_C_SBIGINT : SQL_C_UBIGINT;
         default:
-            fprintf(stderr, "sqltype2enum unknown type:%d\n", ct);
-            return QueryValue::tnull;
+            return SQL_C_DEFAULT;
         }
     }
 
-    SQLSMALLINT KOdbcSql::EnumToCType(SQLSMALLINT et)
+    SQLSMALLINT KOdbcSql::GetSqlType(SQLSMALLINT ctype, bool& bsigned)
     {
-        switch (et)
+        std::map<SQLSMALLINT, SQLSMALLINT>::const_iterator it = m_cType2sqlType.find(ctype);
+        if (it != m_cType2sqlType.end())
+            return it->second;
+        switch (ctype)
         {
-        case QueryValue::tbool:
-            return SQL_C_BIT;
-        case QueryValue::tuint8:
-            return SQL_C_TINYINT;
-        case QueryValue::tint16:
-            return SQL_C_SHORT;
-        case QueryValue::tint32:
-            return SQL_C_LONG;
-        case QueryValue::tint64:
-            return SQL_C_SBIGINT;
-        case QueryValue::tfloat:
-            return SQL_C_FLOAT;
-        case QueryValue::tdouble:
-            return SQL_C_DOUBLE;
-        case QueryValue::tguid:
-            return SQL_C_GUID;
-        case QueryValue::tnumeric:
-            return SQL_C_NUMERIC;
-        case QueryValue::tstring:
-            return SQL_C_CHAR;
-        case QueryValue::tbinary:
-            return SQL_C_BINARY;
-        case QueryValue::tdate:
-            return SQL_C_DATE;
-        case QueryValue::ttime:
-            return SQL_C_TIME;
-        case QueryValue::ttimestamp:
-            return SQL_C_TIMESTAMP;
+        case SQL_C_STINYINT:
+        {
+            bsigned = true;
+            return SQL_TINYINT;
+        }
+        case SQL_C_UTINYINT:
+        {
+            bsigned = false;
+            return SQL_TINYINT;
+        }
+        case SQL_C_SSHORT:
+        {
+            bsigned = true;
+            return SQL_SMALLINT;
+        }
+        case SQL_C_USHORT:
+        {
+            bsigned = false;
+            return SQL_SMALLINT;
+        }
+        case SQL_C_SLONG:
+        {
+            bsigned = true;
+            return SQL_INTEGER;
+        }
+        case SQL_C_ULONG:
+        {
+            bsigned = false;
+            return SQL_INTEGER;
+        }
+        case SQL_C_SBIGINT:
+        {
+            bsigned = true;
+            return SQL_BIGINT;
+        }
+        case SQL_C_UBIGINT:
+        {
+            bsigned = false;
+            return SQL_BIGINT;
+        }
         default:
-            return SQL_C_DEFAULT;
+            return SQL_DEFAULT;
         }
     }
 
