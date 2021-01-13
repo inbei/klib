@@ -2,10 +2,10 @@
 namespace klib
 {
     // 字段信息
-    struct FieldDescription
+    struct KOdbcField
     {
         SQLUSMALLINT colnum;
-        DBCHAR colname[256];
+        CharType colname[256];
         SQLSMALLINT namelen;
 
         SQLSMALLINT sqltype;
@@ -17,9 +17,9 @@ namespace klib
     //错误信息
     struct SqlState
     {
-        DBCHAR         state[16];
+        CharType         state[16];
         SQLINTEGER      nativerr;
-        DBCHAR         msgtext[SQL_MAX_MESSAGE_LENGTH];
+        CharType         msgtext[SQL_MAX_MESSAGE_LENGTH];
         SQLSMALLINT     msglen;
     };
 
@@ -31,9 +31,9 @@ namespace klib
         m_sqlType2cType[SQL_LONGVARCHAR] = SQL_C_CHAR;
         m_sqlType2cType[SQL_NUMERIC] = SQL_C_CHAR;
         m_sqlType2cType[SQL_DECIMAL] = SQL_C_CHAR;
-        m_sqlType2cType[SQL_WCHAR] = SQL_C_WCHAR;
-        m_sqlType2cType[SQL_WVARCHAR] = SQL_C_WCHAR;
-        m_sqlType2cType[SQL_WLONGVARCHAR] = SQL_C_WCHAR;
+        m_sqlType2cType[SQL_WCHAR] = SQL_C_CHAR;
+        m_sqlType2cType[SQL_WVARCHAR] = SQL_C_CHAR;
+        m_sqlType2cType[SQL_WLONGVARCHAR] = SQL_C_CHAR;
         m_sqlType2cType[SQL_BIT] = SQL_C_BIT;
         m_sqlType2cType[SQL_REAL] = SQL_C_FLOAT;
         m_sqlType2cType[SQL_GUID] = SQL_C_GUID;
@@ -65,8 +65,8 @@ namespace klib
         SQLRETURN r = SQLNumParams(stmt, &numPara);
         if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
             return false;
-        SQLSMALLINT   sqltype, decimaldigits, nullable;
-        SQLUINTEGER   colsize;
+        SQLSMALLINT   sqltype = SQL_DEFAULT, decimaldigits = -1, nullable = -1;
+        SQLUINTEGER   colsize = 0;
         int i = 1;
         va_list args;
         va_start(args, fmt);
@@ -74,9 +74,9 @@ namespace klib
         size_t slen = strlen(fmt);
         for (; i <= numPara && pos < slen; ++i)
         {
-            SQLRETURN r = SQLDescribeParam(stmt, i, &sqltype, &colsize, &decimaldigits, &nullable);
+            /*SQLRETURN r = SQLDescribeParam(stmt, i, &sqltype, &colsize, &decimaldigits, &nullable);
             if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-                break;
+                break;*/
             // Bind the memory to the parameter. Assume that we only have input parameters. 
             while (pos < slen && fmt[pos] == ' ') ++pos;
             if (!(pos < slen && fmt[pos++] == '%'))break;
@@ -85,14 +85,14 @@ namespace klib
             {
             case 'd':
             {
-                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_LONG/*EnumToCType(SqlTypeToEnum(sqltype))*/,
-                    SQL_INTEGER, colsize, decimaldigits, (char*)&va_arg(args, int32_t), sizeof(int32_t), 0);
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_LONG,
+                    SQL_INTEGER, sizeof(int32_t), 0, (char*)&va_arg(args, int32_t), sizeof(int32_t), 0);
                 break;
             }
             case 'f':
             {
-                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, GetCType(sqltype),
-                    sqltype, colsize, decimaldigits, (char*)&va_arg(args, float), sizeof(float), 0);
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_FLOAT,
+                    SQL_FLOAT, sizeof(float), 0, (char*)&va_arg(args, float), sizeof(float), 0);
                 break;
             }
             case 'l':
@@ -101,13 +101,13 @@ namespace klib
                 std::string flag = std::string(fmt + pos, 2);
                 if (flag == longfmt)
                 {
-                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, GetCType(sqltype),
-                        sqltype, colsize, decimaldigits, (char*)&va_arg(args, int64_t), sizeof(int64_t), 0);
+                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_SBIGINT,
+                        SQL_BIGINT, sizeof(int64_t), 0, (char*)&va_arg(args, int64_t), sizeof(int64_t), 0);
                 }
                 else if (flag == doublefmt)
                 {
-                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, GetCType(sqltype),
-                        sqltype, colsize, decimaldigits, (char*)&va_arg(args, double), sizeof(double), 0);
+                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_DOUBLE,
+                        SQL_DOUBLE, sizeof(double), 0, (char*)&va_arg(args, double), sizeof(double), 0);
                 }
                 else
                 {
@@ -119,15 +119,15 @@ namespace klib
             case 'c':
             {
                 char* c = va_arg(args, char*);
-                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, GetCType(sqltype),
-                    sqltype, colsize, decimaldigits, c, strlen(c), 0);
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_CHAR,
+                    SQL_CHAR, strlen(c), 0, c, strlen(c), 0);
                 break;
             }
             case 's':
             {
                 const std::string& s = va_arg(args, std::string);
-                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, GetCType(sqltype),
-                    sqltype, colsize, decimaldigits, const_cast<char *>(s.c_str()), s.size(), 0);
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_CHAR,
+                    SQL_CHAR, s.size(), 0, const_cast<char *>(s.c_str()), s.size(), 0);
                 break;
             }
             default:
@@ -151,7 +151,7 @@ namespace klib
 
     bool KOdbcSql::Next()
     {
-        if (m_buffer.dat.empty())
+        if (m_buffer.empty())
             return false;
         return (SQLFetch(m_stmt) != SQL_NO_DATA);
     }
@@ -172,7 +172,7 @@ namespace klib
         m_buffer.Release();
     }
 
-    bool KOdbcSql::InitializeBuffer(SQLHANDLE stmt, QueryRow& buf)
+    bool KOdbcSql::InitializeBuffer(SQLHANDLE stmt, KOdbcRow& buf)
     {
         //获取列数
         SQLSMALLINT numCols = 0;
@@ -184,25 +184,25 @@ namespace klib
             return true;
 
         // 获取字段信息
-        buf.dat.clear();
-        buf.dat.resize(numCols);
+        buf.Release();
+        buf.resize(numCols);
         for (SQLSMALLINT i = 0; i < numCols; i++)
         {
-            FieldDescription cd;
+            KOdbcField cd;
             r = SQLDescribeCol(stmt, (SQLSMALLINT)i + 1, cd.colname, sizeof(cd.colname), &cd.namelen,
                 &cd.sqltype, &cd.colsize, &cd.decimaldigits, &cd.nullable);
             if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
                 return false;
-            DescribeField(cd, buf.dat[i]);
-            r = SQLBindCol(stmt, i + 1, buf.dat[i].ctype, buf.dat[i].valbuf,
-                buf.dat[i].bufsize, (SQLLEN*)&(buf.dat[i].valsize));
+            DescribeField(cd, buf[i]);
+            r = SQLBindCol(stmt, i + 1, buf[i].ctype, buf[i].valbuf,
+                buf[i].bufsize, (SQLLEN*)&(buf[i].valsize));
             if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
                 return false;
         }
         return true;
     }
 
-    void KOdbcSql::DescribeField(const FieldDescription& cd, QueryValue& r)
+    void KOdbcSql::DescribeField(const KOdbcField& cd, KOdbcValue& r)
     {
         r.name = std::string((char*)&cd.colname[0], cd.namelen);
         r.precision = cd.decimaldigits;
@@ -284,7 +284,7 @@ namespace klib
         }
     }
 
-    KOdbcClient::KOdbcClient(const DataBaseConfig& prop) :m_conf(prop), m_henv(SQL_NULL_HENV), m_hdbc(SQL_NULL_HDBC), m_autoCommit(true)
+    KOdbcClient::KOdbcClient(const KOdbcConfig& prop) :m_conf(prop), m_henv(SQL_NULL_HENV), m_hdbc(SQL_NULL_HDBC), m_autoCommit(true)
     {
         // Create the DB2 environment handle
         SQLRETURN r = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_henv);
@@ -327,13 +327,13 @@ namespace klib
 
         SQLSMALLINT sz = 1024;
         char outstr[1024] = { 0 };
-        r = SQLDriverConnect(m_hdbc, NULL, (DBCHAR*)connstr.c_str(), SQL_NTS,
-            (DBCHAR*)outstr, sizeof(outstr), &sz, SQL_DRIVER_NOPROMPT);
+        r = SQLDriverConnect(m_hdbc, NULL, (CharType*)connstr.c_str(), SQL_NTS,
+            (CharType*)outstr, sizeof(outstr), &sz, SQL_DRIVER_NOPROMPT);
 
         /*r = SQLConnect(_hdbc,
-            (DBCHAR *)_prop.host.c_str(), SQL_NTS,
-            (DBCHAR *)_prop.username.c_str(), SQL_NTS,
-            (DBCHAR *)_prop.passwd.c_str(), SQL_NTS);*/
+            (CharType *)_prop.host.c_str(), SQL_NTS,
+            (CharType *)_prop.username.c_str(), SQL_NTS,
+            (CharType *)_prop.passwd.c_str(), SQL_NTS);*/
 
         return CheckSqlState(SQL_HANDLE_DBC, m_hdbc, r);
     }
@@ -358,7 +358,7 @@ namespace klib
         r = SQLSetStmtAttr(stmt, SQL_ATTR_USE_BOOKMARKS, (SQLPOINTER)SQL_UB_OFF, SQL_IS_INTEGER);
         if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
             return NULL;
-        r = SQLPrepare(stmt, (DBCHAR*)sql.c_str(), SQL_NTS);
+        r = SQLPrepare(stmt, (CharType*)sql.c_str(), sql.size());
         if (CheckSqlState(SQL_HANDLE_STMT, stmt, r))
             return new KOdbcSql(stmt);
         return NULL;
@@ -381,7 +381,7 @@ namespace klib
         return CheckSqlState(SQL_HANDLE_DBC, m_hdbc, r);
     }
 
-    std::string KOdbcClient::GetConnStr(const DataBaseConfig& prop)
+    std::string KOdbcClient::GetConnStr(const KOdbcConfig& prop)
     {
         // 使用创建数据源时显示的驱动程序名称（必须完全一致）
         char constr[256] = { 0 };
@@ -460,4 +460,334 @@ namespace klib
 
         return (r == SQL_SUCCESS || r == SQL_SUCCESS_WITH_INFO);
     }
+
+    KOdbcValue::KOdbcValue()
+        :bufsize(-1), nullable(true), ctype(SQL_C_DEFAULT), 
+        precision(0), valbuf(NULL), valsize(-1)
+    {
+
+    }
+
+    void KOdbcValue::Clone(const KOdbcValue& r)
+    {
+        name = r.name;
+        ctype = r.ctype;
+        bufsize = r.bufsize;
+        valsize = r.valsize;
+        if (valsize > 0 && r.valbuf != NULL)
+        {
+            valbuf = new char[valsize]();
+            memmove(valbuf, r.valbuf, valsize);
+        }
+        else
+        {
+            valbuf = NULL;
+        }
+        precision = r.precision;
+        nullable = r.nullable;
+    }
+
+    void KOdbcValue::Release()
+    {
+        if (valbuf)
+        {
+            delete[] valbuf;
+            valbuf = NULL;
+        }
+    }
+
+    bool KOdbcValue::StringVal(std::string& val) const
+    {
+        switch (ctype)
+        {
+        case SQL_C_TYPE_DATE:
+            return GetDate(val);
+        case SQL_C_TYPE_TIME:
+            return GetTime(val);
+        case SQL_C_TYPE_TIMESTAMP:
+            return GetTimestamp(val);
+        case SQL_C_GUID:
+            return GetTimestamp(val);
+        case SQL_C_CHAR:
+            return GetStr(val);
+        default:
+            return false;
+        }
+    }
+
+    bool KOdbcValue::DoubleVal(double& val) const
+    {
+        if (IsNull())
+            return false;
+        switch (ctype)
+        {
+        case SQL_C_FLOAT:
+        {
+            val = *(float*)(valbuf);
+            return true;
+        }
+        case SQL_C_DOUBLE:
+        {
+            val = *(double*)(valbuf);
+            return true;
+        }
+        default:
+            return false;
+        }
+    }
+
+    bool KOdbcValue::IntegerVal(int64_t& val) const
+    {
+        if (IsNull())
+            return false;
+        switch (ctype)
+        {
+        case SQL_C_STINYINT:
+        {
+            val = *(int8_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_SSHORT:
+        {
+            val = *(int16_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_SLONG:
+        {
+            val = *(int32_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_SBIGINT:
+        {
+            val = *(int64_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_UTINYINT:
+        {
+            val = *(uint8_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_USHORT:
+        {
+            val = *(uint16_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_ULONG:
+        {
+            val = *(uint32_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_UBIGINT:
+        {
+            val = *(uint64_t*)(valbuf);
+            return true;
+        }
+        default:
+            return false;
+        }
+    }
+
+    bool KOdbcValue::BinaryVal(char* val) const
+    {
+        return GetBinary(val);
+    }
+
+    bool KOdbcValue::GetBool(bool& val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_BIT)
+            return false;
+        val = 0x01 & valbuf[0];
+        return true;
+    }
+
+    bool KOdbcValue::GetBinary(char* val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_BINARY)
+            return false;
+        memmove(val, valbuf, valsize);
+        return true;
+    }
+
+    bool KOdbcValue::GetStr(std::string& val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_CHAR)
+            return false;
+        std::string(valbuf, valsize).swap(val);
+        return true;
+    }
+
+    bool KOdbcValue::GetFloat(float& val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_FLOAT)
+            return false;
+        val = *(float*)(valbuf);
+        return true;
+    }
+
+    bool KOdbcValue::GetDouble(double& val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_DOUBLE)
+            return false;
+        val = *(double*)(valbuf);
+        return true;
+    }
+
+    bool KOdbcValue::GetInt32(int32_t& val) const
+    {
+        if (IsNull())
+            return false;
+        switch (ctype)
+        {
+        case SQL_C_STINYINT:
+        {
+            val = *(int8_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_SSHORT:
+        {
+            val = *(int16_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_SLONG:
+        {
+            val = *(int32_t*)(valbuf);
+            return true;
+        }
+        default:
+            return false;
+        }
+    }
+
+    bool KOdbcValue::GetUint32(uint32_t& val) const
+    {
+        if (IsNull())
+            return false;
+        switch (ctype)
+        {
+        case SQL_C_UTINYINT:
+        {
+            val = *(uint8_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_USHORT:
+        {
+            val = *(uint16_t*)(valbuf);
+            return true;
+        }
+        case SQL_C_ULONG:
+        {
+            val = *(uint32_t*)(valbuf);
+            return true;
+        }
+        default:
+            return false;
+        }
+    }
+
+    bool KOdbcValue::GetInt64(int64_t& val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_SBIGINT)
+            return false;
+        val = *(int64_t*)(valbuf);
+        return true;
+    }
+
+    bool KOdbcValue::GetUint64(uint64_t& val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_UBIGINT)
+            return false;
+        val = *(uint64_t*)(valbuf);
+        return true;
+    }
+
+    bool KOdbcValue::GetGuid(std::string& val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_GUID)
+            return false;
+        char buf[128] = { 0 };
+        SQLGUID* guid = reinterpret_cast<SQLGUID*>(valbuf);
+        sprintf(buf, "%d-%d-%d-%s,", guid->Data1, guid->Data2, guid->Data3, guid->Data4);
+        std::string(buf).swap(val);
+        return true;
+    }
+
+    bool KOdbcValue::GetDate(std::string& val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_TYPE_DATE)
+            return false;
+        char buf[128] = { 0 };
+        DATE_STRUCT* date = reinterpret_cast<DATE_STRUCT*>(valbuf);
+        sprintf(buf, "%04d/%02d/%02d,", date->year, date->month, date->day);
+        std::string(buf).swap(val);
+        return true;
+    }
+
+    bool KOdbcValue::GetTime(std::string& val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_TYPE_TIME)
+            return false;
+        char buf[128] = { 0 };
+        TIME_STRUCT* time = reinterpret_cast<TIME_STRUCT*>(valbuf);
+        sprintf(buf, "%02d:%02d:%02d,", time->hour, time->minute, time->second);
+        std::string(buf).swap(val);
+        return true;
+    }
+
+    bool KOdbcValue::GetTimestamp(std::string& val) const
+    {
+        if (IsNull())
+            return false;
+        if (ctype != SQL_C_TYPE_TIMESTAMP)
+            return false;
+        char buf[128] = { 0 };
+        TIMESTAMP_STRUCT* timestamp = reinterpret_cast<TIMESTAMP_STRUCT*>(valbuf);
+        sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d,", timestamp->year, timestamp->month, timestamp->day,
+            timestamp->hour, timestamp->minute, timestamp->second);
+        std::string(buf).swap(val);
+        return true;
+    }
+
+    void KOdbcRow::Clone(const KOdbcRow& other)
+    {
+        std::vector<KOdbcValue>::const_iterator it = other.begin();
+        while (it != other.end())
+        {
+            KOdbcValue val;
+            val.Clone(*it);
+            push_back(val);
+            ++it;
+        }
+    }
+
+    void KOdbcRow::Release()
+    {
+        std::vector<KOdbcValue>::iterator it = begin();
+        while (it != end())
+        {
+            it->Release();
+            ++it;
+        }
+        clear();
+    }
+
 };
