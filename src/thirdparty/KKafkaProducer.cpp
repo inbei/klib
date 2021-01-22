@@ -63,7 +63,7 @@ namespace thirdparty {
                 errStr.c_str());
             return false;
         }
-
+        printf("Kafka create Producer success:[%s]\n", m_conf.brokers.c_str());
         // topic conf
         kc = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
         RdKafka::Topic* topic = RdKafka::Topic::create(producer, m_conf.topicName, kc, errStr);
@@ -75,6 +75,7 @@ namespace thirdparty {
             return false;
         }
 
+        printf("Kafka create topic success:[%s]\n", m_conf.topicName.c_str());
         RdKafka::Metadata* metadata;
         RdKafka::ErrorCode err = producer->metadata(false, topic, &metadata, 3000);
         if (err == RdKafka::ERR_NO_ERROR)

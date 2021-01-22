@@ -262,6 +262,8 @@ namespace thirdparty {
 
     bool KInfluxDbClient::Post(const std::string& url, const std::string& dat, std::string& resp)
     {
+        if (m_host.empty())
+            return false;
         long rc = 0;
         try
         {
