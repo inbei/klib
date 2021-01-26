@@ -58,6 +58,7 @@ namespace klib
     bool KOdbcSql::BindParam(const char* fmt, ...)
     {
         static const std::string longfmt("ld");
+        static const std::string ulongfmt("lu");
         static const std::string doublefmt("lf");
         CleanParams();
         SQLHANDLE& stmt = m_stmt;
@@ -95,6 +96,16 @@ namespace klib
                     SQL_INTEGER, 0, 0, (SQLPOINTER)buf.GetData(), 0, NULL);
                 break;
             }
+            case 'u':
+            {
+                KBuffer buf(sizeof(uint32_t));
+                memcpy(buf.GetData(), &va_arg(args, uint32_t), sizeof(uint32_t));
+                m_paraBufs.push_back(buf);
+                printf("uint32_t param:[%u]\n", *reinterpret_cast<uint32_t*>(buf.GetData()));
+                r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_LONG,
+                    SQL_INTEGER, 0, 0, (SQLPOINTER)buf.GetData(), 0, NULL);
+                break;
+            }
             case 'f':
             {
                 KBuffer buf(sizeof(float));
@@ -115,6 +126,15 @@ namespace klib
                     memcpy(buf.GetData(), &va_arg(args, int64_t), sizeof(int64_t));
                     m_paraBufs.push_back(buf);
                     printf("int64_t param:[%lld]\n", *reinterpret_cast<int64_t*>(buf.GetData()));
+                    r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_SBIGINT,
+                        SQL_BIGINT, 0, 0, (SQLPOINTER)buf.GetData(), 0, NULL);
+                }
+                else if (flag == ulongfmt)
+                {
+                    KBuffer buf(sizeof(uint64_t));
+                    memcpy(buf.GetData(), &va_arg(args, uint64_t), sizeof(uint64_t));
+                    m_paraBufs.push_back(buf);
+                    printf("uint64_t param:[%llu]\n", *reinterpret_cast<uint64_t*>(buf.GetData()));
                     r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_SBIGINT,
                         SQL_BIGINT, 0, 0, (SQLPOINTER)buf.GetData(), 0, NULL);
                 }
