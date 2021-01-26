@@ -90,6 +90,7 @@ namespace klib
     private:
         std::string name;
         int16_t ctype;
+        int16_t sqltype;
         char* valbuf;
         int bufsize;
         int valsize;
@@ -120,6 +121,8 @@ namespace klib
             Release();
         }
 
+        inline bool IsValid() const { return m_stmt != SQL_NULL_HSTMT; }
+
         // %d int32_t， %lld int64_t， %s string %f float %llf  double  %c char *//
         bool BindParam(const char *fmt, ...);
 
@@ -132,7 +135,7 @@ namespace klib
     private:
         void Release();
 
-        bool InitializeBuffer(SQLHANDLE stmt, KOdbcRow& buffer);
+        bool DescribeHeader(SQLHANDLE stmt, KOdbcRow& buffer);
 
         void DescribeField(const KOdbcField& cd, KOdbcValue& r);
 
@@ -140,12 +143,15 @@ namespace klib
 
         SQLSMALLINT GetSqlType(SQLSMALLINT ctype, bool& bsigned);
 
+        void CleanParams();
+
 
     private:
         SQLHANDLE m_stmt;
         KOdbcRow m_buffer;
         std::map<SQLSMALLINT, SQLSMALLINT> m_sqlType2cType;
         std::map<SQLSMALLINT, SQLSMALLINT> m_cType2sqlType;
+        std::vector<KBuffer> m_paraBufs;
     };
 
     class KOdbcClient
@@ -159,7 +165,7 @@ namespace klib
 
         void Disconnect();
 
-        KOdbcSql* Prepare(const std::string& sql);
+        KOdbcSql Prepare(const std::string &sql);
 
         /*
         Transactions in ODBC do not have to be explicitly initiated. Instead,

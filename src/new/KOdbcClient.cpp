@@ -15,7 +15,7 @@ namespace klib
     };
 
     //错误信息
-    struct SqlState
+    struct KOdbcSqlState
     {
         CharType         state[16];
         SQLINTEGER      nativerr;
@@ -59,6 +59,7 @@ namespace klib
     {
         static const std::string longfmt("ld");
         static const std::string doublefmt("lf");
+        CleanParams();
         SQLHANDLE& stmt = m_stmt;
         // Check to see if there are any parameters. If so, process them. 
         SQLSMALLINT numPara = 0;
@@ -74,9 +75,10 @@ namespace klib
         size_t slen = strlen(fmt);
         for (; i <= numPara && pos < slen; ++i)
         {
-            /*SQLRETURN r = SQLDescribeParam(stmt, i, &sqltype, &colsize, &decimaldigits, &nullable);
+            // mysql does't support this api
+            SQLRETURN r = SQLDescribeParam(stmt, i, &sqltype, &colsize, &decimaldigits, &nullable);
             if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-                break;*/
+                break;
             // Bind the memory to the parameter. Assume that we only have input parameters. 
             while (pos < slen && fmt[pos] == ' ') ++pos;
             if (!(pos < slen && fmt[pos++] == '%'))break;
@@ -85,14 +87,22 @@ namespace klib
             {
             case 'd':
             {
+                KBuffer buf(sizeof(int32_t));
+                memcpy(buf.GetData(), &va_arg(args, int32_t), sizeof(int32_t));
+                m_paraBufs.push_back(buf);
+                printf("int32_t param:[%d]\n", *reinterpret_cast<int32_t*>(buf.GetData()));
                 r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_LONG,
-                    SQL_INTEGER, sizeof(int32_t), 0, (char*)&va_arg(args, int32_t), sizeof(int32_t), 0);
+                    SQL_INTEGER, 0, 0, (SQLPOINTER)buf.GetData(), 0, NULL);
                 break;
             }
             case 'f':
             {
+                KBuffer buf(sizeof(float));
+                memcpy(buf.GetData(), &va_arg(args, float), sizeof(float));
+                m_paraBufs.push_back(buf);
+                printf("float param:[%f]\n", *reinterpret_cast<float*>(buf.GetData()));
                 r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_FLOAT,
-                    SQL_FLOAT, sizeof(float), 0, (char*)&va_arg(args, float), sizeof(float), 0);
+                    SQL_FLOAT, 0, 0, (SQLPOINTER)buf.GetData(), 0, NULL);
                 break;
             }
             case 'l':
@@ -101,13 +111,21 @@ namespace klib
                 std::string flag = std::string(fmt + pos, 2);
                 if (flag == longfmt)
                 {
+                    KBuffer buf(sizeof(int64_t));
+                    memcpy(buf.GetData(), &va_arg(args, int64_t), sizeof(int64_t));
+                    m_paraBufs.push_back(buf);
+                    printf("int64_t param:[%lld]\n", *reinterpret_cast<int64_t*>(buf.GetData()));
                     r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_SBIGINT,
-                        SQL_BIGINT, sizeof(int64_t), 0, (char*)&va_arg(args, int64_t), sizeof(int64_t), 0);
+                        SQL_BIGINT, 0, 0, (SQLPOINTER)buf.GetData(), 0, NULL);
                 }
                 else if (flag == doublefmt)
                 {
+                    KBuffer buf(sizeof(double));
+                    memcpy(buf.GetData(), &va_arg(args, double), sizeof(double));
+                    m_paraBufs.push_back(buf);
+                    printf("double param:[%llf]\n", *reinterpret_cast<double*>(buf.GetData()));
                     r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_DOUBLE,
-                        SQL_DOUBLE, sizeof(double), 0, (char*)&va_arg(args, double), sizeof(double), 0);
+                        SQL_DOUBLE, 0, 0, (SQLPOINTER)buf.GetData(), 0, NULL);
                 }
                 else
                 {
@@ -120,14 +138,18 @@ namespace klib
             {
                 char* c = va_arg(args, char*);
                 r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_CHAR,
-                    SQL_CHAR, strlen(c), 0, c, strlen(c), 0);
+                    SQL_VARCHAR, strlen(c), 0, (SQLPOINTER)c, strlen(c), NULL);
                 break;
             }
             case 's':
             {
                 const std::string& s = va_arg(args, std::string);
+                KBuffer buf(s.size());
+                memcpy(buf.GetData(), s.c_str(), s.size());
+                m_paraBufs.push_back(buf);
+                printf("string param:[%s]\n", s.c_str());
                 r = SQLBindParameter(stmt, i, SQL_PARAM_INPUT, SQL_C_CHAR,
-                    SQL_CHAR, s.size(), 0, const_cast<char *>(s.c_str()), s.size(), 0);
+                    SQL_VARCHAR, s.size(), 0, (SQLPOINTER)buf.GetData(), s.size(), NULL);
                 break;
             }
             default:
@@ -146,7 +168,9 @@ namespace klib
     {
         SQLHANDLE& stmt = m_stmt;
         SQLRETURN r = SQLExecute(stmt);
-        return KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r) && InitializeBuffer(stmt, m_buffer);
+        bool rc = KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r) && DescribeHeader(stmt, m_buffer);
+        CleanParams();
+        return rc;
     }
 
     bool KOdbcSql::Next()
@@ -172,7 +196,7 @@ namespace klib
         m_buffer.Release();
     }
 
-    bool KOdbcSql::InitializeBuffer(SQLHANDLE stmt, KOdbcRow& buf)
+    bool KOdbcSql::DescribeHeader(SQLHANDLE stmt, KOdbcRow& buf)
     {
         //获取列数
         SQLSMALLINT numCols = 0;
@@ -209,6 +233,7 @@ namespace klib
         r.nullable = (cd.nullable == SQL_NO_NULLS ? false : true);
         r.bufsize = cd.colsize;
         r.valbuf = new char[r.bufsize]();
+        r.sqltype = cd.sqltype;
         r.ctype = GetCType(cd.sqltype);
     }
 
@@ -284,6 +309,17 @@ namespace klib
         }
     }
 
+    void KOdbcSql::CleanParams()
+    {
+        std::vector<KBuffer>::iterator it = m_paraBufs.begin();
+        while (it != m_paraBufs.end())
+        {
+            it->Release();
+            ++it;
+        }
+        m_paraBufs.clear();
+    }
+
     KOdbcClient::KOdbcClient(const KOdbcConfig& prop) :m_conf(prop), m_henv(SQL_NULL_HENV), m_hdbc(SQL_NULL_HDBC), m_autoCommit(true)
     {
         // Create the DB2 environment handle
@@ -347,21 +383,30 @@ namespace klib
         CheckSqlState(SQL_HANDLE_DBC, m_hdbc, r);
     }
 
-    KOdbcSql* KOdbcClient::Prepare(const std::string& sql)
+    KOdbcSql KOdbcClient::Prepare(const std::string& sql)
     {
         KLockGuard<KMutex> lock(m_dmtx);
         SQLHANDLE stmt = SQLHANDLE(SQL_NULL_HSTMT);
         //获取操作句柄
         SQLRETURN r = SQLAllocHandle(SQL_HANDLE_STMT, m_hdbc, &stmt);
         if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-            return NULL;
+            return KOdbcSql(SQL_NULL_HSTMT);
+
         r = SQLSetStmtAttr(stmt, SQL_ATTR_USE_BOOKMARKS, (SQLPOINTER)SQL_UB_OFF, SQL_IS_INTEGER);
         if (!CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-            return NULL;
-        r = SQLPrepare(stmt, (CharType*)sql.c_str(), sql.size());
-        if (CheckSqlState(SQL_HANDLE_STMT, stmt, r))
-            return new KOdbcSql(stmt);
-        return NULL;
+        {
+            SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+            return KOdbcSql(SQL_NULL_HSTMT);
+        }
+
+        r = SQLPrepare(stmt, (CharType*)sql.c_str(), SQL_NTS);
+        if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
+        {
+            SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+            return KOdbcSql(SQL_NULL_HSTMT);
+        }
+
+        return KOdbcSql(stmt);
     }
 
     bool KOdbcClient::Commit()
@@ -448,7 +493,7 @@ namespace klib
             SQLGetDiagField(htype, handle, 0, SQL_DIAG_NUMBER, &numrecs, 0, 0);
             // Get the status records.
             int i = 1;
-            SqlState ss;
+            KOdbcSqlState ss;
             SQLRETURN tmp;
             while (i <= numrecs && (tmp = SQLGetDiagRec(htype, handle, i, ss.state, &ss.nativerr,
                 ss.msgtext, sizeof(ss.msgtext), &ss.msglen)) != SQL_NO_DATA)
