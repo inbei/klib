@@ -298,7 +298,7 @@ namespace klib {
 #else
                 if (errno == EINTR) // 读操作中断，需要重新读
                     KTime::MSleep(3);
-                else if (errno == EWOULDBLOCK) // 非阻塞模式，暂时无数据，不需要重新读
+                else if (errno == EWOULDBLOCK || errno == EAGAIN) // 非阻塞模式，暂时无数据，不需要重新读，hpux暂时无数据时返回EAGAIN
                     break;
 #endif
                 else // 错误断开连接
@@ -339,7 +339,7 @@ namespace klib {
 #else
                 if (errno == EINTR) // 读操作中断，需要重新读
                     KTime::MSleep(6);
-                else if (errno == EWOULDBLOCK) // 非阻塞模式，暂时无数据，不需要重新读
+                else if (errno == EWOULDBLOCK || errno == EAGAIN) // 非阻塞模式，暂时无数据，不需要重新读
                     break;
 #endif
                 else // 错误断开连接
