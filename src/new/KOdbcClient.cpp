@@ -83,7 +83,6 @@ namespace klib
             // Bind the memory to the parameter. Assume that we only have input parameters. 
             while (pos < slen && fmt[pos] == ' ') ++pos;
             if (!(pos < slen && fmt[pos++] == '%'))break;
-            // %d int32_t£¬ %lld int64_t£¬ %s string %f float %llf  double  %c char *//
             switch (fmt[pos++])
             {
             case 'd':

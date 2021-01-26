@@ -123,7 +123,7 @@ namespace klib
 
         inline bool IsValid() const { return m_stmt != SQL_NULL_HSTMT; }
 
-        // %d int32_t， %lld int64_t， %s string %f float %llf  double  %c char *//
+        // %d int32_t， %lld int64_t， %s string %f float %llf  double  %c char * %u uint32_t %llu uint64_t//
         bool BindParam(const char *fmt, ...);
 
         bool Execute();
