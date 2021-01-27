@@ -22,6 +22,8 @@
     <ClCompile Include="src\new\KOdbcClient.cpp" />
     <ClCompile Include="src\tcp\KTcpModbus.cpp" />
     <ClCompile Include="src\tcp\KTcpWebsocket.cpp" />
+    <ClCompile Include="src\test\KCalculator.cpp" />
+    <ClCompile Include="src\test\NineYin.cpp" />
     <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp" />
     <ClCompile Include="src\thirdparty\KKafkaProducer.cpp" />
     <ClCompile Include="src\thirdparty\KRedisClient.cpp" />
@@ -41,7 +43,6 @@
   <ItemGroup>
     <ClInclude Include="src\new\KBarrier.hpp" />
     <ClInclude Include="src\new\KOdbcClient.h" />
-    <ClInclude Include="src\new\KPingClient.hpp" />
     <ClInclude Include="src\new\KReadWriteLock.hpp" />
     <ClInclude Include="src\new\KSpinLock.hpp" />
     <ClInclude Include="src\tcp\KModbusClient.hpp" />
@@ -54,6 +55,9 @@
     <ClInclude Include="src\tcp\KTcpServer.hpp" />
     <ClInclude Include="src\tcp\KWebsocketClient.hpp" />
     <ClInclude Include="src\tcp\KWebsocketServer.hpp" />
+    <ClInclude Include="src\test\KCalculator.h" />
+    <ClInclude Include="src\test\KPing.hpp" />
+    <ClInclude Include="src\test\NineYin.h" />
     <ClInclude Include="src\thirdparty\KInfluxDbClient.h" />
     <ClInclude Include="src\thirdparty\KKafkaProducer.h" />
     <ClInclude Include="src\thirdparty\KRedisClient.h" />

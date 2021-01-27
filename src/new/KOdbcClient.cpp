@@ -201,18 +201,21 @@ namespace klib
 
     void KOdbcSql::Release()
     {
-        SQLHANDLE& stmt = m_stmt;
-        SQLRETURN r = SQLCloseCursor(stmt);
-        r = SQLCancel(stmt);
-        r = SQLFreeStmt(stmt, SQL_CLOSE);
-        KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
-        r = SQLFreeStmt(stmt, SQL_UNBIND);
-        KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
-        r = SQLFreeStmt(stmt, SQL_RESET_PARAMS);
-        KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
-        r = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-        KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
-        m_buffer.Release();
+        if (IsValid())
+        {
+            SQLHANDLE& stmt = m_stmt;
+            SQLRETURN r = SQLCloseCursor(stmt);
+            r = SQLCancel(stmt);
+            r = SQLFreeStmt(stmt, SQL_CLOSE);
+            KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
+            r = SQLFreeStmt(stmt, SQL_UNBIND);
+            KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
+            r = SQLFreeStmt(stmt, SQL_RESET_PARAMS);
+            KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
+            r = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+            KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r);
+            m_buffer.Release();
+        }
     }
 
     bool KOdbcSql::DescribeHeader(SQLHANDLE stmt, KOdbcRow& buf)
