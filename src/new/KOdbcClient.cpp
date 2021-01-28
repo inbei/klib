@@ -465,34 +465,47 @@ namespace klib
         case mysql:
             //MySQL ODBC 8.0 Unicode Driver
             //libmyodbc8w.so
-            sprintf(constr, "DRIVER={%s};SERVER=%s;PORT=3306;"
+            /*
+            klib::KOdbcConfig config(klib::mysql);
+            config.drvname = "MySQL ODBC 8.0 ANSI Driver";
+            config.host = "172.25.11.102";
+            config.passwd = "mics";
+            config.username = "mics";
+            config.dbname = "micssta";
+            */
+            sprintf(constr, "DRIVER={%s};SERVER=%s;PORT=%d;"
                 "DATABASE=%s;USER=%s;PASSWORD=%s;CHARSET=GB18030;OPTION=3;",
-                m_conf.drvname.c_str(), m_conf.host.c_str(), m_conf.dbname.c_str(),
-                m_conf.username.c_str(), m_conf.passwd.c_str());
+                m_conf.drvname.c_str(), m_conf.host.c_str(), m_conf.port, 
+                m_conf.dbname.c_str(), m_conf.username.c_str(), m_conf.passwd.c_str());
             break;
         case db2:
             //IBM DB2 ODBC DRIVER
             //libdb2.so
+            /*
+            klib::KOdbcConfig config(klib::db2);
+            config.drvname = "IBM DATA SERVER DRIVER for ODBC - E:/software/snack2/db/clidriver";
+            config.host = "172.25.11.21";
+            config.passwd = "mics@db2";
+            config.username = "db2inst1";
+            config.dbname = "micsltz";
+            */
             sprintf(constr, "driver={%s};hostname=%s;database=%s;"
-                "port=50000;protocol=TCPIP;uid=%s;pwd=%s",
+                "port=%d;protocol=TCPIP;uid=%s;pwd=%s",
                 m_conf.drvname.c_str(), m_conf.host.c_str(), m_conf.dbname.c_str(),
-                m_conf.username.c_str(), m_conf.passwd.c_str());
+                m_conf.port ,m_conf.username.c_str(), m_conf.passwd.c_str());
             break;
         case oracle:
-
             //Oracle in instantclient_19_5
             //libsqora.so.19.1
-            /*
-            klib::KOdbcConfig config;
+            /*klib::KOdbcConfig config(klib::oracle);
             config.drvname = "Oracle in instantclient_18_5";
-            config.drvtype = klib::oracle;
-            config.host = "10.41.10.11:1521";
+            config.host = "10.41.10.11";
             config.passwd = "L18mics";
             config.username = "mics";
-            config.dbname = "orapdb19";
-            */
-            sprintf(constr, "Driver={%s};UID=%s;PWD=%s;DBQ=//%s/%s;",
-                m_conf.drvname.c_str(), m_conf.username.c_str(), m_conf.passwd.c_str(), m_conf.host.c_str(), m_conf.dbname.c_str());
+            config.dbname = "orapdb19";*/
+            sprintf(constr, "Driver={%s};UID=%s;PWD=%s;DBQ=//%s:%d/%s;",
+                m_conf.drvname.c_str(), m_conf.username.c_str(), m_conf.passwd.c_str(),
+                m_conf.host.c_str(), m_conf.port, m_conf.dbname.c_str());
             break;
         case sqlserver:
             sprintf(constr, "Driver={%s};Server=%s;Database=%s;"

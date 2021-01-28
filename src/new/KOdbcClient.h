@@ -38,7 +38,31 @@ namespace klib
         std::string dbname;
         std::string host;
         std::string drvname;
+
+        int port;
+
+        KOdbcConfig(KOdbcType type)
+            :drvtype(type),port(0)
+        {
+            switch (drvtype)
+            {
+            case klib::mysql:
+                port = 3306;
+                break;
+            case klib::db2:
+                port = 50000;
+                break;
+            case klib::oracle:
+                port = 1521;
+                break;
+            default:
+                break;
+            }
+        }
+
+    private:
         KOdbcType drvtype;
+        friend class KOdbcClient;
     };
 
     class KOdbcValue
