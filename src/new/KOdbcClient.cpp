@@ -385,8 +385,16 @@ namespace klib
 
         SQLSMALLINT sz = 1024;
         char outstr[1024] = { 0 };
-        r = SQLDriverConnect(m_hdbc, NULL, (CharType*)connstr.c_str(), SQL_NTS,
-            (CharType*)outstr, sizeof(outstr), &sz, SQL_DRIVER_NOPROMPT);
+        try
+        {
+            r = SQLDriverConnect(m_hdbc, NULL, (CharType*)connstr.c_str(), SQL_NTS,
+                (CharType*)outstr, sizeof(outstr), &sz, SQL_DRIVER_NOPROMPT);
+        }
+        catch (const std::exception&e)
+        {
+            printf("<%s> exception:[%s]\n", e.what());
+            return false;
+        }
 
         /*r = SQLConnect(_hdbc,
             (CharType *)_prop.host.c_str(), SQL_NTS,
@@ -471,22 +479,20 @@ namespace klib
                 m_conf.username.c_str(), m_conf.passwd.c_str());
             break;
         case oracle:
-            /*
-            "Driver={%s};"
-            "CONNECTSTRING=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=%s)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=%s)));"
-            "Uid=%s;Pwd=%s;"
-            "Driver={%s};"
-            "Server=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=%s)(PORT=1521))(CONNECT_DATA=(SID=%s)));"
-            "Uid=%s;Pwd=%s;"
-            */
+
             //Oracle in instantclient_19_5
             //libsqora.so.19.1
-            //have to set tnsnames.ora
-            sprintf(constr, "DRIVER={%s};"
-                "DBQ=%s;DBA=W;"
-                "UID=%s;PWD=%s;",
-                m_conf.drvname.c_str(), m_conf.dbname.c_str(),
-                m_conf.username.c_str(), m_conf.passwd.c_str());
+            /*
+            klib::KOdbcConfig config;
+            config.drvname = "Oracle in instantclient_18_5";
+            config.drvtype = klib::oracle;
+            config.host = "10.41.10.11:1521";
+            config.passwd = "L18mics";
+            config.username = "mics";
+            config.dbname = "orapdb19";
+            */
+            sprintf(constr, "Driver={%s};UID=%s;PWD=%s;DBQ=//%s/%s;",
+                m_conf.drvname.c_str(), m_conf.username.c_str(), m_conf.passwd.c_str(), m_conf.host.c_str(), m_conf.dbname.c_str());
             break;
         case sqlserver:
             sprintf(constr, "Driver={%s};Server=%s;Database=%s;"
@@ -520,7 +526,7 @@ namespace klib
             while (i <= numrecs && (tmp = SQLGetDiagRec(htype, handle, i, ss.state, &ss.nativerr,
                 ss.msgtext, sizeof(ss.msgtext), &ss.msglen)) != SQL_NO_DATA)
             {
-                fprintf(stderr, "check sql state error:%s\n", std::string((char*)&ss.msgtext[0], ss.msglen).c_str());
+                fprintf(stderr, "check sql state %s:%s\n", ((r == SQL_ERROR)?"error":"info"),  std::string((char*)&ss.msgtext[0], ss.msglen).c_str());
                 i++;
             }
         }
