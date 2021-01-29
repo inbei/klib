@@ -28,9 +28,6 @@
     <Filter Include="new">
       <UniqueIdentifier>{f48d26c7-c305-4545-987d-963189176fe7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="test">
-      <UniqueIdentifier>{3575e66c-03c2-473f-b08d-e82b92e1caba}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp">
@@ -86,12 +83,6 @@
     </ClCompile>
     <ClCompile Include="src\tcp\KTcpWebsocket.cpp">
       <Filter>tcp</Filter>
-    </ClCompile>
-    <ClCompile Include="src\test\KCalculator.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="src\test\NineYin.cpp">
-      <Filter>test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -208,15 +199,6 @@
     </ClInclude>
     <ClInclude Include="src\tcp\KWebsocketServer.hpp">
       <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\test\KCalculator.h">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="src\test\NineYin.h">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="src\test\KPing.hpp">
-      <Filter>test</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
