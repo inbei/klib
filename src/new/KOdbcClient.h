@@ -94,6 +94,10 @@ namespace klib
 
         bool GetTimestamp(std::string& val) const;     
 
+        inline const std::string& GetFieldName() const { return name; }
+        inline bool IsNullable() const { return nullable; }
+        inline int16_t GetCType() const { return ctype; }
+
     private:
         std::string name;
         int16_t ctype;
