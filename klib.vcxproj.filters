@@ -84,6 +84,9 @@
     <ClCompile Include="src\tcp\KTcpWebsocket.cpp">
       <Filter>tcp</Filter>
     </ClCompile>
+    <ClCompile Include="src\thread\KSharedMemory.cpp">
+      <Filter>thread</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\thirdparty\KInfluxDbClient.h">
@@ -199,6 +202,9 @@
     </ClInclude>
     <ClInclude Include="src\tcp\KWebsocketServer.hpp">
       <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\thread\KSharedMemory.h">
+      <Filter>thread</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

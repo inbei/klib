@@ -32,6 +32,7 @@
     <ClCompile Include="src\thread\KEventObject.cpp" />
     <ClCompile Include="src\thread\KException.cpp" />
     <ClCompile Include="src\thread\KMutex.cpp" />
+    <ClCompile Include="src\thread\KSharedMemory.cpp" />
     <ClCompile Include="src\util\KBase64.cpp" />
     <ClCompile Include="src\util\KEndian.cpp" />
     <ClCompile Include="src\util\KSHA1.cpp" />
@@ -68,6 +69,7 @@
     <ClInclude Include="src\thread\KMutex.h" />
     <ClInclude Include="src\thread\KPthread.h" />
     <ClInclude Include="src\thread\KQueue.h" />
+    <ClInclude Include="src\thread\KSharedMemory.h" />
     <ClInclude Include="src\util\KBase64.h" />
     <ClInclude Include="src\util\KCsvFile.hpp" />
     <ClInclude Include="src\util\KEndian.h" />

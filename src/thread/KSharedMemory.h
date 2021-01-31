@@ -13,6 +13,11 @@ namespace klib
 	class KSharedMemory
 	{
 	public:
+		KSharedMemory()
+			:m_shmBuf(NULL)
+		{
+		}
+
 		bool Create(const std::string& key, size_t len)
 		{
 			// 共享内存标识符 创建共享内存  //
