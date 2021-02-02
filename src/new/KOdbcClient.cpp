@@ -23,36 +23,53 @@ namespace klib
         SQLSMALLINT     msglen;
     };
 
+    std::map<SQLSMALLINT, SQLSMALLINT> GetSql2CType()
+    {
+        std::map<SQLSMALLINT, SQLSMALLINT> types;
+        types[SQL_CHAR] = SQL_C_CHAR;
+        types[SQL_VARCHAR] = SQL_C_CHAR;
+        types[SQL_LONGVARCHAR] = SQL_C_CHAR;
+        types[SQL_NUMERIC] = SQL_C_CHAR;
+        types[SQL_DECIMAL] = SQL_C_CHAR;
+        types[SQL_WCHAR] = SQL_C_CHAR;
+        types[SQL_WVARCHAR] = SQL_C_CHAR;
+        types[SQL_WLONGVARCHAR] = SQL_C_CHAR;
+        types[SQL_BIT] = SQL_C_BIT;
+        types[SQL_REAL] = SQL_C_FLOAT;
+        types[SQL_GUID] = SQL_C_GUID;
+        types[SQL_FLOAT] = SQL_C_DOUBLE;
+        types[SQL_DOUBLE] = SQL_C_DOUBLE;
+        types[SQL_BINARY] = SQL_C_BINARY;
+        types[SQL_VARBINARY] = SQL_C_BINARY;
+        types[SQL_LONGVARBINARY] = SQL_C_BINARY;
+        types[SQL_TYPE_DATE] = SQL_C_TYPE_DATE;
+        types[SQL_TYPE_TIME] = SQL_C_TYPE_TIME;
+        types[SQL_TYPE_TIMESTAMP] = SQL_C_TYPE_TIMESTAMP;
+        return types;
+    }
+
+    std::map<SQLSMALLINT, SQLSMALLINT> GetC2SqlType()
+    {
+        std::map<SQLSMALLINT, SQLSMALLINT> types;
+        types[SQL_C_CHAR] = SQL_CHAR;
+        types[SQL_C_WCHAR] = SQL_WCHAR;
+        types[SQL_C_BIT] = SQL_BIT;
+        types[SQL_C_FLOAT] = SQL_REAL;
+        types[SQL_C_DOUBLE] = SQL_DOUBLE;
+        types[SQL_C_BINARY] = SQL_BINARY;
+        types[SQL_C_GUID] = SQL_GUID;
+        return types;
+    }
+
+    std::map<SQLSMALLINT, SQLSMALLINT> KOdbcSql::SqlType2cType = GetSql2CType();
+
+    std::map<SQLSMALLINT, SQLSMALLINT> KOdbcSql::CType2sqlType = GetC2SqlType();
+
+
     KOdbcSql::KOdbcSql(SQLHANDLE stmt) 
         :m_stmt(stmt)
     {
-        m_sqlType2cType[SQL_CHAR] = SQL_C_CHAR;
-        m_sqlType2cType[SQL_VARCHAR] = SQL_C_CHAR;
-        m_sqlType2cType[SQL_LONGVARCHAR] = SQL_C_CHAR;
-        m_sqlType2cType[SQL_NUMERIC] = SQL_C_CHAR;
-        m_sqlType2cType[SQL_DECIMAL] = SQL_C_CHAR;
-        m_sqlType2cType[SQL_WCHAR] = SQL_C_CHAR;
-        m_sqlType2cType[SQL_WVARCHAR] = SQL_C_CHAR;
-        m_sqlType2cType[SQL_WLONGVARCHAR] = SQL_C_CHAR;
-        m_sqlType2cType[SQL_BIT] = SQL_C_BIT;
-        m_sqlType2cType[SQL_REAL] = SQL_C_FLOAT;
-        m_sqlType2cType[SQL_GUID] = SQL_C_GUID;
-        m_sqlType2cType[SQL_FLOAT] = SQL_C_DOUBLE;
-        m_sqlType2cType[SQL_DOUBLE] = SQL_C_DOUBLE;
-        m_sqlType2cType[SQL_BINARY] = SQL_C_BINARY;
-        m_sqlType2cType[SQL_VARBINARY] = SQL_C_BINARY;
-        m_sqlType2cType[SQL_LONGVARBINARY] = SQL_C_BINARY;
-        m_sqlType2cType[SQL_TYPE_DATE] = SQL_C_TYPE_DATE;
-        m_sqlType2cType[SQL_TYPE_TIME] = SQL_C_TYPE_TIME;
-        m_sqlType2cType[SQL_TYPE_TIMESTAMP] = SQL_C_TYPE_TIMESTAMP;
-
-        m_cType2sqlType[SQL_C_CHAR] = SQL_CHAR;
-        m_cType2sqlType[SQL_C_WCHAR] = SQL_WCHAR;
-        m_cType2sqlType[SQL_C_BIT] = SQL_BIT;
-        m_cType2sqlType[SQL_C_FLOAT] = SQL_REAL;
-        m_cType2sqlType[SQL_C_DOUBLE] = SQL_DOUBLE;
-        m_cType2sqlType[SQL_C_BINARY] = SQL_BINARY;
-        m_cType2sqlType[SQL_C_GUID] = SQL_GUID;
+                
     }
 
     bool KOdbcSql::BindParam(const char* fmt, ...)
@@ -261,8 +278,8 @@ namespace klib
 
     SQLSMALLINT KOdbcSql::GetCType(SQLSMALLINT sqlType, bool bsigned /*= false*/)
     {
-        std::map<SQLSMALLINT, SQLSMALLINT>::const_iterator it = m_sqlType2cType.find(sqlType);
-        if (it != m_sqlType2cType.end())
+        std::map<SQLSMALLINT, SQLSMALLINT>::const_iterator it = SqlType2cType.find(sqlType);
+        if (it != SqlType2cType.end())
             return it->second;
         switch (sqlType)
         {
@@ -281,8 +298,8 @@ namespace klib
 
     SQLSMALLINT KOdbcSql::GetSqlType(SQLSMALLINT ctype, bool& bsigned)
     {
-        std::map<SQLSMALLINT, SQLSMALLINT>::const_iterator it = m_cType2sqlType.find(ctype);
-        if (it != m_cType2sqlType.end())
+        std::map<SQLSMALLINT, SQLSMALLINT>::const_iterator it = CType2sqlType.find(ctype);
+        if (it != CType2sqlType.end())
             return it->second;
         switch (ctype)
         {
@@ -342,6 +359,7 @@ namespace klib
         m_paraBufs.clear();
     }
 
+
     KOdbcClient::KOdbcClient(const KOdbcConfig& prop) :m_conf(prop), m_henv(SQL_NULL_HENV), m_hdbc(SQL_NULL_HDBC), m_autoCommit(true)
     {
         // Create the DB2 environment handle
@@ -379,7 +397,7 @@ namespace klib
         std::string connstr = GetConnStr(m_conf);
         if (connstr.empty())
         {
-            fprintf(stderr, "OdbcCli connect failed, null driver\n");
+            printf("OdbcCli connect failed, null driver\n");
             return false;
         }
 
@@ -539,7 +557,7 @@ namespace klib
             while (i <= numrecs && (tmp = SQLGetDiagRec(htype, handle, i, ss.state, &ss.nativerr,
                 ss.msgtext, sizeof(ss.msgtext), &ss.msglen)) != SQL_NO_DATA)
             {
-                fprintf(stderr, "check sql state %s:%s\n", ((r == SQL_ERROR)?"error":"info"),  std::string((char*)&ss.msgtext[0], ss.msglen).c_str());
+                printf("sql state %s:%s\n", ((r == SQL_ERROR)?"error":"info"),  std::string((char*)&ss.msgtext[0], ss.msglen).c_str());
                 i++;
             }
         }

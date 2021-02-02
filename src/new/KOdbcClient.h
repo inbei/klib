@@ -160,8 +160,8 @@ namespace klib
     private:
         SQLHANDLE m_stmt;
         KOdbcRow m_buffer;
-        std::map<SQLSMALLINT, SQLSMALLINT> m_sqlType2cType;
-        std::map<SQLSMALLINT, SQLSMALLINT> m_cType2sqlType;
+        static std::map<SQLSMALLINT, SQLSMALLINT> SqlType2cType;
+        static std::map<SQLSMALLINT, SQLSMALLINT> CType2sqlType;
         std::vector<KBuffer> m_paraBufs;
     };
 
