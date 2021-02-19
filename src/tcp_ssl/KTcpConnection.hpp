@@ -37,6 +37,8 @@
 #include "thread/KEventObject.h"
 #include "util/KTime.h"
 
+#include "tcp/KOpenSSL.h"
+
 /**
 tcp数据处理类
 **/
@@ -258,6 +260,13 @@ namespace klib {
         std::vector<KBuffer> dat1;
         // 字符串数据 //
         std::string dat2;
+
+        SSL* ssl;
+        SocketEvent()
+            :ssl(NULL), fd(0)
+        {
+
+        }
     };
 
     enum NetworkState
@@ -362,7 +371,7 @@ namespace klib {
     public:
         KTcpConnection(KTcpNetwork<MessageType> *poller)
             :KEventObject<SocketEvent>("Socket event thread", 1000),
-            m_state(NsUndefined), m_mode(NmUndefined), m_poller(poller)
+            m_state(NsUndefined), m_mode(NmUndefined), m_poller(poller),m_ssl(NULL)
         {
 
         }
@@ -445,6 +454,10 @@ namespace klib {
         *************************************/
         inline SocketType GetSocket() const { return m_fd; }
 
+        inline SSL* GetSSL() const { return m_ssl; }
+
+        inline void SetSSL(SSL* ssl) { m_ssl = ssl; }
+
         /************************************
         * Method:    获取IP和端口
         * Returns:   返回IP和端口
@@ -488,6 +501,7 @@ namespace klib {
         *************************************/
         virtual void OnDisconnected(NetworkMode mode, const std::string& ipport, SocketType fd)
         {
+            KOpenSSL::Disconnect(&m_ssl);
             m_auth.Reset();
             m_remain.Release();
             SetState(NsDisconnected);
@@ -564,7 +578,7 @@ namespace klib {
                         const std::string& smsg = ev.dat2;
                         if (!smsg.empty())
                         {
-                            int rc = WriteSocket(fd, smsg.c_str(), smsg.size());
+                            int rc = KOpenSSL::WriteSocket(ev.ssl, smsg.c_str(), smsg.size());
                             if (rc < 0)
                             {
                                 Disconnect(fd);
@@ -579,7 +593,7 @@ namespace klib {
                             while (it != bufs.end())
                             {
                                 KBuffer& buf = *it;
-                                if (WriteSocket(fd, buf.GetData(), buf.GetSize()) < 0)
+                                if (KOpenSSL::WriteSocket(ev.ssl, buf.GetData(), buf.GetSize()) < 0)
                                 {
                                     Disconnect(fd);
                                     break;
@@ -596,7 +610,7 @@ namespace klib {
                     if (bufs.empty())
                     {
                         std::vector<KBuffer> buffers;
-                        int rc = ReadSocket(fd, buffers);
+                        int rc = KOpenSSL::ReadSocket(ev.ssl, buffers);
                         if (rc < 0)
                             Disconnect(fd);
 
@@ -663,5 +677,6 @@ namespace klib {
         Authorization m_auth;
         // 连接 //
         KTcpNetwork<MessageType>* m_poller;
+        SSL* m_ssl;
     };
 };

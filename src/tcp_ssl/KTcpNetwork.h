@@ -16,7 +16,7 @@ namespace klib {
         *************************************/
         KTcpNetwork()
             :KEventObject<SocketType>("Poll thread", 50),m_connected(false), 
-            m_isServer(false),m_needAuth(false),m_maxClient(50)
+            m_isServer(false),m_needAuth(false),m_maxClient(50),m_ctx(NULL)
         {
 #if defined(WIN32)
             WSADATA wsd;
@@ -80,8 +80,14 @@ namespace klib {
         * Parameter: isServer 是否是服务器
         * Parameter: needAuth 是否需要授权
         *************************************/
-        virtual bool Start(const std::string& ip, int32_t port, bool isServer = true, bool needAuth = false)
+        virtual bool Start(const std::string& ip, int32_t port, const KOpenSSLConfig &conf, bool isServer = true, bool needAuth = false)
         {
+            if (!KOpenSSL::CreateCtx(isServer, conf, &m_ctx))
+            {
+                KOpenSSL::DestroyCtx(&m_ctx);
+                return false;
+            }
+
             m_ip = ip;
             m_port = port;
             m_isServer = isServer;
@@ -91,7 +97,15 @@ namespace klib {
                 PostForce(0);
                 return true;
             }
+
+            KOpenSSL::DestroyCtx(&m_ctx);
             return false;
+        }
+
+        virtual void WaitForStop()
+        {
+            KEventObject<SocketType>::WaitForStop();
+            KOpenSSL::DestroyCtx(&m_ctx);
         }
 
         /************************************
@@ -124,6 +138,7 @@ namespace klib {
                 e.fd = fd;
                 e.ev = et;
                 e.dat1 = bufs;
+                e.ssl = c->GetSSL();
                 if (c->IsConnected())
                 {
                     if (!c->Post(e))
@@ -323,7 +338,7 @@ namespace klib {
         void ReadSocket2(SocketType fd)
         {
             std::vector<KBuffer> bufs;
-            if (ReadSocket(fd, bufs) < 0)
+            if (KOpenSSL::ReadSocket(GetSSL(fd), bufs) < 0)
                 DisconnectConnection(fd);
 
             if (!bufs.empty())
@@ -433,6 +448,19 @@ namespace klib {
                 return;
             }
 
+            SSL* ssl = NULL;
+            if (m_isServer)
+                ssl = KOpenSSL::Accept(fd, m_ctx);
+            else
+                ssl = KOpenSSL::Connect(fd, m_ctx);
+				
+			if (ssl == NULL)
+            {
+                CloseSocket(fd);
+                printf("CreateSSL failed\n");
+                return;
+            }
+
             if (!SetPollEvent(fd))
             {
                 CloseSocket(fd);
@@ -441,6 +469,7 @@ namespace klib {
 
             if (recycle)
             {
+                recycle->SetSSL(ssl);
                 recycle->Connect(ipport, fd);
                 m_connections[fd] = recycle;
                 printf("Recycle connection started success\n");
@@ -452,6 +481,7 @@ namespace klib {
                     KTcpConnection<MessageType>* c = NewConnection(fd, ipport);
                     if (c->Start(m_isServer ? NmServer : NmClient, ipport, fd, m_needAuth))
                     {
+                        c->SetSSL(ssl);
                         m_connections[fd] = c;
                         printf("New connection started success\n");
                     }
@@ -628,6 +658,22 @@ namespace klib {
                 reinterpret_cast<const char*>(&on), sizeof(on));
         }
 
+        bool IsExist(SocketType fd) const
+        {
+            KLockGuard<KMutex> lock(m_connMtx);
+            typename std::map<SocketType, KTcpConnection<MessageType>*>::const_iterator it = m_connections.find(fd);
+            return (it != m_connections.end());
+        }
+
+        SSL* GetSSL(SocketType fd) const
+        {
+            KLockGuard<KMutex> lock(m_connMtx);
+            typename std::map<SocketType, KTcpConnection<MessageType>*>::const_iterator it = m_connections.find(fd);
+            if (it != m_connections.end())
+                return it->second->GetSSL();
+            return NULL;
+        }
+
     private:
         template<typename T>
         friend class KTcpConnection;
@@ -660,6 +706,8 @@ namespace klib {
         KMutex m_connMtx;
         // 连接缓存 //
         std::map<SocketType, KTcpConnection<MessageType>*> m_connections;
+
+        SSL_CTX* m_ctx;
     };
 };
 
