@@ -78,14 +78,17 @@
     <ClCompile Include="src\new\KOdbcClient.cpp">
       <Filter>new</Filter>
     </ClCompile>
+    <ClCompile Include="src\thread\KSharedMemory.cpp">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tcp\KOpenSSL.cpp">
+      <Filter>tcp</Filter>
+    </ClCompile>
     <ClCompile Include="src\tcp\KTcpModbus.cpp">
       <Filter>tcp</Filter>
     </ClCompile>
     <ClCompile Include="src\tcp\KTcpWebsocket.cpp">
       <Filter>tcp</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread\KSharedMemory.cpp">
-      <Filter>thread</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -161,12 +164,6 @@
     <ClInclude Include="src\thread\KQueue.h">
       <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="src\tcp\KTcpClient.hpp">
-      <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tcp\KTcpServer.hpp">
-      <Filter>tcp</Filter>
-    </ClInclude>
     <ClInclude Include="src\new\KBarrier.hpp">
       <Filter>new</Filter>
     </ClInclude>
@@ -179,17 +176,8 @@
     <ClInclude Include="src\new\KOdbcClient.h">
       <Filter>new</Filter>
     </ClInclude>
-    <ClInclude Include="src\tcp\KTcpNetwork.h">
-      <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tcp\KTcpModbus.h">
-      <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tcp\KTcpWebsocket.h">
-      <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tcp\KTcpConnection.hpp">
-      <Filter>tcp</Filter>
+    <ClInclude Include="src\thread\KSharedMemory.h">
+      <Filter>thread</Filter>
     </ClInclude>
     <ClInclude Include="src\tcp\KModbusClient.hpp">
       <Filter>tcp</Filter>
@@ -197,14 +185,32 @@
     <ClInclude Include="src\tcp\KModbusServer.hpp">
       <Filter>tcp</Filter>
     </ClInclude>
+    <ClInclude Include="src\tcp\KOpenSSL.h">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpClient.hpp">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpConnection.hpp">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpModbus.h">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpNetwork.h">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpServer.hpp">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KTcpWebsocket.h">
+      <Filter>tcp</Filter>
+    </ClInclude>
     <ClInclude Include="src\tcp\KWebsocketClient.hpp">
       <Filter>tcp</Filter>
     </ClInclude>
     <ClInclude Include="src\tcp\KWebsocketServer.hpp">
       <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\thread\KSharedMemory.h">
-      <Filter>thread</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

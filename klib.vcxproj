@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\new\KOdbcClient.cpp" />
+    <ClCompile Include="src\tcp\KOpenSSL.cpp" />
     <ClCompile Include="src\tcp\KTcpModbus.cpp" />
     <ClCompile Include="src\tcp\KTcpWebsocket.cpp" />
     <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp" />
@@ -46,12 +47,13 @@
     <ClInclude Include="src\new\KSpinLock.hpp" />
     <ClInclude Include="src\tcp\KModbusClient.hpp" />
     <ClInclude Include="src\tcp\KModbusServer.hpp" />
-    <ClInclude Include="src\tcp\KTcpNetwork.h" />
+    <ClInclude Include="src\tcp\KOpenSSL.h" />
     <ClInclude Include="src\tcp\KTcpClient.hpp" />
     <ClInclude Include="src\tcp\KTcpConnection.hpp" />
     <ClInclude Include="src\tcp\KTcpModbus.h" />
-    <ClInclude Include="src\tcp\KTcpWebsocket.h" />
+    <ClInclude Include="src\tcp\KTcpNetwork.h" />
     <ClInclude Include="src\tcp\KTcpServer.hpp" />
+    <ClInclude Include="src\tcp\KTcpWebsocket.h" />
     <ClInclude Include="src\tcp\KWebsocketClient.hpp" />
     <ClInclude Include="src\tcp\KWebsocketServer.hpp" />
     <ClInclude Include="src\thirdparty\KInfluxDbClient.h" />
@@ -150,7 +152,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;__OPEN_SSL__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>

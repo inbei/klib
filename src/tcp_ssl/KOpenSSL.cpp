@@ -1,3 +1,4 @@
+#ifdef __OPEN_SSL__
 #include "tcp/KOpenSSL.h"
 #include "tcp/KTcpConnection.hpp"
 namespace klib
@@ -243,3 +244,5 @@ namespace klib
     }
 
 };
+
+#endif

@@ -1,5 +1,6 @@
 #ifndef __KOPENSSL__
 #define __KOPENSSL__
+#ifdef __OPEN_SSL__
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 #include "openssl/ssl3.h"
@@ -36,5 +37,5 @@ namespace klib
     };
 
 };
-
+#endif
 #endif
