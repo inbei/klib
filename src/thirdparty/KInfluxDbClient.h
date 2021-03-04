@@ -16,19 +16,40 @@
 
 namespace thirdparty {
     using namespace klib;
-    /*
+
+    struct Measurement
+    {
+        std::string database;
+        std::string rp;
+        std::string measurement;
+    };
+
     struct ContinuousQueryParams
     {
         std::string cqname;
-        std::string srcdb;
-        std::map<std::string, std::string> aggfuncalias;
-        std::string dstmeasurement;
-        std::string srcmeasurement;
-        std::string groupbyfields;
+        Measurement src;
+        std::map<std::string, std::string> alias;
+        Measurement dst;
+        std::vector<std::string> groupFields; // 分组字段 //
         std::string interval;
-    };*/
+    };
 
-    struct QuaryResult
+    struct RetentionPolicyParams
+    {
+        std::string rp; // 保存策略名称 //
+        std::string duration; // 保留时长 //
+        std::string sharedDuration; // 文件分片时长 //
+        std::string database;
+        bool defaultRp; // 是否设置为默认策略 //
+        bool enable;
+        RetentionPolicyParams()
+            :defaultRp(true), enable(true)
+        {
+
+        }
+    };
+
+    struct QueryResult
     {
         rapidjson::Value rows;
         rapidjson::Value fields;
@@ -39,12 +60,7 @@ namespace thirdparty {
     {
     public:
         KInfluxDbClient()
-            :m_retentionpolicy("autogen")
-        {
-
-        }
-
-        ~KInfluxDbClient()
+            :m_rp("autogen")
         {
 
         }
@@ -61,101 +77,26 @@ namespace thirdparty {
         bool CreateDB(const std::string& database);
 
         // m:minute, h:hour, d:day, w:week, for example: 30w means 30 weeks
-        //************************************
-        // Method:    创建保留策略
-        // FullName:  KInfluxdbCli::CreateRetentionPolicy
-        // Access:    public 
-        // Returns:   bool
-        // Qualifier:
-        // Parameter: const std::string & retentionpolicy 保存策略名称
-        // Parameter: const std::string & duration1 保留时长
-        // Parameter: const std::string & sharedduration 文件分片时长
-        // Parameter: bool bdefault 是否设置为默认策略
-        //************************************
-        bool CreateRetentionPolicy(const std::string& retentionpolicy, const std::string& duration1, const std::string& sharedduration, bool bdefault = false);
+        bool CreateRetentionPolicy(const RetentionPolicyParams &p);
 
-        void SetRetentionPolicy(const std::string& retentionpolicy);
+        void SetRetentionPolicy(const std::string& rp);
 
-        /*bool DropRetentionPolicy(const std::string &rpname)
-        {
-            // DROP RETENTION POLICY <retention_policy_name> ON <database_name>
-            std::string resp;
-            return Post(_queryurl, std::string("q=DDROP RETENTION POLICY \"" + rpname + "\" ON \"" + _database + "\""), resp);
-        }*/
+        bool DropRetentionPolicy(const std::string &rp, const std::string &database);
 
-        //************************************
-        // Method:    创建连续查询
-        // FullName:  KInfluxdbCli::CreateContinuousQuery
-        // Access:    public 
-        // Returns:   bool
-        // Qualifier:
-        // Parameter: const std::string & cqname 连续查询名称
-        // Parameter: const std::string & interval 查询间隔
-        // Parameter: const std::map<std::string, std::string> & aggfuncalias 新字段
-        // Parameter: const std::vector<std::string> groupbyfields 分组字段
-        //************************************
-        bool CreateContinuousQuery(const std::string& cqname, const std::string& interval,
-            const std::map<std::string, std::string>& aggfuncalias, const std::vector<std::string> groupbyfields);
+        bool CreateContinuousQuery(const ContinuousQueryParams &p);
 
-        /*bool DropContinuousQuery(const std::string &cqname)
-        {
-            // DROP CONTINUOUS QUERY <cq_name> ON <database_name>
-            std::string resp;
-            return Post(_queryurl, std::string("q=DROP CONTINUOUS QUERY \"" + cqname + "\" ON \"" + _database + "\""), resp);
-        }   */
+        bool DropContinuousQuery(const std::string &cq, const std::string &database);   
 
-        //************************************
-        // Method:    插入POINT
-        // FullName:  KInfluxdbCli::InsertPoint
-        // Access:    public 
-        // Returns:   bool
-        // Qualifier:
-        // Parameter: const std::string & sql
-        //************************************
-        bool InsertPoint(const std::string& sql)
-        {
-            std::string resp;
-            return Post(m_writeurl, sql, resp);
-        }
+        bool InsertPoint(const std::string& sql);
 
-        //************************************
-        // Method:    批量插入POINT
-        // FullName:  KInfluxdbCli::InsertPoint
-        // Access:    public 
-        // Returns:   bool
-        // Qualifier:
-        // Parameter: const std::vector<std::string> & sqls
-        //************************************
         bool InsertPoint(const std::vector<std::string>& sqls);
 
-        //************************************
-        // Method:    查询
-        // FullName:  KInfluxdbCli::QueryMesurement
-        // Access:    public 
-        // Returns:   bool
-        // Qualifier:
-        // Parameter: const std::string & sql， sql语句
-        // Parameter: std::string & tablename，表名
-        // Parameter: Json::Value & fields 字段名
-        // Parameter: Json::Value & rows 行数据
-        //************************************
-        bool QueryMesurement(const std::string& sql, std::string& tablename, QuaryResult& qr);
+        bool QueryMesurement(const std::string& sql, std::string& tablename, QueryResult& qr);
 
     private:
         void SetEasyOpt(const std::string& url, CURL* curl, std::string* resp) const;
 
-        //************************************
-        // Method:    解析influxdb响应内容
-        // FullName:  KInfluxdbCli::ParseInfluxdbResponse
-        // Access:    private 
-        // Returns:   bool
-        // Qualifier:
-        // Parameter: const std::string & resp
-        // Parameter: std::string & tablename
-        // Parameter: Json::Value & fields
-        // Parameter: Json::Value & rows
-        //************************************
-        bool ParseInfluxdbResponse(const std::string& resp, std::string& tablename, QuaryResult& qr);
+        bool ParseResponse(const std::string& resp, std::string& tablename, QueryResult& qr);
 
         static size_t WriteCallback(void* data, size_t size, size_t nmemb, void* buffer);
 
@@ -169,6 +110,6 @@ namespace thirdparty {
 
         std::string m_writeurl;
         std::string m_queryurl;
-        std::string m_retentionpolicy;
+        std::string m_rp;
     };
 };

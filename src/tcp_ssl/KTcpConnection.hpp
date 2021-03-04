@@ -281,7 +281,7 @@ namespace klib {
     enum NetworkState
     {
         // 连接上，断开，就绪 //
-        NsUndefined, NsConnected, NsHandshaked, NsAllReady, NsDisconnected
+        NsUndefined, NsPeerConnected, NsDisconnected, NsReadyToWork
     };
 
     enum NetworkMode
@@ -443,8 +443,8 @@ namespace klib {
         {
             switch (GetState())
             {
-            case NsConnected:
-            case NsAllReady:
+            case NsPeerConnected:
+            case NsReadyToWork:
                 return true;
             default:
                 return false;
@@ -498,7 +498,7 @@ namespace klib {
         *************************************/
         virtual void OnConnected(NetworkMode mode, const std::string& ipport)
         {
-            SetState(NsConnected);
+            SetState(NsPeerConnected);
             printf("%s connected\n", ipport.c_str());
         }
         /************************************

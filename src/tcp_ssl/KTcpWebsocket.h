@@ -382,7 +382,7 @@ namespace klib
         end:
             KTcpNetwork<KWebsocketMessage>::Release(const_cast<std::vector<KBuffer>&>(ev));
             if (rc)
-                SetState(NsAllReady);
+                SetState(NsReadyToWork);
             return rc;
         }
 

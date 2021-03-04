@@ -128,7 +128,7 @@ namespace thirdparty {
             catch (CMSException& e)
             {
                 printf("<%s> Consumer Exception:[%s].\n", 
-                    __FUNCTION__, e.getStackTraceString().c_str());
+                    __FUNCTION__, e.what());
                 m_state = CSException;
             }
             break;

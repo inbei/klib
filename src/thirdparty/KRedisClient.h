@@ -2,7 +2,7 @@
 #ifndef _HIREDIS_HPP_
 #define _HIREDIS_HPP_
 
-#include "hiredis/hiredis.h"
+#include "hiredis.h"
 #include "thread/KMutex.h"
 #include "thread/KLockGuard.h"
 #include "util/KStringUtility.h"

@@ -60,8 +60,7 @@ namespace thirdparty {
         virtual void onException(const CMSException& ex)
         {
             m_state = CSException;
-            printf("CMS Exception occurred:[%s].  Shutting down client.\n", 
-                ex.getStackTraceString().c_str());
+            printf("CMS Exception occurred:[%s].  Shutting down client.\n", ex.what());
         }
 
         virtual void transportInterrupted()
