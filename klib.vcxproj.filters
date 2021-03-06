@@ -81,9 +81,6 @@
     <ClCompile Include="src\thread\KSharedMemory.cpp">
       <Filter>thread</Filter>
     </ClCompile>
-    <ClCompile Include="src\tcp\KOpenSSL.cpp">
-      <Filter>tcp</Filter>
-    </ClCompile>
     <ClCompile Include="src\tcp\KTcpModbus.cpp">
       <Filter>tcp</Filter>
     </ClCompile>
@@ -183,9 +180,6 @@
       <Filter>tcp</Filter>
     </ClInclude>
     <ClInclude Include="src\tcp\KModbusServer.hpp">
-      <Filter>tcp</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tcp\KOpenSSL.h">
       <Filter>tcp</Filter>
     </ClInclude>
     <ClInclude Include="src\tcp\KTcpClient.hpp">

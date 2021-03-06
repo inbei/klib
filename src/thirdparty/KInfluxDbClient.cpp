@@ -112,8 +112,8 @@ namespace thirdparty {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, resp);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 6);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 6);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30);
 
         //curl_slist *headers = NULL;
         //headers = curl_slist_append(headers, "Content-Type:application/octet-stream; charset=UTF-8");
@@ -179,9 +179,9 @@ namespace thirdparty {
                 SetEasyOpt(url, curl, &resp);
                 CURLcode cc;
                 if (CURLE_OK == (cc = curl_easy_perform(curl)))
-                {
                     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &rc);
-                }
+                else
+                    printf("error code:[%d]\n", cc);
                 curl_easy_cleanup(curl);
             }
         }

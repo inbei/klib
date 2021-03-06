@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\new\KOdbcClient.cpp" />
-    <ClCompile Include="src\tcp\KOpenSSL.cpp" />
     <ClCompile Include="src\tcp\KTcpModbus.cpp" />
     <ClCompile Include="src\tcp\KTcpWebsocket.cpp" />
     <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp" />
@@ -47,7 +46,6 @@
     <ClInclude Include="src\new\KSpinLock.hpp" />
     <ClInclude Include="src\tcp\KModbusClient.hpp" />
     <ClInclude Include="src\tcp\KModbusServer.hpp" />
-    <ClInclude Include="src\tcp\KOpenSSL.h" />
     <ClInclude Include="src\tcp\KTcpClient.hpp" />
     <ClInclude Include="src\tcp\KTcpConnection.hpp" />
     <ClInclude Include="src\tcp\KTcpModbus.h" />

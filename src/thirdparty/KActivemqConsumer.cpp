@@ -10,6 +10,7 @@ namespace thirdparty {
         m_state(CSDisconnected)
     {
         m_brokerURI = GetBrokerUrl(brokers);
+        printf("<%s> broker url:[%s]\n", __FUNCTION__,m_brokerURI.c_str());
     }
 
     void KActivemqConsumer::Initialize()
