@@ -87,6 +87,9 @@
     <ClCompile Include="src\tcp\KTcpWebsocket.cpp">
       <Filter>tcp</Filter>
     </ClCompile>
+    <ClCompile Include="src\thirdparty\KTDengineClient.cpp">
+      <Filter>thirdparty</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\thirdparty\KInfluxDbClient.h">
@@ -205,6 +208,9 @@
     </ClInclude>
     <ClInclude Include="src\tcp\KWebsocketServer.hpp">
       <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\thirdparty\KTDengineClient.h">
+      <Filter>thirdparty</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

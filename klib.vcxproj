@@ -26,6 +26,7 @@
     <ClCompile Include="src\thirdparty\KKafkaProducer.cpp" />
     <ClCompile Include="src\thirdparty\KRedisClient.cpp" />
     <ClCompile Include="src\thirdparty\KRocketMqConsumer.cpp" />
+    <ClCompile Include="src\thirdparty\KTDengineClient.cpp" />
     <ClCompile Include="src\thread\KBuffer.cpp" />
     <ClCompile Include="src\thread\KCondVariable.cpp" />
     <ClCompile Include="src\thread\KError.cpp" />
@@ -58,6 +59,7 @@
     <ClInclude Include="src\thirdparty\KKafkaProducer.h" />
     <ClInclude Include="src\thirdparty\KRedisClient.h" />
     <ClInclude Include="src\thirdparty\KRocketMqConsumer.h" />
+    <ClInclude Include="src\thirdparty\KTDengineClient.h" />
     <ClInclude Include="src\thread\KAny.h" />
     <ClInclude Include="src\thread\KAtomic.h" />
     <ClInclude Include="src\thread\KBuffer.h" />
@@ -154,7 +156,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>E:\depends\windows\pthreads-w32-2-9-1-release\Pre-built.2\include;E:\depends\windows\GnuWin32\include;E:\depends\windows\hiredis\include;E:\depends\windows\libcurl\include;E:\depends\windows\rdkafka\include;E:\depends\windows\rocketmq\include;.\src;.\;C:\Program Files (x86)\OpenSSL-Win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\depends\windows\pthreads-w32-2-9-1-release\Pre-built.2\include;E:\depends\windows\GnuWin32\include;E:\depends\windows\hiredis\include;E:\depends\windows\libcurl\include;E:\depends\windows\rdkafka\include;E:\depends\windows\rocketmq\include;.\src;.\;C:\Program Files (x86)\OpenSSL-Win32\include;E:\depends\windows\TDengine-2.0.16.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
