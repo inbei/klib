@@ -113,7 +113,7 @@ namespace thirdparty {
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, resp);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 300);
 
         //curl_slist *headers = NULL;
         //headers = curl_slist_append(headers, "Content-Type:application/octet-stream; charset=UTF-8");

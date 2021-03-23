@@ -90,7 +90,7 @@ namespace klib
         va_list args;
         va_start(args, fmt);
         int pos = 0;
-        size_t slen = strlen(fmt);
+        int slen = strlen(fmt);
         for (; i <= numPara && pos < slen; ++i)
         {
             // mysql does't support this api
