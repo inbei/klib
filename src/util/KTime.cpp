@@ -104,26 +104,26 @@ namespace klib {
 #endif
     }
 
-	void KTime::NowMicrosecond(uint64_t& microsec)
-	{
+    void KTime::NowMicrosecond(uint64_t& microsec)
+    {
 #ifdef WIN32
 #define EPOCHFILETIME   (116444736000000000UL)
-		FILETIME ft;
-		LARGE_INTEGER li;
-		GetSystemTimeAsFileTime(&ft);
-		li.LowPart = ft.dwLowDateTime;
-		li.HighPart = ft.dwHighDateTime;
-		microsec = (li.QuadPart - EPOCHFILETIME) / 10;
+        FILETIME ft;
+        LARGE_INTEGER li;
+        GetSystemTimeAsFileTime(&ft);
+        li.LowPart = ft.dwLowDateTime;
+        li.HighPart = ft.dwHighDateTime;
+        microsec = (li.QuadPart - EPOCHFILETIME) / 10;
 #else
-		timeval tv;
-		if (gettimeofday(&tv, NULL) == 0)
-		{
-			microsec = (uint64_t(tv.tv_sec) * 1000000 + tv.tv_usec);
-		}
-		else
-		{
-			microsec = 0;
-		}
+        timeval tv;
+        if (gettimeofday(&tv, NULL) == 0)
+        {
+            microsec = (uint64_t(tv.tv_sec) * 1000000 + tv.tv_usec);
+        }
+        else
+        {
+            microsec = 0;
+        }
 #endif
     }
 

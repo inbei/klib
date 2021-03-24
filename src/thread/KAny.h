@@ -58,74 +58,74 @@ namespace klib {
         template<typename ValueType>
         KAny(const ValueType& v) :m_dat(new ValueHolder<ValueType>(v)) {}
         // 拷贝构造 //
-		KAny(const KAny& rhs) 
+        KAny(const KAny& rhs) 
         {
-			if (rhs.m_dat)
-				m_dat = rhs.m_dat->Clone();
-		}
+            if (rhs.m_dat)
+                m_dat = rhs.m_dat->Clone();
+        }
         // 析构函数 //
         virtual ~KAny(){ Release(); }
         // 赋值操作符重载 //
         template<typename ValueType>
-		KAny& operator=(const ValueType& v)
-		{
-			if (TypeInfo() == typeid(ValueType))
-			{
-				ValueHolder<ValueType>* s = dynamic_cast<ValueHolder<ValueType>*>(m_dat);
-				s->SetValue(v);
-			}
-			else
-			{
-				Release();
-				m_dat = new ValueHolder<ValueType>(v);
-			}
-			return *this;
-		}
+        KAny& operator=(const ValueType& v)
+        {
+            if (TypeInfo() == typeid(ValueType))
+            {
+                ValueHolder<ValueType>* s = dynamic_cast<ValueHolder<ValueType>*>(m_dat);
+                s->SetValue(v);
+            }
+            else
+            {
+                Release();
+                m_dat = new ValueHolder<ValueType>(v);
+            }
+            return *this;
+        }
         // 赋值操作符重载 //
         KAny& operator=(const KAny& rhs)
         {
-			if (this == &rhs)
-				return *this;
+            if (this == &rhs)
+                return *this;
             if (TypeInfo() == rhs.TypeInfo())
                 m_dat->Copy(rhs.m_dat);
             else
             {
-				Release();
-				if (rhs.m_dat)
-					m_dat = rhs.m_dat->Clone();
+                Release();
+                if (rhs.m_dat)
+                    m_dat = rhs.m_dat->Clone();
             }
-			return *this;
+            return *this;
         }
         // 获取数据类型 //
         virtual const std::type_info& TypeInfo() const
         {
-			if (!m_dat)
-				return typeid(void);
-			return m_dat->TypeInfo();
+            if (!m_dat)
+                return typeid(void);
+            return m_dat->TypeInfo();
         }
         // 将数据转换为指定类型 //
         template<typename ValueType>
         static const ValueType& AnyCast(const KAny& a)
         {
-			if (!a.m_dat)
+            if (!a.m_dat)
                 throw std::invalid_argument("KAny data is null");
 
-			ValueHolder<ValueType>* s = dynamic_cast<ValueHolder<ValueType>*>(a.m_dat);
-			if (s)
+            ValueHolder<ValueType>* s = dynamic_cast<ValueHolder<ValueType>*>(a.m_dat);
+            if (s)
                 return s->GetValue();
-			else
+            else
                 throw std::bad_cast();
         }
 
     private:
-		// 释放资源 //
+        // 释放资源 //
         void Release()
         {
-			if (m_dat)
-			{
-				delete m_dat;
-				m_dat = NULL;
-			}
+            if (m_dat)
+            {
+                delete m_dat;
+                m_dat = NULL;
+            }
         }
 
     private:

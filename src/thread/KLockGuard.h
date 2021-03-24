@@ -12,13 +12,13 @@ namespace klib {
         KLockGuard(const MutexType& mtx)
             :m_tmtx(mtx)
         {
-			m_tmtx.Lock();
-			m_acquired = true;
+            m_tmtx.Lock();
+            m_acquired = true;
         }
 
         ~KLockGuard()
         {
-			if (m_acquired)
+            if (m_acquired)
                 m_tmtx.Unlock();
         }
 
@@ -28,10 +28,10 @@ namespace klib {
         *************************************/
         inline void Acquire() const
         {
-			if (m_acquired)
+            if (m_acquired)
                 throw KException(__FILE__, __LINE__, "already acquired");
             m_tmtx.Lock();
-			m_acquired = true;
+            m_acquired = true;
         }
 
         /************************************
@@ -40,10 +40,10 @@ namespace klib {
         *************************************/
         inline bool TryAcquire() const
         {
-			if (m_acquired)
+            if (m_acquired)
                 throw KException(__FILE__, __LINE__, "already acquired");
-			m_acquired = m_tmtx.TryLock();
-			return m_acquired;
+            m_acquired = m_tmtx.TryLock();
+            return m_acquired;
         }
 
         /************************************
@@ -52,10 +52,10 @@ namespace klib {
         *************************************/
         inline void Release() const
         {
-			if (!m_acquired)
+            if (!m_acquired)
                 throw KException(__FILE__, __LINE__, "not acquired");
-			m_tmtx.Unlock();
-			m_acquired = false;
+            m_tmtx.Unlock();
+            m_acquired = false;
         }
 
         inline bool Acquired() const{ return m_acquired; }

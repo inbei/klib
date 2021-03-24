@@ -22,20 +22,20 @@ namespace klib {
 
         inline void Assign(const VariantType& d)
         {
-			KLockGuard<KMutex> lock(m_vtMtx);
-			m_dat = d;
+            KLockGuard<KMutex> lock(m_vtMtx);
+            m_dat = d;
         }
 
         inline VariantType Get() const
         {
-			KLockGuard<KMutex> lock(m_vtMtx);
-			return m_dat;
+            KLockGuard<KMutex> lock(m_vtMtx);
+            return m_dat;
         }
 
         inline operator VariantType() const
         {
-			KLockGuard<KMutex> lock(m_vtMtx);
-			return m_dat;
+            KLockGuard<KMutex> lock(m_vtMtx);
+            return m_dat;
         }
 
         inline AtomicVariant& operator=(const VariantType& dt)
@@ -56,25 +56,25 @@ namespace klib {
     public:
         inline void Assign(const KeyType& ky, const ValueType& vt)
         {
-			KLockGuard<KMutex> lock(m_mpMtx);
-			m_dat[ky] = vt;
+            KLockGuard<KMutex> lock(m_mpMtx);
+            m_dat[ky] = vt;
         }
 
         inline void Assign(const std::map<KeyType, ValueType>& d)
         {
-			KLockGuard<KMutex> lock(m_mpMtx);
-			m_dat = d;
+            KLockGuard<KMutex> lock(m_mpMtx);
+            m_dat = d;
         }
 
         inline bool Get(const KeyType& ky, ValueType& val)
         {
-			KLockGuard<KMutex> lock(m_mpMtx);
-			if (m_dat.find(ky) != m_dat.end())
-			{
-				val = m_dat[ky];
-				return true;
-			}
-			return false;
+            KLockGuard<KMutex> lock(m_mpMtx);
+            if (m_dat.find(ky) != m_dat.end())
+            {
+                val = m_dat[ky];
+                return true;
+            }
+            return false;
         }
 
         inline void Get(std::map<KeyType, ValueType>& d) const
@@ -85,26 +85,26 @@ namespace klib {
 
         inline void Erase(const KeyType& ky)
         {
-			KLockGuard<KMutex> lock(m_mpMtx);
-			m_dat.erase(ky);
+            KLockGuard<KMutex> lock(m_mpMtx);
+            m_dat.erase(ky);
         }
 
         inline void Clear()
         {
-			KLockGuard<KMutex> lock(m_mpMtx);
-			m_dat.clear();
+            KLockGuard<KMutex> lock(m_mpMtx);
+            m_dat.clear();
         }
 
         inline bool Empty() const
         {
-			KLockGuard<KMutex> lock(m_mpMtx);
-			return m_dat.empty();
+            KLockGuard<KMutex> lock(m_mpMtx);
+            return m_dat.empty();
         }
 
         inline size_t Size() const
         {
-			KLockGuard<KMutex> lock(m_mpMtx);
-			return m_dat.size();
+            KLockGuard<KMutex> lock(m_mpMtx);
+            return m_dat.size();
         }
 
     private:
@@ -131,12 +131,12 @@ namespace klib {
         inline IntegerType FetchAdd(IntegerType val)
         {
 #if defined(WIN32)
-			KLockGuard<KMutex> lock(m_intMtx);
-			IntegerType tmp = m_ival;
-			m_ival += val;
-			return tmp;
+            KLockGuard<KMutex> lock(m_intMtx);
+            IntegerType tmp = m_ival;
+            m_ival += val;
+            return tmp;
 #else
-			return __sync_fetch_and_add(&m_ival, val);
+            return __sync_fetch_and_add(&m_ival, val);
 #endif
         }
 
@@ -155,23 +155,23 @@ namespace klib {
         inline IntegerType Load() const
         {
 #if defined(WIN32)
-			KLockGuard<KMutex> lock(m_intMtx);
-			return m_ival;
+            KLockGuard<KMutex> lock(m_intMtx);
+            return m_ival;
 #else
-			return __sync_fetch_and_add(const_cast<IntegerType*>(&m_ival), 0);
+            return __sync_fetch_and_add(const_cast<IntegerType*>(&m_ival), 0);
 #endif
         }
 
         inline IntegerType Exchange(IntegerType val)
         {
 #if defined(WIN32)
-			KLockGuard<KMutex> lock(m_intMtx);
-			IntegerType tmp = m_ival;
-			m_ival = val;
-			return tmp;
+            KLockGuard<KMutex> lock(m_intMtx);
+            IntegerType tmp = m_ival;
+            m_ival = val;
+            return tmp;
 #else
-			__sync_synchronize();
-			return __sync_lock_test_and_set(&m_ival, val);
+            __sync_synchronize();
+            return __sync_lock_test_and_set(&m_ival, val);
 #endif
         }
 
@@ -181,8 +181,8 @@ namespace klib {
         KMutex m_intMtx;
 #endif
     };
-	
-	class AtomicBool
+    
+    class AtomicBool
     {
     public:
         AtomicBool(bool v = false):m_dat(v ? 1 : 0){}

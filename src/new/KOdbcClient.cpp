@@ -410,7 +410,7 @@ namespace klib
         }
         catch (const std::exception&e)
         {
-            printf("<%s> exception:[%s]\n", e.what());
+            printf("<%s> exception:[%s]\n", __FUNCTION__, e.what());
             return false;
         }
 
