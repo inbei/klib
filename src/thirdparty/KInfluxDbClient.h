@@ -32,6 +32,7 @@ namespace thirdparty {
         Measurement dst;
         std::vector<std::string> groupFields; // 分组字段 //
         std::string interval;
+        std::string condition;
     };
 
     struct RetentionPolicyParams
@@ -79,7 +80,7 @@ namespace thirdparty {
         // m:minute, h:hour, d:day, w:week, for example: 30w means 30 weeks
         bool CreateRetentionPolicy(const RetentionPolicyParams &p);
 
-        void SetRetentionPolicy(const std::string& rp);
+        void UpdateUrl(const std::string& rp, const std::string& database);
 
         bool DropRetentionPolicy(const std::string &rp, const std::string &database);
 

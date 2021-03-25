@@ -1,5 +1,5 @@
 #include "KActivemqConsumer.h"
-
+#include "util/KTime.h"
 namespace thirdparty {
     KActivemqConsumer::KActivemqConsumer(const std::vector<std::string>& brokers, const std::string& destURI)
         : m_connection(NULL),
@@ -131,6 +131,7 @@ namespace thirdparty {
                 printf("<%s> Consumer Exception:[%s].\n", 
                     __FUNCTION__, e.what());
                 m_state = CSException;
+                klib::KTime::MSleep(3000);
             }
             break;
         }

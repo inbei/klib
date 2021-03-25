@@ -192,8 +192,9 @@ namespace thirdparty {
         return (rc / 100 == 2);
     }
 
-    void KInfluxDbClient::SetRetentionPolicy(const std::string& rp)
+    void KInfluxDbClient::UpdateUrl(const std::string& rp, const std::string &database)
     {
+        m_database = database;
         m_rp = rp;
         m_queryurl = "http://" + m_host + ":8086/query?u=" + m_username + "&p=" + m_password + "&db=" + m_database + "&rp=" + m_rp;
         m_writeurl = "http://" + m_host + ":8086/write?u=" + m_username + "&p=" + m_password + "&db=" + m_database + "&rp=" + m_rp;
@@ -298,15 +299,15 @@ namespace thirdparty {
 
                 char buf[1024] = { 0 };
 #ifdef WIN32
-                sprintf_s(buf, "CREATE CONTINUOUS QUERY %s ON %s RESAMPLE EVERY 1m FOR 5m "
+                sprintf_s(buf, "CREATE CONTINUOUS QUERY %s ON %s RESAMPLE EVERY 1m FOR %s "
 #else
-                sprintf(buf, "CREATE CONTINUOUS QUERY %s ON %s RESAMPLE EVERY 1m FOR 5m "
+                sprintf(buf, "CREATE CONTINUOUS QUERY %s ON %s RESAMPLE EVERY 1m FOR %s "
 #endif
-                    "BEGIN SELECT %s INTO %s.%s.%s FROM %s "
-                    "where quality = 1 or quality = 5 GROUP BY %s,time(%s) fill(65535) END",
-                    p.cqname.c_str(), p.src.database.c_str(), fields.c_str(), 
-                    p.dst.database.c_str(),p.dst.rp.c_str(), p.dst.measurement.c_str(), 
-                    p.src.measurement.c_str(), groupStr.c_str(), p.interval.c_str());
+                    "BEGIN SELECT %s INTO %s.%s.:MEASUREMENT FROM /.*/ "
+                    "%s GROUP BY %s,time(%s) END",//tz('Asia/Shanghai')
+                    p.cqname.c_str(), p.src.database.c_str(), p.interval.c_str(),
+                    fields.c_str(), p.dst.database.c_str(),p.dst.rp.c_str(), //p.dst.measurement.c_str(), p.src.measurement.c_str(),
+                    p.condition.c_str(),groupStr.c_str(), p.interval.c_str());
                 return Post(m_queryurl, std::string("q=") + buf, resp);
             }
         }
