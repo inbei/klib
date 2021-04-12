@@ -20,17 +20,17 @@ namespace klib
 
 		bool Create(const std::string& key, size_t len)
 		{
-			// ¹²ÏíÄÚ´æ±êÊ¶·û ´´½¨¹²ÏíÄÚ´æ  //
+			// å…±äº«å†…å­˜æ ‡è¯†ç¬¦ åˆ›å»ºå…±äº«å†…å­˜  //
 #ifdef WIN32
 			int hashKey = HashCode(key);
 			printf("str:[%s] hash code:[%d]\n", key.c_str(), hashKey);
-			// Ê×ÏÈÊÔÍ¼´ò¿ªÒ»¸öÃüÃûµÄÄÚ´æÓ³ÉäÎÄ¼ş¶ÔÏó  //
+			// é¦–å…ˆè¯•å›¾æ‰“å¼€ä¸€ä¸ªå‘½åçš„å†…å­˜æ˜ å°„æ–‡ä»¶å¯¹è±¡  //
 			m_hMap = OpenFileMapping(FILE_MAP_ALL_ACCESS, 0, key.c_str());
 			if (NULL == m_hMap)
 				m_hMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, len, key.c_str());
 			if (NULL == m_hMap)
 				return false;
-			// Ó³Éä¶ÔÏóµÄÒ»¸öÊÓÍ¼£¬µÃµ½Ö¸Ïò¹²ÏíÄÚ´æµÄÖ¸Õë£¬ÉèÖÃÀïÃæµÄÊı¾İ //
+			// æ˜ å°„å¯¹è±¡çš„ä¸€ä¸ªè§†å›¾ï¼Œå¾—åˆ°æŒ‡å‘å…±äº«å†…å­˜çš„æŒ‡é’ˆï¼Œè®¾ç½®é‡Œé¢çš„æ•°æ® //
 			m_shmBuf = MapViewOfFile(m_hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 			return true;
 #else
@@ -59,7 +59,7 @@ namespace klib
 #ifdef WIN32
 			return UnmapViewOfFile(m_shmBuf);
 #else
-			// °Ñ¹²ÏíÄÚ´æ´Óµ±Ç°½ø³ÌÖĞ·ÖÀë //
+			// æŠŠå…±äº«å†…å­˜ä»å½“å‰è¿›ç¨‹ä¸­åˆ†ç¦» //
 			if (shmdt(m_shmBuf) == -1)
 			{
 				printf("shmdt failed\n");
@@ -74,7 +74,7 @@ namespace klib
 #ifdef WIN32
 			CloseHandle(m_hMap);
 #else
-			// É¾³ı¹²ÏíÄÚ´æ //   
+			// åˆ é™¤å…±äº«å†…å­˜ //   
 			if (shmctl(m_shmId, IPC_RMID, 0) == -1)
 			{
 				printf("shmctl(IPC_RMID) failed\n");

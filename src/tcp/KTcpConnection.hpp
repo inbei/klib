@@ -293,17 +293,17 @@ namespace klib {
             else
             {
 #if defined(WIN32)
-                if (GetLastError() == WSAEINTR) // 读操作中断，需要重新读
+                if (GetLastError() == WSAEINTR) // 写操作中断，需要重新读 //
                     KTime::MSleep(3);
-                else if (GetLastError() == WSAEWOULDBLOCK) // 非阻塞模式，暂时无数据，不需要重新读
-                    break;
+                else if (GetLastError() == WSAEWOULDBLOCK) // 非阻塞模式，写缓冲已满，需要重新尝试写入 //
+                    KTime::MSleep(3);
 #else
-                if (errno == EINTR) // 读操作中断，需要重新读
+                if (errno == EINTR) // 写操作中断，需要重新读 //
                     KTime::MSleep(3);
-                else if (errno == EWOULDBLOCK || errno == EAGAIN) // 非阻塞模式，暂时无数据，不需要重新读，hpux暂时无数据时返回EAGAIN
-                    break;
+                else if (errno == EWOULDBLOCK || errno == EAGAIN) // 非阻塞模式，写缓冲已满，需要重新尝试写入，hpux写缓冲已满时返回EAGAIN //
+                    KTime::MSleep(3);
 #endif
-                else // 错误断开连接
+                else // 错误断开连接 //
                     return -1;
             }
         }
@@ -337,12 +337,12 @@ namespace klib {
             {
 #if defined(WIN32)
                 if (GetLastError() == WSAEINTR) // 读操作中断，需要重新读
-                    KTime::MSleep(6);
+                    KTime::MSleep(3);
                 else if (GetLastError() == WSAEWOULDBLOCK) // 非阻塞模式，暂时无数据，不需要重新读
                     break;
 #else
                 if (errno == EINTR) // 读操作中断，需要重新读
-                    KTime::MSleep(6);
+                    KTime::MSleep(3);
                 else if (errno == EWOULDBLOCK || errno == EAGAIN) // 非阻塞模式，暂时无数据，不需要重新读
                     break;
 #endif

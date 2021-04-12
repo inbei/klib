@@ -9,7 +9,7 @@
 #include "thread/KMutex.h"
 #include "thread/KLockGuard.h"
 /**
-Ô­×Ó²Ù×÷Àà
+åŸå­æ“ä½œç±»
 **/
 
 namespace klib {
