@@ -8,7 +8,7 @@
 #include "util/KStringUtility.h"
 
 /**
-tcpæœåŠ¡ç«¯ç±»
+tcp·şÎñ¶ËÀà
 **/
 
 namespace klib {
@@ -18,10 +18,10 @@ namespace klib {
     {
     public:
         /************************************
-        * Method:    å¯åŠ¨æœåŠ¡ç«¯
-        * Returns:   æˆåŠŸè¿”å›trueå¤±è´¥è¿”å›false
-        * Parameter: hosts æ ¼å¼ï¼š"1.1.1.1:1234,2.2.2.2:2345"
-        * Parameter: needAuth  æ˜¯å¦éœ€è¦æˆæƒ
+        * Method:    Æô¶¯·şÎñ¶Ë
+        * Returns:   ³É¹¦·µ»ØtrueÊ§°Ü·µ»Øfalse
+        * Parameter: hosts ¸ñÊ½£º"1.1.1.1:1234,2.2.2.2:2345"
+        * Parameter: needAuth  ÊÇ·ñĞèÒªÊÚÈ¨
         *************************************/
         bool Start(const std::string& hosts, bool needAuth = false)
         {
@@ -60,8 +60,8 @@ namespace klib {
 
     protected:
         /************************************
-        * Method:    è·å–é…ç½®
-        * Returns:   è¿”å›é…ç½®
+        * Method:    »ñÈ¡ÅäÖÃ
+        * Returns:   ·µ»ØÅäÖÃ
         *************************************/
         virtual std::pair<std::string, uint16_t> GetConfig() const
         {

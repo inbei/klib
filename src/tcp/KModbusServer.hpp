@@ -8,7 +8,7 @@
 #include "tcp/KTcpModbus.h"
 
 /**
-modbus æœåŠ¡ç«¯ç±»
+modbus ·şÎñ¶ËÀà
 **/
 
 namespace klib
@@ -17,10 +17,10 @@ namespace klib
     {
     public:
         /************************************
-        * Method:    å‘é€æ•°æ®ç»™å®¢æˆ·ç«¯
-        * Returns:   æˆåŠŸè¿”å›trueå¤±è´¥false
+        * Method:    ·¢ËÍÊı¾İ¸ø¿Í»§¶Ë
+        * Returns:   ³É¹¦·µ»ØtrueÊ§°Üfalse
         * Parameter: fd socket ID
-        * Parameter: msg æ•°æ®
+        * Parameter: msg Êı¾İ
         *************************************/
         bool Send(SocketType fd, const KBuffer& msg)
         {
@@ -30,15 +30,15 @@ namespace klib
             wmsg.Serialize(buf);
             std::vector<KBuffer> bufs;
             bufs.push_back(buf);
-            return SendDataToConnection(fd, SocketEvent::SeSent, bufs);
+            return SendClient(fd, SocketEvent::SeSent, bufs);
         }
 
     protected:
         /************************************
-        * Method:    åˆ›å»ºæ–°è¿æ¥
-        * Returns:   è¿”å›æ–°è¿æ¥
+        * Method:    ´´½¨ĞÂÁ¬½Ó
+        * Returns:   ·µ»ØĞÂÁ¬½Ó
         * Parameter: fd socket ID
-        * Parameter: ipport IPç«¯å£
+        * Parameter: ipport IP¶Ë¿Ú
         *************************************/
         virtual KTcpConnection<KModbusMessage>* NewConnection(SocketType fd, const std::string& ipport)
         {

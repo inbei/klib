@@ -6,7 +6,7 @@
 #include "util/KEndian.h"
 #include "tcp/KTcpNetwork.h"
 /**
-websocketæ•°æ®å¤„ç†ç±»
+websocketÊı¾İ´¦ÀíÀà
 **/
 namespace klib
 {
@@ -31,7 +31,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    è·å–æ¶ˆæ¯ä½“å¤§å°
+        * Method:    »ñÈ¡ÏûÏ¢Ìå´óĞ¡
         * Returns:   
         *************************************/
         virtual size_t GetPayloadSize() const
@@ -45,7 +45,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    è·å–æ¶ˆæ¯å¤´å¤§å°
+        * Method:    »ñÈ¡ÏûÏ¢Í·´óĞ¡
         * Returns:   
         *************************************/
         virtual size_t GetHeaderSize() const
@@ -60,7 +60,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    åˆ¤æ–­æ¶ˆæ¯æ˜¯å¦æœ‰æ•ˆ
+        * Method:    ÅĞ¶ÏÏûÏ¢ÊÇ·ñÓĞĞ§
         * Returns:   
         *************************************/
         virtual bool IsValid()
@@ -80,7 +80,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    è®¾ç½®payloadå¤§å°
+        * Method:    ÉèÖÃpayload´óĞ¡
         * Returns:   
         * Parameter: sz
         *************************************/
@@ -101,7 +101,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    åˆå§‹åŒ–æ¶ˆæ¯
+        * Method:    ³õÊ¼»¯ÏûÏ¢
         * Returns:   
         * Parameter: msg
         *************************************/
@@ -117,7 +117,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    åºåˆ—åŒ–æ¶ˆæ¯
+        * Method:    ĞòÁĞ»¯ÏûÏ¢
         * Returns:   
         * Parameter: result
         *************************************/
@@ -194,13 +194,13 @@ namespace klib
         */
         uint8_t opcode : 4;
 
-        uint8_t mask : 1; //è¡¨ç¤ºæ˜¯å¦è¦å¯¹æ•°æ®è½½è·è¿›è¡Œæ©ç å¼‚æˆ–æ“ä½œ, 1 yes, 0 no 
+        uint8_t mask : 1; //±íÊ¾ÊÇ·ñÒª¶ÔÊı¾İÔØºÉ½øĞĞÑÚÂëÒì»ò²Ù×÷, 1 yes, 0 no 
 
         /*
-        è¡¨ç¤ºæ•°æ®è½½è·çš„é•¿åº¦
-        0~125ï¼šæ•°æ®çš„é•¿åº¦ç­‰äºè¯¥å€¼ï¼›
-        126ï¼šåç»­ 2 ä¸ªå­—èŠ‚ä»£è¡¨ä¸€ä¸ª 16 ä½çš„æ— ç¬¦å·æ•´æ•°ï¼Œè¯¥æ— ç¬¦å·æ•´æ•°çš„å€¼ä¸ºæ•°æ®çš„é•¿åº¦ï¼›
-        127ï¼šåç»­ 8 ä¸ªå­—èŠ‚ä»£è¡¨ä¸€ä¸ª 64 ä½çš„æ— ç¬¦å·æ•´æ•°ï¼ˆæœ€é«˜ä½ä¸º 0ï¼‰ï¼Œè¯¥æ— ç¬¦å·æ•´æ•°çš„å€¼ä¸ºæ•°æ®çš„é•¿åº¦
+        ±íÊ¾Êı¾İÔØºÉµÄ³¤¶È
+        0~125£ºÊı¾İµÄ³¤¶ÈµÈÓÚ¸ÃÖµ£»
+        126£ººóĞø 2 ¸ö×Ö½Ú´ú±íÒ»¸ö 16 Î»µÄÎŞ·ûºÅÕûÊı£¬¸ÃÎŞ·ûºÅÕûÊıµÄÖµÎªÊı¾İµÄ³¤¶È£»
+        127£ººóĞø 8 ¸ö×Ö½Ú´ú±íÒ»¸ö 64 Î»µÄÎŞ·ûºÅÕûÊı£¨×î¸ßÎ»Îª 0£©£¬¸ÃÎŞ·ûºÅÕûÊıµÄÖµÎªÊı¾İµÄ³¤¶È
         */
         uint8_t plen : 7;
 
@@ -211,10 +211,10 @@ namespace klib
         } extplen;
 
         /*
-        å½“ mask ä¸º 1ï¼Œåˆ™æºå¸¦äº† 4 å­—èŠ‚çš„ Masking-keyï¼›
-        å½“ mask ä¸º 0ï¼Œåˆ™æ²¡æœ‰ Masking-keyã€‚
-        æ©ç ç®—æ³•ï¼šæŒ‰ä½åšå¾ªç¯å¼‚æˆ–è¿ç®—ï¼Œå…ˆå¯¹è¯¥ä½çš„ç´¢å¼•å–æ¨¡æ¥è·å¾— Masking-key ä¸­å¯¹åº”çš„å€¼ xï¼Œç„¶åå¯¹è¯¥ä½ä¸ x åšå¼‚æˆ–ï¼Œä»è€Œå¾—åˆ°çœŸå®çš„ byte æ•°æ®ã€‚
-        æ³¨æ„ï¼šæ©ç çš„ä½œç”¨å¹¶ä¸æ˜¯ä¸ºäº†é˜²æ­¢æ•°æ®æ³„å¯†ï¼Œè€Œæ˜¯ä¸ºäº†é˜²æ­¢æ—©æœŸç‰ˆæœ¬çš„åè®®ä¸­å­˜åœ¨çš„ä»£ç†ç¼“å­˜æ±¡æŸ“æ”»å‡»ï¼ˆproxy cache poisoning attacksï¼‰ç­‰é—®é¢˜
+        µ± mask Îª 1£¬ÔòĞ¯´øÁË 4 ×Ö½ÚµÄ Masking-key£»
+        µ± mask Îª 0£¬ÔòÃ»ÓĞ Masking-key¡£
+        ÑÚÂëËã·¨£º°´Î»×öÑ­»·Òì»òÔËËã£¬ÏÈ¶Ô¸ÃÎ»µÄË÷ÒıÈ¡Ä£À´»ñµÃ Masking-key ÖĞ¶ÔÓ¦µÄÖµ x£¬È»ºó¶Ô¸ÃÎ»Óë x ×öÒì»ò£¬´Ó¶øµÃµ½ÕæÊµµÄ byte Êı¾İ¡£
+        ×¢Òâ£ºÑÚÂëµÄ×÷ÓÃ²¢²»ÊÇÎªÁË·ÀÖ¹Êı¾İĞ¹ÃÜ£¬¶øÊÇÎªÁË·ÀÖ¹ÔçÆÚ°æ±¾µÄĞ­ÒéÖĞ´æÔÚµÄ´úÀí»º´æÎÛÈ¾¹¥»÷£¨proxy cache poisoning attacks£©µÈÎÊÌâ
         */
         char maskkey[4]; // 0 or 4 bytes
         KBuffer payload;
@@ -234,7 +234,7 @@ namespace klib
 
     protected:
         /************************************
-        * Method:    äºŒè¿›åˆ¶æ¶ˆæ¯è§¦å‘
+        * Method:    ¶ş½øÖÆÏûÏ¢´¥·¢
         * Returns:   
         * Parameter: dat
         *************************************/
@@ -244,7 +244,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    æ–‡æœ¬æ¶ˆæ¯è§¦å‘
+        * Method:    ÎÄ±¾ÏûÏ¢´¥·¢
         * Returns:   
         * Parameter: dat
         *************************************/
@@ -254,18 +254,18 @@ namespace klib
         }
 
         /************************************
-        * Method:    è¿æ¥è§¦å‘
+        * Method:    Á¬½Ó´¥·¢
         * Returns:   
         * Parameter: mode
         * Parameter: ipport
         *************************************/
-        virtual void OnConnected(NetworkMode mode, const std::string& ipport)
+        virtual void OnConnected(NetworkMode mode, const std::string& ipport, SocketType fd)
         {
-            KTcpConnection<KWebsocketMessage>::OnConnected(mode, ipport);
+            KTcpConnection<KWebsocketMessage>::OnConnected(mode, ipport, fd);
         }
 
         /************************************
-        * Method:    æ–­å¼€è§¦å‘
+        * Method:    ¶Ï¿ª´¥·¢
         * Returns:   
         * Parameter: mode
         * Parameter: ipport
@@ -278,7 +278,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    è¯·æ±‚æˆæƒè§¦å‘
+        * Method:    ÇëÇóÊÚÈ¨´¥·¢
         * Returns:   
         *************************************/
         virtual bool OnAuthRequest() const// client
@@ -299,11 +299,11 @@ namespace klib
             req.append(m_secKey + "\r\n");
             req.append("Sec-WebSocket-Version: 13\r\n\r\n");
 
-            return WriteSocket(GetSocket(), req.c_str(), req.size()) == req.size();
+            return KTcpUtil::WriteSocket(GetSocket(), req.c_str(), req.size()) == req.size();
         }
 
         /************************************
-        * Method:    å“åº”æˆæƒè§¦å‘
+        * Method:    ÏìÓ¦ÊÚÈ¨´¥·¢
         * Returns:   
         * Parameter: ev
         *************************************/
@@ -346,7 +346,7 @@ namespace klib
                 }
                 resp.append("Upgrade: websocket\r\n\r\n");
 
-                if (WriteSocket(fd, resp.c_str(), resp.size()) == resp.size())
+                if (KTcpUtil::WriteSocket(fd, resp.c_str(), resp.size()) == resp.size())
                 {
                     printf("handshake with client successfully\n");
                     rc = true;
@@ -366,14 +366,14 @@ namespace klib
             }
 
         end:
-            KTcpNetwork<KWebsocketMessage>::Release(const_cast<std::vector<KBuffer>&>(ev));
+            KTcpUtil::Release(const_cast<std::vector<KBuffer>&>(ev));
             if (rc)
                 SetState(NsReadyToWork);
             return rc;
         }
 
         /************************************
-        * Method:    æ–°æ¶ˆæ¯è§¦å‘
+        * Method:    ĞÂÏûÏ¢´¥·¢
         * Returns:   
         * Parameter: msgs
         *************************************/
@@ -389,19 +389,19 @@ namespace klib
         }
 
         /************************************
-        * Method:    äºŒè¿›åˆ¶æ•°æ®è§¦å‘
+        * Method:    ¶ş½øÖÆÊı¾İ´¥·¢
         * Returns:   
         * Parameter: ev
         *************************************/
         virtual void OnMessage(const std::vector<KBuffer>& ev)
         {
             printf("%s recv raw message, count:[%d]\n", ev.size());
-            KTcpNetwork<KWebsocketMessage>::Release(const_cast<std::vector<KBuffer>&>(ev));
+            KTcpUtil::Release(const_cast<std::vector<KBuffer>&>(ev));
         }
 
     private:
         /************************************
-        * Method:    è·å–key
+        * Method:    »ñÈ¡key
         * Returns:   
         * Parameter: reqstr
         * Parameter: keyword
@@ -425,7 +425,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    è·å–å“åº”key
+        * Method:    »ñÈ¡ÏìÓ¦key
         * Returns:   
         * Parameter: wskey
         *************************************/
@@ -443,10 +443,10 @@ namespace klib
         }
 
         /************************************
-        * Method:    åˆå¹¶åˆ†ç‰‡æ¶ˆæ¯
+        * Method:    ºÏ²¢·ÖÆ¬ÏûÏ¢
         * Returns:   
-        * Parameter: msg æ¶ˆæ¯
-        * Parameter: partial æ¶ˆæ¯ç‰‡
+        * Parameter: msg ÏûÏ¢
+        * Parameter: partial ÏûÏ¢Æ¬
         *************************************/
         void MergeMessage(KWebsocketMessage& msg, KWebsocketMessage& partial)
         {
@@ -493,7 +493,7 @@ namespace klib
             case KWebsocketMessage::opclose:
             {
                 printf("web socket recv close request start\n");
-                Disconnect(GetSocket());
+                m_poller->Disconnect(GetSocket());
                 printf("web socket recv close request end\n");
                 msg.payload.Release();
                 break;
@@ -504,10 +504,10 @@ namespace klib
         }
 
         /************************************
-        * Method:    è¿½åŠ æ¶ˆæ¯
+        * Method:    ×·¼ÓÏûÏ¢
         * Returns:   
-        * Parameter: msg æ¶ˆæ¯
-        * Parameter: partial æ¶ˆæ¯ç‰‡
+        * Parameter: msg ÏûÏ¢
+        * Parameter: partial ÏûÏ¢Æ¬
         *************************************/
         void AppendBuffer(KWebsocketMessage& msg, KWebsocketMessage& partial) const
         {

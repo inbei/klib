@@ -6,7 +6,7 @@
 #include "tcp/KTcpServer.hpp"
 #include "tcp/KTcpWebsocket.h"
 /**
-websocketæœåŠ¡ç«¯
+websocket·şÎñ¶Ë
 **/
 namespace klib
 {
@@ -14,7 +14,7 @@ namespace klib
     {
     public:
         /************************************
-        * Method:    å‘é€æ•°æ®ç»™å®¢æˆ·ç«¯
+        * Method:    ·¢ËÍÊı¾İ¸ø¿Í»§¶Ë
         * Returns:   
         * Parameter: fd
         * Parameter: msg
@@ -27,7 +27,7 @@ namespace klib
             wmsg.Serialize(buf);
             std::vector<KBuffer> bufs;
             bufs.push_back(buf);
-            if (!SendDataToConnection(fd, SocketEvent::SeSent, bufs))
+            if (!SendClient(fd, SocketEvent::SeSent, bufs))
             {
                 buf.Release();
                 return false;

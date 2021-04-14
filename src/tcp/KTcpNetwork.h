@@ -1,9 +1,9 @@
 /*
-tcp è¿æ¥æ“ä½œç±»ï¼ŒåŒ…æ‹¬è¿æ¥ç»‘å®šè½®è¯¢è¯»æ•°æ®
+tcp Á¬½Ó²Ù×÷Àà£¬°üÀ¨Á¬½Ó°ó¶¨ÂÖÑ¯¶ÁÊı¾İ
 */
 #ifndef _KTCPBASE_HPP_
 #define _KTCPBASE_HPP_
-
+#include "util/KStringUtility.h"
 #include "KTcpConnection.hpp"
 namespace klib {
     template<typename MessageType>
@@ -11,12 +11,12 @@ namespace klib {
     {
     public:
         /************************************
-        * Method:    æ„é€ å‡½æ•°
+        * Method:    ¹¹Ôìº¯Êı
         * Returns:   
         *************************************/
         KTcpNetwork()
             :KEventObject<SocketType>("Poll thread", 50),m_connected(false), 
-            m_isServer(false),m_needAuth(false),m_maxClient(50)
+            m_isServer(false),m_needAuth(false),m_maxClient(100), m_checkThread("Check alive thread")
         {
 #if defined(WIN32)
             WSADATA wsd;
@@ -29,7 +29,7 @@ namespace klib {
         }
 
         /************************************
-        * Method:    ææ„å‡½æ•°
+        * Method:    Îö¹¹º¯Êı
         * Returns:   
         *************************************/
         virtual ~KTcpNetwork()
@@ -43,42 +43,28 @@ namespace klib {
 #endif
         }
 
-        /************************************
-        * Method:    é‡Šæ”¾å†…å­˜
-        * Returns:   
-        * Parameter: bufs å¾…é‡Šæ”¾çš„å†…å­˜
-        *************************************/
-        static  void Release(std::vector<KBuffer>& bufs)
-        {
-            std::vector<KBuffer>::iterator it = bufs.begin();
-            while (it != bufs.end())
-            {
-                it->Release();
-                ++it;
-            }
-            bufs.clear();
-        }
+        
 
         /************************************
-        * Method:    åˆ¤æ–­æ˜¯å¦è¿æ¥ä¸Š
-        * Returns:   è¿ä¸Šè¿”å›trueå¦åˆ™è¿”å›false
+        * Method:    ÅĞ¶ÏÊÇ·ñÁ¬½ÓÉÏ
+        * Returns:   Á¬ÉÏ·µ»Øtrue·ñÔò·µ»Øfalse
         *************************************/
         inline bool IsConnected() const { return m_connected; }
 
         /************************************
-        * Method:    è®¾ç½®æœ€å¤§è¿æ¥æ•°
+        * Method:    ÉèÖÃ×î´óÁ¬½ÓÊı
         * Returns:   
-        * Parameter: mc è¿æ¥ä¸ªæ•°
+        * Parameter: mc Á¬½Ó¸öÊı
         *************************************/
         inline void SetMaxClient(uint16_t mc) { m_maxClient = mc; }
         
         /************************************
-        * Method:    å¯åŠ¨
-        * Returns:   æˆåŠŸè¿”å›trueå¤±è´¥è¿”å›false
-        * Parameter: ip è¿æ¥IP
-        * Parameter: port è¿æ¥ç«¯å£
-        * Parameter: isServer æ˜¯å¦æ˜¯æœåŠ¡å™¨
-        * Parameter: needAuth æ˜¯å¦éœ€è¦æˆæƒ
+        * Method:    Æô¶¯
+        * Returns:   ³É¹¦·µ»ØtrueÊ§°Ü·µ»Øfalse
+        * Parameter: ip Á¬½ÓIP
+        * Parameter: port Á¬½Ó¶Ë¿Ú
+        * Parameter: isServer ÊÇ·ñÊÇ·şÎñÆ÷
+        * Parameter: needAuth ÊÇ·ñĞèÒªÊÚÈ¨
         *************************************/
         virtual bool Start(const std::string& ip, int32_t port, bool isServer = true, bool needAuth = false)
         {
@@ -88,6 +74,18 @@ namespace klib {
             m_needAuth = needAuth;
             if (KEventObject<SocketType>::Start())
             {
+                try
+                {
+                    m_checkThread.Run(this, &KTcpNetwork::CheckAlive, 1);
+                }
+                catch (const std::exception& e)
+                {
+                    printf("<%s> KTcpNetwork thread start failed, exception:[%s]\n", __FUNCTION__, e.what());
+                    KEventObject<SocketType>::Stop();
+                    KEventObject<SocketType>::WaitForStop();
+                    return false;
+                }
+
                 PostForce(0);
                 return true;
             }
@@ -95,35 +93,52 @@ namespace klib {
         }
 
         /************************************
-        * Method:    å‘é€æ•°æ®ç»™è‡ªå·±
-        * Returns:   å‘é€æˆåŠŸè¿”å›trueå¤±è´¥è¿”å›false
-        * Parameter: bufs å¾…å‘é€çš„æ•°æ®
+        * Method:    Í£Ö¹
+        * Returns:
         *************************************/
-        bool SendDataToSelf(const std::vector<KBuffer>& bufs)
+        virtual void Stop()
         {
-            if (m_isServer)
-                return false;
-            return SendDataToConnection(m_fd, SocketEvent::SeSent, bufs);
+            KEventObject<SocketType>::Stop();
         }
 
         /************************************
-        * Method:    å‘é€æ•°æ®ç»™å®¢æˆ·ç«¯
-        * Returns:   å‘é€æˆåŠŸè¿”å›trueå¤±è´¥è¿”å›false
-        * Parameter: fd å®¢æˆ·ç«¯ID
-        * Parameter: et äº‹ä»¶ç±»å‹
-        * Parameter: bufs å‘é€çš„æ•°æ®
+        * Method:    µÈ´ıÍ£Ö¹
+        * Returns:
         *************************************/
-        bool SendDataToConnection(SocketType fd, SocketEvent::EventType et,const std::vector<KBuffer>& bufs)
+        virtual void WaitForStop()
+        {
+            KEventObject<SocketType>::WaitForStop();
+            m_checkThread.Join();
+        }
+
+        /************************************
+        * Method:    ·¢ËÍÊı¾İ¸ø×Ô¼º
+        * Returns:   ·¢ËÍ³É¹¦·µ»ØtrueÊ§°Ü·µ»Øfalse
+        * Parameter: bufs ´ı·¢ËÍµÄÊı¾İ
+        *************************************/
+        bool Send(const std::vector<KBuffer>& bufs)
+        {
+            if (m_isServer)
+                return false;
+            return SendClient(m_fd, SocketEvent::SeSent, bufs);
+        }
+
+        /************************************
+        * Method:    ·¢ËÍÊı¾İ¸ø¿Í»§¶Ë
+        * Returns:   ·¢ËÍ³É¹¦·µ»ØtrueÊ§°Ü·µ»Øfalse
+        * Parameter: fd ¿Í»§¶ËID
+        * Parameter: et ÊÂ¼şÀàĞÍ
+        * Parameter: bufs ·¢ËÍµÄÊı¾İ
+        *************************************/
+        bool SendClient(SocketType fd, SocketEvent::EventType et,const std::vector<KBuffer>& bufs)
         {
             KLockGuard<KMutex> lock(m_connMtx);
             typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.find(fd);
             if (it != m_connections.end())
             {
                 KTcpConnection<MessageType>* c = it->second;
-                SocketEvent e;
-                e.fd = fd;
-                e.ev = et;
-                e.dat1 = bufs;
+                SocketEvent e(fd, et);
+                e.binDat = bufs;
                 if (c->IsConnected())
                 {
                     if (!c->Post(e))
@@ -136,15 +151,15 @@ namespace klib {
         }
 
         /************************************
-        * Method:    è·å–è‡ªå·±çš„socket ID
-        * Returns:   è¿”å›socket ID
+        * Method:    »ñÈ¡×Ô¼ºµÄsocket ID
+        * Returns:   ·µ»Øsocket ID
         *************************************/
         inline SocketType GetSocket() const { return m_fd; }
         
         /************************************
-        * Method:    è·å–è¿æ¥IP
-        * Returns:   è¿”å›IP
-        * Parameter: fd å®¢æˆ·ç«¯ID
+        * Method:    »ñÈ¡Á¬½ÓIP
+        * Returns:   ·µ»ØIP
+        * Parameter: fd ¿Í»§¶ËID
         *************************************/
         const std::string& GetConnectionInfo(SocketType fd)
         {
@@ -154,12 +169,34 @@ namespace klib {
                 return it->second->GetAddress();
             return std::string();
         }
+
+        /************************************
+        * Method:    ¶Ë¿ÚÁ¬½Ó²¢ÇåÀí×ÊÔ´
+        * Returns:
+        * Parameter: fd ¿Í»§¶ËID
+        *************************************/
+        void Disconnect(SocketType fd)
+        {
+            KLockGuard<KMutex> lock(m_connMtx);
+            typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.find(fd);
+            if (it != m_connections.end())
+            {
+                KTcpConnection<MessageType>* c = it->second;
+                std::string ip = c->GetIP();
+                DeleteSocket(fd);
+                c->Disconnect(fd);
+                std::map<std::string, int>::iterator pit = m_ipConnCount.find(ip);
+                if (pit != m_ipConnCount.end() && --pit->second < 1)
+                    m_ipConnCount.erase(pit);
+            }
+        }
+
     protected:        
         /************************************
-        * Method:    åˆ›å»ºè¿æ¥
-        * Returns:   è¿”å›è¿æ¥å¯¹è±¡
-        * Parameter: fd å®¢æˆ·ç«¯ID
-        * Parameter: ipport å®¢æˆ·ç«¯è¿æ¥IPå’Œç«¯å£
+        * Method:    ´´½¨Á¬½Ó
+        * Returns:   ·µ»ØÁ¬½Ó¶ÔÏó
+        * Parameter: fd ¿Í»§¶ËID
+        * Parameter: ipport ¿Í»§¶ËÁ¬½ÓIPºÍ¶Ë¿Ú
         *************************************/
         virtual KTcpConnection<MessageType>* NewConnection(SocketType fd, const std::string& ipport)
         {
@@ -167,75 +204,55 @@ namespace klib {
         }
 
         /************************************
-        * Method:    è·å–é…ç½®
-        * Returns:   è¿”å›é…ç½®IPå’Œç«¯å£
+        * Method:    »ñÈ¡ÅäÖÃ
+        * Returns:   ·µ»ØÅäÖÃIPºÍ¶Ë¿Ú
         *************************************/
         virtual std::pair<std::string, uint16_t> GetConfig() const {
             return std::pair<std::string, uint16_t>(m_ip, m_port);
         }
 
-        /************************************
-        * Method:    ç«¯å£è¿æ¥å¹¶æ¸…ç†èµ„æº
-        * Returns:   
-        * Parameter: fd å®¢æˆ·ç«¯ID
-        *************************************/
-        void DisconnectConnection(SocketType fd)
-        {
-            KLockGuard<KMutex> lock(m_connMtx);
-            typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.find(fd);
-            if (it != m_connections.end())
-            {
-                KTcpConnection<MessageType>* c = it->second;
-                c->Disconnect(fd);
-            }
-        }
-
     private:
         /************************************
-        * Method:    å®šæ—¶è½®è¯¢æˆ–è€…é‡è¿
+        * Method:    ¶¨Ê±ÂÖÑ¯»òÕßÖØÁ¬
         * Returns:   
         * Parameter: ev
         *************************************/
         virtual void ProcessEvent(const SocketType& ev)
         {
-            if (m_isServer)
+            if (m_connected)
             {
-                if (m_connected)
-                {
-                    PollSocket();
-                }
-                else
+                PollSocket();
+            }
+            else
+            {
+                if (m_isServer)
                 {
                     std::pair<std::string, uint16_t> conf = GetConfig();
-                    if ((m_fd = Listen(conf.first, conf.second)) > 0)
+                    if ((m_fd = KTcpUtil::Listen(conf.first, conf.second)) > 0)
                     {
                         std::ostringstream os;
                         os << conf.first << ":" << conf.second;
 
-                        if (SetSocketNonBlock(m_fd) && SetPollEvent(m_fd))
+                        if (SetSocket(m_fd))
                             m_connected = true;
                         else
-                            CloseSocket(m_fd);
+                        {
+                            KTcpUtil::CloseSocket(m_fd);
+                            KTime::MSleep(1000);
+                        }
                     }
                     else
                         KTime::MSleep(1000);
                 }
-            }
-            else
-            {
-                if (m_connected)
-                {
-                    if (PollSocket() < 1)
-                        ReadSocket2(m_fd);
-                }
                 else
                 {
                     std::pair<std::string, uint16_t> conf = GetConfig();
-                    if ((m_fd = Connect(conf.first, conf.second)) > 0)
+                    if ((m_fd = KTcpUtil::Connect(conf.first, conf.second)) > 0)
                     {
-                        std::ostringstream os;
-                        os << conf.first << ":" << conf.second;
-                        AddSocket(m_fd, os.str());
+                        if(AddSocket(m_fd, conf.first, KStringUtility::Int32ToString(conf.second)))
+                            m_connected = true;
+                        else
+                            KTime::MSleep(1000);
                     }
                     else
                         KTime::MSleep(1000);
@@ -245,7 +262,7 @@ namespace klib {
         }     
         
         /************************************
-        * Method:    è½®è¯¢socket ID
+        * Method:    ÂÖÑ¯socket ID
         * Returns:   
         *************************************/
         int PollSocket()
@@ -288,54 +305,61 @@ namespace klib {
         }
 
         /************************************
-        * Method:    æ ¹æ®IDæ˜¯å¦æ˜¯è‡ªå·±
+        * Method:    ¸ù¾İIDÊÇ·ñÊÇ×Ô¼º
         * Returns:   
         * Parameter: fd
         *************************************/
         inline bool IsSelfSocket(SocketType fd) const { return m_fd == fd; }
 
         /************************************
-        * Method:    å¤„ç†socket äº§ç”Ÿçš„event
+        * Method:    ´¦Àísocket ²úÉúµÄevent
         * Returns:   
-        * Parameter: fd å®¢æˆ·ç«¯ID
-        * Parameter: evt äº‹ä»¶
+        * Parameter: fd ¿Í»§¶ËID
+        * Parameter: evt ÊÂ¼ş
         *************************************/
         void ProcessSocketEvent(SocketType fd, short evt)
         {
             if (evt & epollin)
             {
-                if (m_isServer && IsSelfSocket(fd))
-                    AcceptSocket(fd);
+                if (m_isServer)
+                {
+                    if (IsSelfSocket(fd))
+                        AcceptSocket(fd);
+                    else
+                        ReadSocket2(fd);
+                }
                 else
+                {
                     ReadSocket2(fd);
+                }
             }
             else if (evt & epollhup || evt & epollerr)
             {
-                DisconnectConnection(fd);
+                Disconnect(fd);
             }
         }
 
         /************************************
-        * Method:    è¯»socket
+        * Method:    ¶Ásocket
         * Returns:   
         * Parameter: fd socket ID
         *************************************/
         void ReadSocket2(SocketType fd)
         {
             std::vector<KBuffer> bufs;
-            if (ReadSocket(fd, bufs) < 0)
-                DisconnectConnection(fd);
+            if (KTcpUtil::ReadSocket(fd, bufs) < 0)
+                Disconnect(fd);
 
             if (!bufs.empty())
             {
-                if (!SendDataToConnection(fd, SocketEvent::SeRecv, bufs))
-                    Release(bufs);
+                if (!SendClient(fd, SocketEvent::SeRecv, bufs))
+                    KTcpUtil::Release(bufs);
             }
         }
 
         /************************************
-        * Method:    åˆ é™¤socket 
-        * Returns:   åˆ é™¤æˆåŠŸè¿”å›trueå¦åˆ™è¿”å›false
+        * Method:    É¾³ısocket 
+        * Returns:   É¾³ı³É¹¦·µ»Øtrue·ñÔò·µ»Øfalse
         * Parameter: fd socket ID
         *************************************/
         bool DeleteSocket(SocketType fd)
@@ -362,7 +386,7 @@ namespace klib {
                         epoll_ctl(m_pfd, EPOLL_CTL_DEL, fd, &ev);
 #endif
                         rc = true;
-                        CloseSocket(fd);
+                        KTcpUtil::CloseSocket(fd);
                         break;
                     }
                     ++it;
@@ -375,7 +399,7 @@ namespace klib {
         }
 
         /************************************
-        * Method:    æ¥å—è¿æ¥
+        * Method:    ½ÓÊÜÁ¬½Ó
         * Returns:   
         * Parameter: fd socket ID
         *************************************/
@@ -384,93 +408,143 @@ namespace klib {
             SocketType nfd = 0;
             sockaddr_in caddr = { 0 };
             SocketLength addrlen = sizeof(caddr);
-            std::map<SocketType, std::string> socks;
 #if defined(WIN32)
             while ((nfd = ::accept(fd, (struct sockaddr*)&caddr, &addrlen)) != INVALID_SOCKET)
 #else
             while ((nfd = ::accept(fd, (struct sockaddr*)&caddr, &addrlen)) > 0)
 #endif
             {
-                std::ostringstream os;
-                os << inet_ntoa(caddr.sin_addr) << ":" << ntohs(caddr.sin_port);
-                socks[nfd] = os.str();
-            }
-
-            std::map<SocketType, std::string>::const_iterator it = socks.begin();
-            while (it != socks.end())
-            {
-                AddSocket(it->first, it->second);
-                ++it;
+                AddSocket(nfd, inet_ntoa(caddr.sin_addr), KStringUtility::Int32ToString(ntohs(caddr.sin_port)));
             }
         }
 
         /************************************
-        * Method:    æ·»åŠ socket åˆ°å†…å­˜
+        * Method:    Ìí¼Ósocket µ½ÄÚ´æ
         * Returns:   
         * Parameter: fd socket ID
-        * Parameter: ipport IPå’Œç«¯å£
-        * Parameter: createConn æ˜¯å¦åˆ›å»ºè¿æ¥
+        * Parameter: ipport IPºÍ¶Ë¿Ú
+        * Parameter: createConn ÊÇ·ñ´´½¨Á¬½Ó
         *************************************/
-        void AddSocket(SocketType fd, const std::string& ipport)
+        bool AddSocket(SocketType fd, const std::string& ip, const std::string &port)
         {
             KLockGuard<KMutex> lock(m_connMtx);
-            KTcpConnection<MessageType>* recycle = NULL;
+            typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator recycle = m_connections.end();
             typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.begin();
             while (it != m_connections.end())
             {
-                if (it->second->IsDisconnected())
+                KTcpConnection<MessageType>* t = it->second;
+                if (t->IsDisconnected())
                 {
-                    recycle = it->second;
-                    m_connections.erase(it);
+                    recycle = it;
                     break;
                 }
                 ++it;
             }
 
-            if (!SetSocketNonBlock(fd))
+            if (recycle != m_connections.end())
             {
-                CloseSocket(fd);
-                return;
-            }
-
-            if (!SetPollEvent(fd))
-            {
-                CloseSocket(fd);
-                return;
-            }
-
-            if (recycle)
-            {
-                recycle->Connect(ipport, fd);
-                m_connections[fd] = recycle;
-                printf("Recycle connection started success\n");
+                KTcpConnection<MessageType>* c = recycle->second;
+                c->Connect(ip, port, fd);
+                if (SetSocket(fd))
+                {
+                    int& count = m_ipConnCount[ip];
+                    if (count < 50)
+                    {
+                        ++count;
+                        m_connections.erase(recycle);
+                        m_connections[fd] = c;
+                        printf("Recycle connection started success\n");
+                        return true;
+                    }
+                    else
+                    {
+                        printf("Recycle one ip has more than 5 connections \n");
+                    }
+                }
+                else
+                {
+                    printf("Recycle set socket failed\n");
+                }
+                c->Disconnect(fd);
             }
             else
             {
                 if (m_connections.size() < m_maxClient)
                 {
-                    KTcpConnection<MessageType>* c = NewConnection(fd, ipport);
-                    if (c->Start(m_isServer ? NmServer : NmClient, ipport, fd, m_needAuth))
+                    KTcpConnection<MessageType>* c = NewConnection(fd, ip + ":" + port);
+                    if (c->Start(m_isServer ? NmServer : NmClient, ip, port, fd, m_needAuth))
                     {
-                        m_connections[fd] = c;
-                        printf("New connection started success\n");
+                        if (SetSocket(fd))
+                        {
+                            int& count = m_ipConnCount[ip];
+                            if (count < 5)
+                            {
+                                ++count;
+                                m_connections[fd] = c;
+                                printf("New connection started success\n");
+                                return true;
+                            }
+                            else
+                            {
+                                printf("New one ip has more than 5 connections \n");
+                            }
+                        }
+                        else
+                        {
+                            printf("New set socket failed\n");
+                        }
+                        c->Disconnect(fd);
+                        c->Stop();
+                        c->WaitForStop();
                     }
                     else
                     {
                         DeleteSocket(fd);
-                        delete c;
-                        printf("Connection started failed\n");
+                        printf("New thread started failed\n");
                     }
+                    
+                    delete c;
                 }
                 else
                 {
                     DeleteSocket(fd);
-                    printf("Reach max client count:[%d]\n", m_maxClient);
+                    printf("New reach max client count:[%d]\n", m_maxClient);
                 }
+                
             }
+            
+            return false;
+        }
 
-            if(IsSelfSocket(fd))
-                m_connected = true;
+
+        int CheckAlive(int)
+        {
+            while (IsRunning())
+            {
+                {
+                    KLockGuard<KMutex> lock(m_connMtx);
+                    typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.begin();
+                    while (it != m_connections.end())
+                    {
+                        KTcpConnection<MessageType>* t = it->second;
+                        if (t->IsConnected() && t->IsEmpty())
+                        {
+                            t->Post(SocketEvent(t->GetSocket(), SocketEvent::SeRecv));
+                            //printf("check client alive, id:[%s]\n", t->GetAddress().c_str());
+                        }
+                        ++it;
+                    }
+                }
+
+                KTime::MSleep(3000);
+            }
+            return 0;
+        }
+
+        bool SetSocket(SocketType fd)
+        {
+            KTcpUtil::SetKeepAlive(fd, 10, 3, 3);
+            return KTcpUtil::SetSocketNonBlock(fd) && SetPollEvent(fd);
         }
 
         bool SetPollEvent(SocketType fd)
@@ -485,7 +559,7 @@ namespace klib {
             //int rc = pollset_ctl(pollset_t ps, struct poll_ctl* pollctl_array,int array_length)
             if (pollset_ctl(m_pfd, &ev, 1) < 0)
             {
-                CloseSocket(fd);
+                KTcpUtil::CloseSocket(fd);
                 return false;
             };
 #elif defined(LINUX)
@@ -494,7 +568,7 @@ namespace klib {
             ev.events = EPOLLIN | EPOLLET | EPOLLERR | EPOLLHUP;
             if (epoll_ctl(m_pfd, EPOLL_CTL_ADD, fd, &ev) < 0)
             {
-                CloseSocket(fd);
+                KTcpUtil::CloseSocket(fd);
                 return false;
             };
 #endif
@@ -506,127 +580,11 @@ namespace klib {
             p.events = epollin | epollhup | epollerr;
 #endif
             m_fds.push_back(p);
+
             return true;
         };
 
-        /************************************
-        * Method:    è¿æ¥æœåŠ¡å™¨
-        * Returns:   è¿”å›socket ID
-        * Parameter: ip æœåŠ¡å™¨IP
-        * Parameter: port æœåŠ¡å™¨ç«¯å£
-        *************************************/
-        SocketType Connect(const std::string& ip, uint16_t port) const
-        {
-            int fd = -1;
-            if ((fd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
-                return -1;
-
-            DisableNagle(fd);
-
-            sockaddr_in server;
-            server.sin_family = AF_INET;
-            server.sin_port = htons(port);
-            server.sin_addr.s_addr = inet_addr(ip.c_str());
-            if (::connect(fd, (sockaddr*)(&server), sizeof(server)) != 0)
-            {
-                CloseSocket(fd);
-                return 0;
-            }
-            return fd;
-        }
-
-        /************************************
-        * Method:    ç›‘å¬IPå’Œportç«¯å£
-        * Returns:   è¿”å›socket ID
-        * Parameter: ip å¾…ç›‘å¬çš„IP
-        * Parameter: port å¾…ç›‘å¬çš„ç«¯å£
-        *************************************/
-        SocketType Listen(const std::string& ip, uint16_t port) const
-        {
-            int fd = -1;
-            if ((fd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
-                return -1;
-
-            ReuseAddress(fd);
-            DisableNagle(fd);
-
-            sockaddr_in server;
-            server.sin_family = AF_INET;
-            server.sin_port = htons(port);
-            server.sin_addr.s_addr = inet_addr(ip.c_str()); // htonl(INADDR_ANY);
-            if (::bind(fd, (sockaddr*)(&server), sizeof(server)) != 0)
-            {
-                CloseSocket(fd);
-                return 0;
-            }
-
-            if (::listen(fd, 200) != 0)
-            {
-                CloseSocket(fd);
-                return -2;
-            }
-            return fd;
-        }
-
-        /************************************
-        * Method:    å…³é—­socket
-        * Returns:   
-        * Parameter: fd socket ID
-        *************************************/
-        void CloseSocket(SocketType fd) const
-        {
-#if defined(WIN32)
-            closesocket(fd);
-#else
-            ::close(fd);
-#endif
-        }
-
-        /************************************
-        * Method:    socket è®¾ç½®ä¸ºéé˜»å¡æ¨¡å¼
-        * Returns:   
-        * Parameter: fd socket ID
-        *************************************/
-        bool SetSocketNonBlock(SocketType fd) const
-        {
-#ifdef WIN32
-            // set non block
-            u_long nonblock = 1;
-            return ioctlsocket(fd, FIONBIO, &nonblock) == NO_ERROR;
-#else
-            // set non block
-            int flags = fcntl(fd, F_GETFL, 0);
-            if (flags < 0)
-                return false;
-            return fcntl(fd, F_SETFL, flags | O_NONBLOCK) >= 0;
-#endif // WIN32
-        }
-
-        /************************************
-        * Method:    socket è®¾ç½®reuseå±æ€§
-        * Returns:   
-        * Parameter: fd socket ID
-        *************************************/
-        void ReuseAddress(SocketType fd) const
-        {
-            // set reuse address
-            int on = 1;
-            ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
-                reinterpret_cast<const char*>(&on), sizeof(on));
-        }
-
-        /************************************
-        * Method:    ç¦ç”¨nagleç®—æ³•
-        * Returns:   
-        * Parameter: fd socket id
-        *************************************/
-        void DisableNagle(SocketType fd) const
-        {
-            // disable Nagle
-            int on = 1;
-            ::setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
-                reinterpret_cast<const char*>(&on), sizeof(on));
-        }
+        
 
     private:
         template<typename T>
@@ -638,28 +596,30 @@ namespace klib {
         int m_pfd;
         epoll_event m_ps[MaxEvent];
 #endif
-        // socket äº’æ–¥é‡ //
+        // socket »¥³âÁ¿ //
         KMutex m_fdsMtx;
-        // socket é›†åˆ //
+        // socket ¼¯ºÏ //
         std::vector<pollfd> m_fds;
         // socket id //
         SocketType m_fd;
         // IP //
         std::string m_ip;
-        // ç«¯å£ //
+        // ¶Ë¿Ú //
         int32_t m_port;
-        // æ˜¯å¦æ˜¯æœåŠ¡å™¨ //
+        // ÊÇ·ñÊÇ·şÎñÆ÷ //
         volatile bool m_isServer;
-        // æ˜¯å¦è¿æ¥ä¸Š //
+        // ÊÇ·ñÁ¬½ÓÉÏ //
         volatile bool m_connected;
-        // æ˜¯å¦éœ€è¦æˆæƒ //
+        // ÊÇ·ñĞèÒªÊÚÈ¨ //
         volatile bool m_needAuth;
-        // æœ€å¤§è¿æ¥ä¸ªæ•° //
+        // ×î´óÁ¬½Ó¸öÊı //
         uint16_t m_maxClient;
-        // è¿æ¥å¯¹è±¡äº’æ–¥é‡ //
+        // Á¬½Ó¶ÔÏó»¥³âÁ¿ //
         KMutex m_connMtx;
-        // è¿æ¥ç¼“å­˜ //
+        // Á¬½Ó»º´æ //
         std::map<SocketType, KTcpConnection<MessageType>*> m_connections;
+        std::map<std::string, int> m_ipConnCount;
+        KPthread m_checkThread;
     };
 };
 

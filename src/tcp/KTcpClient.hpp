@@ -5,7 +5,7 @@
 #include "util/KStringUtility.h"
 #include "tcp/KTcpNetwork.h"
 /**
-tcp å®¢æˆ·ç«¯ç±»
+tcp ¿Í»§¶ËÀà
 **/
 
 namespace klib {
@@ -15,10 +15,10 @@ namespace klib {
     {
     public:
         /************************************
-        * Method:    å¯åŠ¨å®¢æˆ·ç«¯
-        * Returns:   æˆåŠŸè¿”å›trueå¦åˆ™è¿”å›false
-        * Parameter: hosts æ ¼å¼ï¼š1.1.1.1:12345,2.2.2.2:23456
-        * Parameter: needAuth æ˜¯å¦éœ€è¦æˆæƒ
+        * Method:    Æô¶¯¿Í»§¶Ë
+        * Returns:   ³É¹¦·µ»Øtrue·ñÔò·µ»Øfalse
+        * Parameter: hosts ¸ñÊ½£º1.1.1.1:12345,2.2.2.2:23456
+        * Parameter: needAuth ÊÇ·ñĞèÒªÊÚÈ¨
         *************************************/
         bool Start(const std::string& hosts, bool needAuth = false)
         {
@@ -56,18 +56,18 @@ namespace klib {
         }
 
         /************************************
-        * Method:    ä¸´æ—¶æ–­å¼€è¿æ¥ï¼Œç”±äºè‡ªå¸¦é‡è¿åŠŸèƒ½ï¼Œæ‰€ä»¥åˆä¼šè¿æ¥ä¸Š
+        * Method:    ÁÙÊ±¶Ï¿ªÁ¬½Ó£¬ÓÉÓÚ×Ô´øÖØÁ¬¹¦ÄÜ£¬ËùÒÔÓÖ»áÁ¬½ÓÉÏ
         * Returns:   
         *************************************/
         void Disconnect()
         {
-            DisconnectConnection(KTcpNetwork<MessageType>::GetSocket());
+            Disconnect(KTcpNetwork<MessageType>::GetSocket());
         }
 
     protected:
         /************************************
-        * Method:    GetConfigè·å–é…ç½®
-        * Returns:   è¿”å›IPå’Œç«¯å£
+        * Method:    GetConfig»ñÈ¡ÅäÖÃ
+        * Returns:   ·µ»ØIPºÍ¶Ë¿Ú
         *************************************/
         virtual std::pair<std::string, uint16_t> GetConfig() const
         {
