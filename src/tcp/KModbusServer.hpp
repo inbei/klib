@@ -8,7 +8,7 @@
 #include "tcp/KTcpModbus.h"
 
 /**
-modbus ·şÎñ¶ËÀà
+modbus æœåŠ¡ç«¯ç±»
 **/
 
 namespace klib
@@ -17,10 +17,10 @@ namespace klib
     {
     public:
         /************************************
-        * Method:    ·¢ËÍÊı¾İ¸ø¿Í»§¶Ë
-        * Returns:   ³É¹¦·µ»ØtrueÊ§°Üfalse
+        * Method:    å‘é€æ•°æ®ç»™å®¢æˆ·ç«¯
+        * Returns:   æˆåŠŸè¿”å›trueå¤±è´¥false
         * Parameter: fd socket ID
-        * Parameter: msg Êı¾İ
+        * Parameter: msg æ•°æ®
         *************************************/
         bool Send(SocketType fd, const KBuffer& msg)
         {
@@ -35,10 +35,10 @@ namespace klib
 
     protected:
         /************************************
-        * Method:    ´´½¨ĞÂÁ¬½Ó
-        * Returns:   ·µ»ØĞÂÁ¬½Ó
+        * Method:    åˆ›å»ºæ–°è¿æ¥
+        * Returns:   è¿”å›æ–°è¿æ¥
         * Parameter: fd socket ID
-        * Parameter: ipport IP¶Ë¿Ú
+        * Parameter: ipport IPç«¯å£
         *************************************/
         virtual KTcpConnection<KModbusMessage>* NewConnection(SocketType fd, const std::string& ipport)
         {

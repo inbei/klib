@@ -6,7 +6,7 @@
 #include "tcp/KTcpClient.hpp"
 #include "tcp/KTcpWebsocket.h"
 /**
-websocket¿Í»§¶Ë
+websocketå®¢æˆ·ç«¯
 **/
 namespace klib
 {
@@ -17,7 +17,7 @@ namespace klib
 
     protected:
         /************************************
-        * Method:    ´´½¨Á¬½Ó
+        * Method:    åˆ›å»ºè¿žæŽ¥
         * Returns:   
         * Parameter: fd
         * Parameter: ipport

@@ -7,7 +7,7 @@
 #include "tcp/KTcpModbus.h"
 
 /**
-modbus ¿Í»§¶ËÀà
+modbus å®¢æˆ·ç«¯ç±»
 **/
 
 namespace klib
@@ -23,10 +23,10 @@ namespace klib
 
     protected:
         /************************************
-        * Method:    ´´½¨Á¬½Ó
-        * Returns:   ·µ»ØÁ¬½Ó
+        * Method:    åˆ›å»ºè¿æ¥
+        * Returns:   è¿”å›è¿æ¥
         * Parameter: fd socket ID
-        * Parameter: ipport IPºÍ¶Ë¿Ú
+        * Parameter: ipport IPå’Œç«¯å£
         *************************************/
         virtual KTcpConnection<KModbusMessage>* NewConnection(SocketType fd, const std::string& ipport)
         {
@@ -34,8 +34,8 @@ namespace klib
         }
 
         /************************************
-        * Method:    »ñÈ¡ĞòÁĞºÅ
-        * Returns:   ·µ»ØĞòÁĞºÅ
+        * Method:    è·å–åºåˆ—å·
+        * Returns:   è¿”å›åºåˆ—å·
         *************************************/
         uint16_t GetSeq()
         {

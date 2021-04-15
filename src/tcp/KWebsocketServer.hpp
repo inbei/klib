@@ -6,7 +6,7 @@
 #include "tcp/KTcpServer.hpp"
 #include "tcp/KTcpWebsocket.h"
 /**
-websocket·şÎñ¶Ë
+websocketæœåŠ¡ç«¯
 **/
 namespace klib
 {
@@ -14,7 +14,7 @@ namespace klib
     {
     public:
         /************************************
-        * Method:    ·¢ËÍÊı¾İ¸ø¿Í»§¶Ë
+        * Method:    å‘é€æ•°æ®ç»™å®¢æˆ·ç«¯
         * Returns:   
         * Parameter: fd
         * Parameter: msg

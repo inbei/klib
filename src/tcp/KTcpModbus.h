@@ -6,7 +6,7 @@
 #include "tcp/KTcpNetwork.h"
 #include "util/KEndian.h"
 /**
-modbusÊı¾İ´¦ÀíÀà
+modbusæ•°æ®å¤„ç†ç±»
 **/
 namespace klib
 {
@@ -24,20 +24,20 @@ namespace klib
         friend int ParsePacket<KModbusMessage>(const KBuffer& dat, KModbusMessage& msg, KBuffer& left);
 
         /************************************
-        * Method:    »ñÈ¡ÏûÏ¢Ìå´óĞ¡
+        * Method:    è·å–æ¶ˆæ¯ä½“å¤§å°
         * Returns:   
         *************************************/
         virtual size_t GetPayloadSize() const { return len; }
         /************************************
-        * Method:    »ñÈ¡ÏûÏ¢Í·´óĞ¡
+        * Method:    è·å–æ¶ˆæ¯å¤´å¤§å°
         * Returns:   
         *************************************/
         virtual size_t GetHeaderSize() const { return sizeof(seq) + sizeof(ver) + sizeof(len); }
         /************************************
-        * Method:    ÅĞ¶ÏÏûÏ¢ÊÇ·ñÓĞĞ§
+        * Method:    åˆ¤æ–­æ¶ˆæ¯æ˜¯å¦æœ‰æ•ˆ
         * Returns:   
-        * Parameter: dev Éè±¸ID
-        * Parameter: func ¹¦ÄÜÂë
+        * Parameter: dev è®¾å¤‡ID
+        * Parameter: func åŠŸèƒ½ç 
         *************************************/
         virtual bool IsValid(uint16_t dev, uint16_t func) {
 
@@ -48,7 +48,7 @@ namespace klib
                 && saddr < MaxModbusAddress;
         }
         /************************************
-        * Method:    ÅĞ¶ÏÏûÏ¢ÊÇ·ñÓĞĞ§
+        * Method:    åˆ¤æ–­æ¶ˆæ¯æ˜¯å¦æœ‰æ•ˆ
         * Returns:   
         *************************************/
         virtual bool IsValid() {
@@ -60,7 +60,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    ÇåÀí»º´æ
+        * Method:    æ¸…ç†ç¼“å­˜
         * Returns:   
         *************************************/
         virtual void Clear() { len = 0; dev = 0; func = 0; }
@@ -70,8 +70,8 @@ namespace klib
             seq(0), ver(0), len(0), saddr(0), count(0), ler(0) {}
 
         /************************************
-        * Method:    ½âÎöÎªÇëÇó
-        * Returns:   ³É¹¦·µ»ØtrueÊ§°Üfalse
+        * Method:    è§£æä¸ºè¯·æ±‚
+        * Returns:   æˆåŠŸè¿”å›trueå¤±è´¥false
         *************************************/
         bool ParseRequest()
         {
@@ -88,7 +88,7 @@ namespace klib
         }
 
         /************************************
-        * Method:    ½âÎöÎªÏìÓ¦
+        * Method:    è§£æä¸ºå“åº”
         * Returns:   
         *************************************/
         void ParseResponse()
@@ -110,11 +110,11 @@ namespace klib
             seq(0), ver(0), len(0), saddr(0), count(0), ler(0) {}
 
         /************************************
-        * Method:    ³õÊ¼»¯ÎªÇëÇó
+        * Method:    åˆå§‹åŒ–ä¸ºè¯·æ±‚
         * Returns:   
-        * Parameter: seq ĞòÁĞºÅ
-        * Parameter: saddr ¿ªÊ¼µØÖ·
-        * Parameter: count ¼Ä´æÆ÷¸öÊı
+        * Parameter: seq åºåˆ—å·
+        * Parameter: saddr å¼€å§‹åœ°å€
+        * Parameter: count å¯„å­˜å™¨ä¸ªæ•°
         *************************************/
         void InitializeRequest(uint16_t seq, uint16_t saddr, uint16_t count)
         {
@@ -127,11 +127,11 @@ namespace klib
         }
 
         /************************************
-        * Method:    ³õÊ¼»¯ÎªÏìÓ¦
+        * Method:    åˆå§‹åŒ–ä¸ºå“åº”
         * Returns:   
-        * Parameter: seq ĞòÁĞºÅ
-        * Parameter: ler ×Ö½ÚÊı
-        * Parameter: buf ÏûÏ¢ÄÚÈİ
+        * Parameter: seq åºåˆ—å·
+        * Parameter: ler å­—èŠ‚æ•°
+        * Parameter: buf æ¶ˆæ¯å†…å®¹
         *************************************/
         void InitializeResponse(uint16_t seq, uint16_t ler, const KBuffer& buf)
         {
@@ -144,44 +144,44 @@ namespace klib
         };
 
         /************************************
-        * Method:    »ñÈ¡ÏûÏ¢Ìå
-        * Returns:   ·µ»ØÏûÏ¢Ìå
+        * Method:    è·å–æ¶ˆæ¯ä½“
+        * Returns:   è¿”å›æ¶ˆæ¯ä½“
         *************************************/
         const KBuffer& GetPayload() const { return payload; }
         /************************************
-        * Method:    »ñÈ¡ÏìÓ¦Êı¾İ
-        * Returns:   ·¬³¤Êı¾İ
+        * Method:    è·å–å“åº”æ•°æ®
+        * Returns:   ç•ªé•¿æ•°æ®
         *************************************/
         const KBuffer& GetData() const { return dat; }
 
         /************************************
-        * Method:    ÊÍ·ÅÏûÏ¢Ìå
+        * Method:    é‡Šæ”¾æ¶ˆæ¯ä½“
         * Returns:   
         *************************************/
         void ReleasePayload() { payload.Release(); }
         /************************************
-        * Method:    ÊÍ·ÅÊı¾İ
+        * Method:    é‡Šæ”¾æ•°æ®
         * Returns:   
         *************************************/
         void ReleaseData() { dat.Release(); }
         /************************************
-        * Method:    »ñÈ¡ĞòÁĞºÅ
-        * Returns:   ·µ»ØĞòÁĞºÅ
+        * Method:    è·å–åºåˆ—å·
+        * Returns:   è¿”å›åºåˆ—å·
         *************************************/
         inline uint16_t GetSeq() const { return seq; }
         /************************************
-        * Method:    »ñÈ¡¿ªÊ¼µØÖ·
-        * Returns:   ·µ»ØµØÖ·
+        * Method:    è·å–å¼€å§‹åœ°å€
+        * Returns:   è¿”å›åœ°å€
         *************************************/
         inline uint16_t GetStartAddress() const { return saddr; }
         /************************************
-        * Method:    »ñÈ¡¼Ä´æÆ÷¸öÊı
-        * Returns:   ·µ»Ø¸öÊı
+        * Method:    è·å–å¯„å­˜å™¨ä¸ªæ•°
+        * Returns:   è¿”å›ä¸ªæ•°
         *************************************/
         inline uint16_t GetCount() const { return count; }
 
         /************************************
-        * Method:    ĞòÁĞ»¯ÏûÏ¢
+        * Method:    åºåˆ—åŒ–æ¶ˆæ¯
         * Returns:   
         * Parameter: result
         *************************************/
@@ -271,9 +271,9 @@ namespace klib
 
     protected:
         /************************************
-        * Method:    ĞÂµÄmodbusÏûÏ¢
+        * Method:    æ–°çš„modbusæ¶ˆæ¯
         * Returns:   
-        * Parameter: msgs ĞÂÏûÏ¢
+        * Parameter: msgs æ–°æ¶ˆæ¯
         *************************************/
         virtual void OnMessage(const std::vector<KModbusMessage>& msgs)
         {
@@ -295,9 +295,9 @@ namespace klib
         }  
 
         /************************************
-        * Method:    Ô­Ê¼Êı¾İ
+        * Method:    åŸå§‹æ•°æ®
         * Returns:   
-        * Parameter: ev Êı¾İ
+        * Parameter: ev æ•°æ®
         *************************************/
         virtual void OnMessage(const std::vector<KBuffer>& ev)
         {
