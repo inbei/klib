@@ -9,6 +9,7 @@
 #include <sys/poll.h>
 #include <sys/pollset.h>
 #include <netinet/tcp.h>
+#include <netinet/in.h>
 #elif defined(HPUX)
 #include <fcntl.h>
 #include <arpa/inet.h>
@@ -16,6 +17,7 @@
 #include <sys/mpctl.h>
 #include <sys/poll.h>
 #include <netinet/tcp.h>
+#include <netinet/in.h>
 #elif defined(LINUX)
 #include <fcntl.h>
 #include <arpa/inet.h>
@@ -537,13 +539,13 @@ namespace klib {
                 if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&keep_alive, sizeof(keep_alive)) == -1)
                     printf("setsockopt SO_KEEPALIVE error:[%s]\n", strerror(errno));
 
-                if (setsockopt(fd, SOL_TCP, TCP_KEEPIDLE, (void*)&keep_idle, sizeof(keep_idle)) == -1)
+                if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, (void*)&keep_idle, sizeof(keep_idle)) == -1)
                     printf("setsockopt TCP_KEEPIDLE error:[%s]\n", strerror(errno));
 
-                if (setsockopt(fd, SOL_TCP, TCP_KEEPINTVL, (void*)&keep_interval, sizeof(keep_interval)) == -1)
+                if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, (void*)&keep_interval, sizeof(keep_interval)) == -1)
                     printf("setsockopt TCP_KEEPINTVL error:[%s]\n", strerror(errno));
 
-                if (setsockopt(fd, SOL_TCP, TCP_KEEPCNT, (void*)&keep_count, sizeof(keep_count)) == -1)
+                if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, (void*)&keep_count, sizeof(keep_count)) == -1)
                     printf("setsockopt TCP_KEEPCNT error:[%s]\n", strerror(errno));
 #endif
             }
