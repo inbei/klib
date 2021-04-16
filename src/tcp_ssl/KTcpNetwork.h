@@ -480,7 +480,7 @@ namespace klib {
 				{
 					KTcpUtil::CloseSocket(fd);
 					printf("CreateSSL failed\n");
-					return;
+					return false;
 				}
             }
 #endif
