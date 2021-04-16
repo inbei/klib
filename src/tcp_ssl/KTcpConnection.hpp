@@ -1,5 +1,6 @@
 #pragma once
 #if defined(WIN32)
+#include <winsock2.h>
 #include <WS2tcpip.h>
 #elif defined(AIX)
 #include <fcntl.h>
@@ -8,6 +9,7 @@
 #include <sys/poll.h>
 #include <sys/pollset.h>
 #include <netinet/tcp.h>
+#include <netinet/in.h>
 #elif defined(HPUX)
 #include <fcntl.h>
 #include <arpa/inet.h>
@@ -15,6 +17,7 @@
 #include <sys/mpctl.h>
 #include <sys/poll.h>
 #include <netinet/tcp.h>
+#include <netinet/in.h>
 #elif defined(LINUX)
 #include <fcntl.h>
 #include <arpa/inet.h>
@@ -80,7 +83,7 @@ namespace klib {
 #define epollerr POLLERR
 #endif
 
-#define PollTimeOut 100
+#define PollTimeOut 500
 #define BlockSize 40960
 #define MaxEvent 40
 
@@ -263,19 +266,19 @@ namespace klib {
             SeUndefined, SeRecv, SeSent
         };
 
+        SocketEvent(SocketType f, EventType type)
+            :fd(f), ev(type), ssl(NULL) {}
+
+        SocketEvent()
+            :fd(0), ev(SeUndefined), ssl(NULL) {}
+
         SocketType fd;
         EventType ev;
         // 二进制数据 //
-        std::vector<KBuffer> dat1;
+        std::vector<KBuffer> binDat;
         // 字符串数据 //
-        std::string dat2;
-
-        SSL* ssl;
-        SocketEvent()
-            :ssl(NULL), fd(0)
-        {
-
-        }
+        std::string strDat;
+		SSL* ssl;
     };
 
     enum NetworkState
@@ -290,86 +293,278 @@ namespace klib {
         NmUndefined, NmClient, NmServer
     };
 
-    /************************************
-    * Method:    写socket
-    * Returns:   
-    * Parameter: fd socket
-    * Parameter: dat 数据缓存
-    * Parameter: sz 数据长度
-    *************************************/
-    static int WriteSocket(SocketType fd, const char* dat, size_t sz)
+    class KTcpUtil
     {
-        if (sz < 1 || dat == NULL || fd < 1)
-            return 0;
-
-        int sent = 0;
-        while (sent != sz)
+    public:
+        /************************************
+        * Method:    写socket
+        * Returns:
+        * Parameter: fd socket
+        * Parameter: dat 数据缓存
+        * Parameter: sz 数据长度
+        *************************************/
+        static int WriteSocket(SocketType fd, const char* dat, size_t sz)
         {
-            int rc = ::send(fd, dat + sent, sz - sent, 0/*MSG_DONTWAIT  MSG_WAITALL*/);
-            if (rc > 0)
-                sent += rc;
-            else
+            if (sz < 1 || dat == NULL || fd < 1)
+                return 0;
+
+            int sent = 0;
+            while (sent != sz)
             {
-#if defined(WIN32)
-                if (GetLastError() == WSAEINTR) // 读操作中断，需要重新读
-                    KTime::MSleep(3);
-                else if (GetLastError() == WSAEWOULDBLOCK) // 非阻塞模式，暂时无数据，不需要重新读
-                    break;
-#else
-                if (errno == EINTR) // 读操作中断，需要重新读
-                    KTime::MSleep(3);
-                else if (errno == EWOULDBLOCK || errno == EAGAIN) // 非阻塞模式，暂时无数据，不需要重新读，hpux暂时无数据时返回EAGAIN
-                    break;
-#endif
-                else // 错误断开连接
+                int rc = ::send(fd, dat + sent, sz - sent, 0/*MSG_DONTWAIT  MSG_WAITALL*/);
+                if (rc > 0)
+                    sent += rc;
+                else if (rc == 0)
                     return -1;
+                else
+                {
+#if defined(WIN32)
+                    if (GetLastError() == WSAEINTR) // 写操作中断，需要重新读 // 
+                        KTime::MSleep(3);
+                    else if (GetLastError() == WSAEWOULDBLOCK) // 非阻塞模式，写缓冲已满，需要重新尝试写入 // 
+                        KTime::MSleep(3);
+#else
+                    //printf("WriteSocket errno:[%d], errstr:[%s]\n", errno, strerror(errno));
+                    if (errno == EINTR) // 写操作中断，需要重新读 // 
+                        KTime::MSleep(3);
+                    else if (errno == EWOULDBLOCK || errno == EAGAIN) // 非阻塞模式，写缓冲已满，需要重新尝试写入，hpux写缓冲已满时返回EAGAIN // 
+                        KTime::MSleep(1);
+#endif
+                    else // 错误断开连接 // 
+                        return -1;
+                }
+            }
+            return sent;
+        }
+
+        /************************************
+        * Method:    读socket
+        * Returns:   返回读取字节数
+        * Parameter: fd socket
+        * Parameter: dat 数据
+        *************************************/
+        static int ReadSocket(SocketType fd, std::vector<KBuffer>& dat)
+        {
+            if (fd < 1)
+                return 0;
+
+            int bytes = 0;
+            char buf[BlockSize] = { 0 };
+            while (true)
+            {
+                int rc = ::recv(fd, buf, BlockSize, 0/*MSG_DONTWAIT  MSG_WAITALL*/);
+                if (rc > 0)
+                {
+                    KBuffer b(rc);
+                    b.ApendBuffer(buf, rc);
+                    dat.push_back(b);
+                    bytes += rc;
+                }
+                else if (rc == 0)
+                    return -1;
+                else
+                {
+#if defined(WIN32)
+                    if (GetLastError() == WSAEINTR) // 读操作中断，需要重新读 // 
+                        KTime::MSleep(3);
+                    else if (GetLastError() == WSAEWOULDBLOCK) // 非阻塞模式，暂时无数据，不需要重新读 // 
+                        break;
+#else
+                    //printf("ReadSocket errno:[%d], errstr:[%s]\n", errno, strerror(errno));
+                    if (errno == EINTR) // 读操作中断，需要重新读 // 
+                        KTime::MSleep(3);
+                    else if (errno == EWOULDBLOCK || errno == EAGAIN) // 非阻塞模式，暂时无数据，不需要重新读 // 
+                        break;
+#endif
+                    else // 错误断开连接 // 
+                        return -1;
+                }
+            }
+            return bytes;
+        }
+
+
+        /************************************
+        * Method:    释放内存
+        * Returns:
+        * Parameter: bufs 待释放的内存
+        *************************************/
+        static  void Release(std::vector<KBuffer>& bufs)
+        {
+            std::vector<KBuffer>::iterator it = bufs.begin();
+            while (it != bufs.end())
+            {
+                it->Release();
+                ++it;
+            }
+            bufs.clear();
+        }
+
+        /************************************
+        * Method:    连接服务器
+        * Returns:   返回socket ID
+        * Parameter: ip 服务器IP
+        * Parameter: port 服务器端口
+        *************************************/
+        static SocketType Connect(const std::string& ip, uint16_t port)
+        {
+            int fd = -1;
+            if ((fd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
+                return -1;
+
+            DisableNagle(fd);
+
+            sockaddr_in server;
+            server.sin_family = AF_INET;
+            server.sin_port = htons(port);
+            server.sin_addr.s_addr = inet_addr(ip.c_str());
+            if (::connect(fd, (sockaddr*)(&server), sizeof(server)) != 0)
+            {
+                CloseSocket(fd);
+                return 0;
+            }
+            return fd;
+        }
+
+        /************************************
+        * Method:    监听IP和port端口
+        * Returns:   返回socket ID
+        * Parameter: ip 待监听的IP
+        * Parameter: port 待监听的端口
+        *************************************/
+        static SocketType Listen(const std::string& ip, uint16_t port)
+        {
+            int fd = -1;
+            if ((fd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
+                return -1;
+
+            ReuseAddress(fd);
+            DisableNagle(fd);
+
+            sockaddr_in server;
+            server.sin_family = AF_INET;
+            server.sin_port = htons(port);
+            server.sin_addr.s_addr = inet_addr(ip.c_str()); // htonl(INADDR_ANY);
+            if (::bind(fd, (sockaddr*)(&server), sizeof(server)) != 0)
+            {
+                CloseSocket(fd);
+                return 0;
+            }
+
+            if (::listen(fd, 200) != 0)
+            {
+                CloseSocket(fd);
+                return -2;
+            }
+            return fd;
+        }
+
+        /************************************
+        * Method:    关闭socket
+        * Returns:
+        * Parameter: fd socket ID
+        *************************************/
+        static void CloseSocket(SocketType fd)
+        {
+#if defined(WIN32)
+            closesocket(fd);
+#else
+            ::close(fd);
+#endif
+        }
+
+        /************************************
+        * Method:    socket 设置为非阻塞模式
+        * Returns:
+        * Parameter: fd socket ID
+        *************************************/
+        static bool SetSocketNonBlock(SocketType fd)
+        {
+#ifdef WIN32
+            // set non block
+            u_long nonblock = 1;
+            return ioctlsocket(fd, FIONBIO, &nonblock) == NO_ERROR;
+#else
+            // set non block
+            int flags = fcntl(fd, F_GETFL, 0);
+            if (flags < 0)
+                return false;
+            return fcntl(fd, F_SETFL, flags | O_NONBLOCK) >= 0;
+#endif // WIN32
+        }
+
+        /************************************
+        * Method:    socket 设置reuse属性
+        * Returns:
+        * Parameter: fd socket ID
+        *************************************/
+        static void ReuseAddress(SocketType fd)
+        {
+            // set reuse address
+            int on = 1;
+            ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
+                reinterpret_cast<const char*>(&on), sizeof(on));
+        }
+
+        /************************************
+        * Method:    禁用nagle算法
+        * Returns:
+        * Parameter: fd socket id
+        *************************************/
+        static void DisableNagle(SocketType fd)
+        {
+            // disable Nagle
+            int on = 1;
+            ::setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+                reinterpret_cast<const char*>(&on), sizeof(on));
+        }
+
+        /*************************************
+        * Method:    Setting SO_TCP KEEPALIVE
+        * Returns:
+        * Parameter: keep_idle 开始首次KeepAlive探测前的TCP空闭时间
+        * Parameter: keep_interval 两次KeepAlive探测间的时间间隔
+        * Parameter: keep_count 判定断开前的KeepAlive探测次数
+        *************************************/
+        static void SetKeepAlive(int fd, int keep_idle, int keep_interval, int keep_count)
+        {
+            int keep_alive = 1;
+            {
+#ifdef WIN32
+#define SIO_KEEPALIVE_VALS _WSAIOW(IOC_VENDOR,4)
+                struct tcp_keepalive {
+
+                    u_long on;
+                    u_long threshold;
+                    u_long interval;
+
+                } keepIn, keepOut;
+
+                keepIn.interval = keep_interval * 1000;// 10s 每10S发送1包探测报文，发5次没有回应，就断开 // 
+                keepIn.threshold = keep_count * keep_interval * 1000;// 60s 超过60S没有数据，就发送探测包 // 
+                keepIn.on = keep_alive;
+
+                u_long ulBytesReturn = 0;
+                if (WSAIoctl(fd, SIO_KEEPALIVE_VALS, (LPVOID)&keepIn, sizeof(keepIn), (LPVOID)&keepOut, sizeof(keepOut), &ulBytesReturn, NULL, NULL) == SOCKET_ERROR)
+                    printf("WSAIoctl error code:[%d]\n", WSAGetLastError());
+#else
+                if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&keep_alive, sizeof(keep_alive)) == -1)
+                    printf("setsockopt SO_KEEPALIVE error:[%s]\n", strerror(errno));
+
+                if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, (void*)&keep_idle, sizeof(keep_idle)) == -1)
+                    printf("setsockopt TCP_KEEPIDLE error:[%s]\n", strerror(errno));
+
+                if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, (void*)&keep_interval, sizeof(keep_interval)) == -1)
+                    printf("setsockopt TCP_KEEPINTVL error:[%s]\n", strerror(errno));
+
+                if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, (void*)&keep_count, sizeof(keep_count)) == -1)
+                    printf("setsockopt TCP_KEEPCNT error:[%s]\n", strerror(errno));
+#endif
             }
         }
-        return sent;
-    }
+    };
 
-    /************************************
-    * Method:    读socket
-    * Returns:   返回读取字节数
-    * Parameter: fd socket
-    * Parameter: dat 数据
-    *************************************/
-    static int ReadSocket(SocketType fd, std::vector<KBuffer>& dat)
-    {
-        if (fd < 1)
-            return 0;
-
-        int bytes = 0;
-        char buf[BlockSize] = { 0 };
-        while (true)
-        {
-            int rc = ::recv(fd, buf, BlockSize, 0/*MSG_DONTWAIT  MSG_WAITALL*/);
-            if (rc > 0)
-            {
-                KBuffer b(rc);
-                b.ApendBuffer(buf, rc);
-                dat.push_back(b);
-                bytes += rc;
-            }
-            else
-            {
-#if defined(WIN32)
-                if (GetLastError() == WSAEINTR) // 读操作中断，需要重新读
-                    KTime::MSleep(6);
-                else if (GetLastError() == WSAEWOULDBLOCK) // 非阻塞模式，暂时无数据，不需要重新读
-                    break;
-#else
-                if (errno == EINTR) // 读操作中断，需要重新读
-                    KTime::MSleep(6);
-                else if (errno == EWOULDBLOCK || errno == EAGAIN) // 非阻塞模式，暂时无数据，不需要重新读
-                    break;
-#endif
-                else // 错误断开连接
-                    return -1;
-            }
-        }
-        return bytes;
-    }
+    
 
     template<typename MessageType>
     class KTcpNetwork;
@@ -380,7 +575,7 @@ namespace klib {
     public:
         KTcpConnection(KTcpNetwork<MessageType> *poller)
             :KEventObject<SocketEvent>("Socket event thread", 1000),
-            m_state(NsUndefined), m_mode(NmUndefined), m_poller(poller),m_ssl(NULL)
+            m_state(NsUndefined), m_mode(NmUndefined), m_poller(poller), m_fd(0),m_ssl(NULL)
         {
 
         }
@@ -398,42 +593,18 @@ namespace klib {
         * Parameter: fd socket
         * Parameter: needAuth 是否需要授权
         *************************************/
-        bool Start(NetworkMode mode, const std::string& ipport, SocketType fd, bool needAuth = false)
+        bool Start(NetworkMode mode, const std::string& ip, const std::string& port, SocketType fd, bool needAuth = false)
         {
             m_mode = mode;
             m_auth.need = needAuth;
             if (KEventObject<SocketEvent>::Start())
             {
-                Connect(ipport, fd);
+                Connect(ip, port, fd);
                 return true;
             }
             return false;
         }
-
-        /************************************
-        * Method:    连接
-        * Returns:   
-        * Parameter: ipport IP和端口
-        * Parameter: fd socket
-        *************************************/
-        void Connect(const std::string& ipport, SocketType fd)
-        {
-            if (GetMode() == NmServer)
-                m_auth.authSent = true;
-            m_ipport = ipport;
-            m_fd = fd;
-            OnConnected(GetMode(), ipport);
-        }
-
-        /************************************
-        * Method:    断开连接
-        * Returns:   
-        * Parameter: fd socket
-        *************************************/
-        void Disconnect(SocketType fd)
-        {
-            OnDisconnected(GetMode(), m_ipport, fd);
-        }
+        
 
         /************************************
         * Method:    是否连接上
@@ -472,6 +643,8 @@ namespace klib {
         * Returns:   返回IP和端口
         *************************************/
         inline  const std::string& GetAddress() const { return m_ipport; }
+
+        inline const std::string& GetIP() const { return m_ip; }
         
     protected:
         /************************************
@@ -496,9 +669,8 @@ namespace klib {
         * Parameter: mode 模式
         * Parameter: ipport IP和端口
         *************************************/
-        virtual void OnConnected(NetworkMode mode, const std::string& ipport)
+        virtual void OnConnected(NetworkMode mode, const std::string& ipport, SocketType fd)
         {
-            SetState(NsPeerConnected);
             printf("%s connected\n", ipport.c_str());
         }
         /************************************
@@ -510,23 +682,6 @@ namespace klib {
         *************************************/
         virtual void OnDisconnected(NetworkMode mode, const std::string& ipport, SocketType fd)
         {
-#ifdef __OPEN_SSL__
-            if (m_poller->IsSslEnabled())
-                KOpenSSL::Disconnect(&m_ssl);
-#endif
-            m_auth.Reset();
-            m_remain.Release();
-            SetState(NsDisconnected);
-            m_poller->DeleteSocket(fd);
-            // clear data
-            std::vector<SocketEvent> events;
-            Flush(events);
-            std::vector<SocketEvent>::iterator it = events.begin();
-            while (it != events.end())
-            {
-                m_poller->Release(it->dat1);
-                ++it;
-            }
             printf("%s disconnected\n", ipport.c_str());
         }
         /************************************
@@ -573,7 +728,7 @@ namespace klib {
         *************************************/
         virtual void ProcessEvent(const SocketEvent& ev)
         {
-            std::vector<KBuffer>& bufs = const_cast<std::vector<KBuffer> &>(ev.dat1);
+            std::vector<KBuffer>& bufs = const_cast<std::vector<KBuffer> &>(ev.binDat);
             if (IsConnected())
             {
                 SocketType fd = ev.fd;
@@ -587,7 +742,7 @@ namespace klib {
                     }
                     else
                     {
-                        const std::string& smsg = ev.dat2;
+                        const std::string& smsg = ev.strDat;
                         if (!smsg.empty())
                         {
                             int rc = 0;
@@ -596,12 +751,12 @@ namespace klib {
                                 rc = KOpenSSL::WriteSocket(ev.ssl, smsg.c_str(), smsg.size());
                             else
 #endif
-                                rc = WriteSocket(fd, smsg.c_str(), smsg.size());
+                                rc = KTcpUtil::WriteSocket(fd, smsg.c_str(), smsg.size());
 
                             if (rc < 0)
                             {
-                                Disconnect(fd);
-                                m_poller->Release(bufs);
+                                m_poller->Disconnect(fd);
+                                KTcpUtil::Release(bufs);
                                 break;
                             }
                         }
@@ -619,18 +774,18 @@ namespace klib {
                                     rc = KOpenSSL::WriteSocket(ev.ssl, buf.GetData(), buf.GetSize());
                                 else
 #endif
-                                    rc = WriteSocket(fd, buf.GetData(), buf.GetSize());
+                                    rc = KTcpUtil::WriteSocket(fd, buf.GetData(), buf.GetSize());
 
                                 if (rc < 0)
                                 {
-                                    Disconnect(fd);
+                                    m_poller->Disconnect(fd);
                                     break;
                                 }
                                 ++it;
                             }
                         }
                     }
-                    m_poller->Release(bufs);
+                    KTcpUtil::Release(bufs);
                     break;
                 }
                 case SocketEvent::SeRecv:
@@ -644,10 +799,10 @@ namespace klib {
                             rc = KOpenSSL::ReadSocket(ev.ssl, buffers);
                         else
 #endif
-                            rc = ReadSocket(fd, buffers);
+                            rc = KTcpUtil::ReadSocket(fd, buffers);
 
                         if (rc < 0)
-                            Disconnect(fd);
+                            m_poller->Disconnect(fd);
 
                         if(!buffers.empty())
                             ParseData(fd, buffers);
@@ -664,7 +819,7 @@ namespace klib {
             }
             else
             {
-                m_poller->Release(bufs);
+                KTcpUtil::Release(bufs);
             }
         }
         /************************************
@@ -678,7 +833,7 @@ namespace klib {
             if (m_auth.need && !m_auth.authRecv)
             {
                 if (!(m_auth.authRecv = OnAuthResponse(bufs)))
-                    Disconnect(fd);
+                    m_poller->Disconnect(fd);
             }
             else
             {
@@ -696,15 +851,73 @@ namespace klib {
                 }
             }
         }
+
+        /************************************
+        * Method:    连接
+        * Returns:
+        * Parameter: ipport IP和端口
+        * Parameter: fd socket
+        *************************************/
+        void Connect(const std::string& ip, const std::string& port, SocketType fd)
+        {
+            if (GetMode() == NmServer)
+                m_auth.authSent = true;
+            m_ip = ip;
+            m_port = port;
+            m_ipport = ip + ":" + port;
+            m_fd = fd;
+            SetState(NsPeerConnected);
+
+            OnConnected(GetMode(), m_ipport, fd);
+        }
+
+        /************************************
+        * Method:    断开连接
+        * Returns:
+        * Parameter: fd socket
+        *************************************/
+        void Disconnect(SocketType fd)
+        {
+#ifdef __OPEN_SSL__
+            if (m_poller->IsSslEnabled())
+                KOpenSSL::Disconnect(&m_ssl);
+#endif
+            m_auth.Reset();
+            m_remain.Release();
+
+            m_ip.clear();
+            m_port.clear();
+            std::string ipport = m_ipport;
+            m_ipport.clear();
+            m_fd = 0;
+
+            std::vector<SocketEvent> events;
+            Flush(events);
+            std::vector<SocketEvent>::iterator it = events.begin();
+            while (it != events.end())
+            {
+                KTcpUtil::Release(it->binDat);
+                ++it;
+            }
+            SetState(NsDisconnected);
+
+            OnDisconnected(GetMode(), ipport, fd);
+        }
+
     protected:
-		// 连接 //
-		KTcpNetwork<MessageType>* m_poller;
+        template<typename T>
+        friend class KTcpNetwork;
+
+        // 连接 //
+        KTcpNetwork<MessageType>* m_poller;
 
     private:
         // IP端口 //
+        std::string m_ip;
+        std::string m_port;
         std::string m_ipport;
         // socket //
-        SocketType m_fd;
+        volatile SocketType m_fd;
         // 模式 //
         AtomicInteger<int32_t> m_mode;
         // 剩余数据 //

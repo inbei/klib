@@ -61,7 +61,7 @@ namespace klib {
         *************************************/
         void Disconnect()
         {
-            DisconnectConnection(KTcpNetwork<MessageType>::GetSocket());
+            Disconnect(KTcpNetwork<MessageType>::GetSocket());
         }
 
     protected:

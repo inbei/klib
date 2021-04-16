@@ -3,7 +3,7 @@ tcp 连接操作类，包括连接绑定轮询读数据
 */
 #ifndef _KTCPBASE_HPP_
 #define _KTCPBASE_HPP_
-
+#include "util/KStringUtility.h"
 #include "KTcpConnection.hpp"
 namespace klib {
     template<typename MessageType>
@@ -16,7 +16,7 @@ namespace klib {
         *************************************/
         KTcpNetwork()
             :KEventObject<SocketType>("Poll thread", 50),m_connected(false), 
-            m_isServer(false),m_needAuth(false),m_maxClient(50),m_ctx(NULL), m_sslEnabled(false)
+            m_isServer(false),m_needAuth(false),m_maxClient(100),m_ctx(NULL), m_sslEnabled(false), m_checkThread("Check alive thread")
         {
 #if defined(WIN32)
             WSADATA wsd;
@@ -43,21 +43,7 @@ namespace klib {
 #endif
         }
 
-        /************************************
-        * Method:    释放内存
-        * Returns:   
-        * Parameter: bufs 待释放的内存
-        *************************************/
-        static  void Release(std::vector<KBuffer>& bufs)
-        {
-            std::vector<KBuffer>::iterator it = bufs.begin();
-            while (it != bufs.end())
-            {
-                it->Release();
-                ++it;
-            }
-            bufs.clear();
-        }
+        
 
         /************************************
         * Method:    判断是否连接上
@@ -98,6 +84,18 @@ namespace klib {
 #endif
             if (KEventObject<SocketType>::Start())
             {
+                try
+                {
+                    m_checkThread.Run(this, &KTcpNetwork::CheckAlive, 1);
+                }
+                catch (const std::exception& e)
+                {
+                    printf("<%s> KTcpNetwork thread start failed, exception:[%s]\n", __FUNCTION__, e.what());
+                    KEventObject<SocketType>::Stop();
+                    KEventObject<SocketType>::WaitForStop();
+                    return false;
+                }
+
                 PostForce(0);
                 return true;
             }
@@ -108,9 +106,23 @@ namespace klib {
             return false;
         }
 
+        /************************************
+        * Method:    停止
+        * Returns:
+        *************************************/
+        virtual void Stop()
+        {
+            KEventObject<SocketType>::Stop();
+        }
+
+        /************************************
+        * Method:    等待停止
+        * Returns:
+        *************************************/
         virtual void WaitForStop()
         {
             KEventObject<SocketType>::WaitForStop();
+            m_checkThread.Join();
 #ifdef __OPEN_SSL__
             KOpenSSL::DestroyCtx(&m_ctx);
 #endif
@@ -121,11 +133,11 @@ namespace klib {
         * Returns:   发送成功返回true失败返回false
         * Parameter: bufs 待发送的数据
         *************************************/
-        bool SendDataToSelf(const std::vector<KBuffer>& bufs)
+        bool Send(const std::vector<KBuffer>& bufs)
         {
             if (m_isServer)
                 return false;
-            return SendDataToConnection(m_fd, SocketEvent::SeSent, bufs);
+            return SendClient(m_fd, SocketEvent::SeSent, bufs);
         }
 
         /************************************
@@ -135,18 +147,16 @@ namespace klib {
         * Parameter: et 事件类型
         * Parameter: bufs 发送的数据
         *************************************/
-        bool SendDataToConnection(SocketType fd, SocketEvent::EventType et,const std::vector<KBuffer>& bufs)
+        bool SendClient(SocketType fd, SocketEvent::EventType et,const std::vector<KBuffer>& bufs)
         {
             KLockGuard<KMutex> lock(m_connMtx);
             typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.find(fd);
             if (it != m_connections.end())
             {
                 KTcpConnection<MessageType>* c = it->second;
-                SocketEvent e;
-                e.fd = fd;
-                e.ev = et;
-                e.dat1 = bufs;
-                e.ssl = c->GetSSL();
+                SocketEvent e(fd, et);
+                e.binDat = bufs;
+				e.ssl = c->GetSSL();
                 if (c->IsConnected())
                 {
                     if (!c->Post(e))
@@ -178,7 +188,29 @@ namespace klib {
             return std::string();
         }
 
-        inline bool IsSslEnabled() const { return m_sslEnabled; }
+        /************************************
+        * Method:    端口连接并清理资源
+        * Returns:
+        * Parameter: fd 客户端ID
+        *************************************/
+        void Disconnect(SocketType fd)
+        {
+            KLockGuard<KMutex> lock(m_connMtx);
+            typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.find(fd);
+            if (it != m_connections.end())
+            {
+                KTcpConnection<MessageType>* c = it->second;
+                std::string ip = c->GetIP();
+                DeleteSocket(fd);
+                c->Disconnect(fd);
+                std::map<std::string, int>::iterator pit = m_ipConnCount.find(ip);
+                if (pit != m_ipConnCount.end() && --pit->second < 1)
+                    m_ipConnCount.erase(pit);
+            }
+        }
+		
+		inline bool IsSslEnabled() const { return m_sslEnabled; }
+
     protected:        
         /************************************
         * Method:    创建连接
@@ -199,22 +231,6 @@ namespace klib {
             return std::pair<std::string, uint16_t>(m_ip, m_port);
         }
 
-        /************************************
-        * Method:    端口连接并清理资源
-        * Returns:   
-        * Parameter: fd 客户端ID
-        *************************************/
-        void DisconnectConnection(SocketType fd)
-        {
-            KLockGuard<KMutex> lock(m_connMtx);
-            typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.find(fd);
-            if (it != m_connections.end())
-            {
-                KTcpConnection<MessageType>* c = it->second;
-                c->Disconnect(fd);
-            }
-        }
-
     private:
         /************************************
         * Method:    定时轮询或者重连
@@ -223,44 +239,40 @@ namespace klib {
         *************************************/
         virtual void ProcessEvent(const SocketType& ev)
         {
-            if (m_isServer)
+            if (m_connected)
             {
-                if (m_connected)
-                {
-                    PollSocket();
-                }
-                else
+                PollSocket();
+            }
+            else
+            {
+                if (m_isServer)
                 {
                     std::pair<std::string, uint16_t> conf = GetConfig();
-                    if ((m_fd = Listen(conf.first, conf.second)) > 0)
+                    if ((m_fd = KTcpUtil::Listen(conf.first, conf.second)) > 0)
                     {
                         std::ostringstream os;
                         os << conf.first << ":" << conf.second;
 
-                        if (SetSocketNonBlock(m_fd) && SetPollEvent(m_fd))
+                        if (SetSocket(m_fd, false))
                             m_connected = true;
                         else
-                            CloseSocket(m_fd);
+                        {
+                            KTcpUtil::CloseSocket(m_fd);
+                            KTime::MSleep(1000);
+                        }
                     }
                     else
                         KTime::MSleep(1000);
                 }
-            }
-            else
-            {
-                if (m_connected)
-                {
-                    if (PollSocket() < 1)
-                        ReadSocket2(m_fd);
-                }
                 else
                 {
                     std::pair<std::string, uint16_t> conf = GetConfig();
-                    if ((m_fd = Connect(conf.first, conf.second)) > 0)
+                    if ((m_fd = KTcpUtil::Connect(conf.first, conf.second)) > 0)
                     {
-                        std::ostringstream os;
-                        os << conf.first << ":" << conf.second;
-                        AddSocket(m_fd, os.str());
+                        if(AddSocket(m_fd, conf.first, KStringUtility::Int32ToString(conf.second)))
+                            m_connected = true;
+                        else
+                            KTime::MSleep(1000);
                     }
                     else
                         KTime::MSleep(1000);
@@ -329,14 +341,21 @@ namespace klib {
         {
             if (evt & epollin)
             {
-                if (m_isServer && IsSelfSocket(fd))
-                    AcceptSocket(fd);
+                if (m_isServer)
+                {
+                    if (IsSelfSocket(fd))
+                        AcceptSocket(fd);
+                    else
+                        ReadSocket2(fd);
+                }
                 else
+                {
                     ReadSocket2(fd);
+                }
             }
             else if (evt & epollhup || evt & epollerr)
             {
-                DisconnectConnection(fd);
+                Disconnect(fd);
             }
         }
 
@@ -354,14 +373,14 @@ namespace klib {
                 rc = KOpenSSL::ReadSocket(GetSSL(fd), bufs);
             else
 #endif
-                rc = ReadSocket(fd, bufs);
+                rc = KTcpUtil::ReadSocket(fd, bufs);
             if (rc < 0)
-                DisconnectConnection(fd);
+                Disconnect(fd);
 
             if (!bufs.empty())
             {
-                if (!SendDataToConnection(fd, SocketEvent::SeRecv, bufs))
-                    Release(bufs);
+                if (!SendClient(fd, SocketEvent::SeRecv, bufs))
+                    KTcpUtil::Release(bufs);
             }
         }
 
@@ -394,7 +413,7 @@ namespace klib {
                         epoll_ctl(m_pfd, EPOLL_CTL_DEL, fd, &ev);
 #endif
                         rc = true;
-                        CloseSocket(fd);
+                        KTcpUtil::CloseSocket(fd);
                         break;
                     }
                     ++it;
@@ -416,23 +435,13 @@ namespace klib {
             SocketType nfd = 0;
             sockaddr_in caddr = { 0 };
             SocketLength addrlen = sizeof(caddr);
-            std::map<SocketType, std::string> socks;
 #if defined(WIN32)
             while ((nfd = ::accept(fd, (struct sockaddr*)&caddr, &addrlen)) != INVALID_SOCKET)
 #else
             while ((nfd = ::accept(fd, (struct sockaddr*)&caddr, &addrlen)) > 0)
 #endif
             {
-                std::ostringstream os;
-                os << inet_ntoa(caddr.sin_addr) << ":" << ntohs(caddr.sin_port);
-                socks[nfd] = os.str();
-            }
-
-            std::map<SocketType, std::string>::const_iterator it = socks.begin();
-            while (it != socks.end())
-            {
-                AddSocket(it->first, it->second);
-                ++it;
+                AddSocket(nfd, inet_ntoa(caddr.sin_addr), KStringUtility::Int32ToString(ntohs(caddr.sin_port)));
             }
         }
 
@@ -443,29 +452,22 @@ namespace klib {
         * Parameter: ipport IP和端口
         * Parameter: createConn 是否创建连接
         *************************************/
-        void AddSocket(SocketType fd, const std::string& ipport)
+        bool AddSocket(SocketType fd, const std::string& ip, const std::string &port)
         {
             KLockGuard<KMutex> lock(m_connMtx);
-            KTcpConnection<MessageType>* recycle = NULL;
+            typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator recycle = m_connections.end();
             typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.begin();
             while (it != m_connections.end())
             {
-                if (it->second->IsDisconnected())
+                KTcpConnection<MessageType>* t = it->second;
+                if (t->IsDisconnected())
                 {
-                    recycle = it->second;
-                    m_connections.erase(it);
+                    recycle = it;
                     break;
                 }
                 ++it;
             }
-
-            if (!SetSocketNonBlock(fd))
-            {
-                CloseSocket(fd);
-                return;
-            }
-
-            SSL* ssl = NULL;
+			SSL* ssl = NULL;
 #ifdef __OPEN_SSL__
             if (IsSslEnabled())
             {
@@ -476,52 +478,119 @@ namespace klib {
 
 				if (ssl == NULL)
 				{
-					CloseSocket(fd);
+					KTcpUtil::CloseSocket(fd);
 					printf("CreateSSL failed\n");
 					return;
 				}
             }
-#endif	
-            if (!SetPollEvent(fd))
+#endif
+            if (recycle != m_connections.end())
             {
-                CloseSocket(fd);
-                return;
-            }
-
-            if (recycle)
-            {
-                recycle->SetSSL(ssl);
-                recycle->Connect(ipport, fd);
-                m_connections[fd] = recycle;
-                printf("Recycle connection started success\n");
+                KTcpConnection<MessageType>* c = recycle->second;
+				c->SetSSL(ssl);
+                c->Connect(ip, port, fd);
+                if (SetSocket(fd))
+                {
+                    int& count = m_ipConnCount[ip];
+                    if (count < 50)
+                    {
+                        ++count;
+                        m_connections.erase(recycle);
+                        m_connections[fd] = c;
+                        printf("Recycle connection started success\n");
+                        return true;
+                    }
+                    else
+                    {
+                        printf("Recycle one ip has more than 5 connections \n");
+                    }
+                }
+                else
+                {
+                    printf("Recycle set socket failed\n");
+                }
+                c->Disconnect(fd);
             }
             else
             {
                 if (m_connections.size() < m_maxClient)
                 {
-                    KTcpConnection<MessageType>* c = NewConnection(fd, ipport);
-                    if (c->Start(m_isServer ? NmServer : NmClient, ipport, fd, m_needAuth))
+                    KTcpConnection<MessageType>* c = NewConnection(fd, ip + ":" + port);
+					c->SetSSL(ssl);
+                    if (c->Start(m_isServer ? NmServer : NmClient, ip, port, fd, m_needAuth))
                     {
-                        c->SetSSL(ssl);
-                        m_connections[fd] = c;
-                        printf("New connection started success\n");
+                        if (SetSocket(fd))
+                        {
+                            int& count = m_ipConnCount[ip];
+                            if (count < 5)
+                            {
+                                ++count;
+                                m_connections[fd] = c;
+                                printf("New connection started success\n");
+                                return true;
+                            }
+                            else
+                            {
+                                printf("New one ip has more than 5 connections \n");
+                            }
+                        }
+                        else
+                        {
+                            printf("New set socket failed\n");
+                        }
+                        c->Disconnect(fd);
+                        c->Stop();
+                        c->WaitForStop();
                     }
                     else
                     {
                         DeleteSocket(fd);
-                        delete c;
-                        printf("Connection started failed\n");
+                        printf("New thread started failed\n");
                     }
+                    
+                    delete c;
                 }
                 else
                 {
                     DeleteSocket(fd);
-                    printf("Reach max client count:[%d]\n", m_maxClient);
+                    printf("New reach max client count:[%d]\n", m_maxClient);
                 }
+                
             }
+            
+            return false;
+        }
 
-            if(IsSelfSocket(fd))
-                m_connected = true;
+
+        int CheckAlive(int)
+        {
+            while (IsRunning())
+            {
+                {
+                    KLockGuard<KMutex> lock(m_connMtx);
+                    typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.begin();
+                    while (it != m_connections.end())
+                    {
+                        KTcpConnection<MessageType>* t = it->second;
+                        if (t->IsConnected() && t->IsEmpty())
+                        {
+                            t->Post(SocketEvent(t->GetSocket(), SocketEvent::SeRecv));
+                            //printf("check client alive, id:[%s]\n", t->GetAddress().c_str());
+                        }
+                        ++it;
+                    }
+                }
+
+                KTime::MSleep(3000);
+            }
+            return 0;
+        }
+
+        bool SetSocket(SocketType fd, bool keep_alive = true)
+        {
+            if (keep_alive)
+                KTcpUtil::SetKeepAlive(fd, 10, 3, 3);
+            return KTcpUtil::SetSocketNonBlock(fd) && SetPollEvent(fd);
         }
 
         bool SetPollEvent(SocketType fd)
@@ -536,7 +605,7 @@ namespace klib {
             //int rc = pollset_ctl(pollset_t ps, struct poll_ctl* pollctl_array,int array_length)
             if (pollset_ctl(m_pfd, &ev, 1) < 0)
             {
-                CloseSocket(fd);
+                KTcpUtil::CloseSocket(fd);
                 return false;
             };
 #elif defined(LINUX)
@@ -545,7 +614,7 @@ namespace klib {
             ev.events = EPOLLIN | EPOLLET | EPOLLERR | EPOLLHUP;
             if (epoll_ctl(m_pfd, EPOLL_CTL_ADD, fd, &ev) < 0)
             {
-                CloseSocket(fd);
+                KTcpUtil::CloseSocket(fd);
                 return false;
             };
 #endif
@@ -557,127 +626,9 @@ namespace klib {
             p.events = epollin | epollhup | epollerr;
 #endif
             m_fds.push_back(p);
+
             return true;
         };
-
-        /************************************
-        * Method:    连接服务器
-        * Returns:   返回socket ID
-        * Parameter: ip 服务器IP
-        * Parameter: port 服务器端口
-        *************************************/
-        SocketType Connect(const std::string& ip, uint16_t port) const
-        {
-            int fd = -1;
-            if ((fd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
-                return -1;
-
-            DisableNagle(fd);
-
-            sockaddr_in server;
-            server.sin_family = AF_INET;
-            server.sin_port = htons(port);
-            server.sin_addr.s_addr = inet_addr(ip.c_str());
-            if (::connect(fd, (sockaddr*)(&server), sizeof(server)) != 0)
-            {
-                CloseSocket(fd);
-                return 0;
-            }
-            return fd;
-        }
-
-        /************************************
-        * Method:    监听IP和port端口
-        * Returns:   返回socket ID
-        * Parameter: ip 待监听的IP
-        * Parameter: port 待监听的端口
-        *************************************/
-        SocketType Listen(const std::string& ip, uint16_t port) const
-        {
-            int fd = -1;
-            if ((fd = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
-                return -1;
-
-            ReuseAddress(fd);
-            DisableNagle(fd);
-
-            sockaddr_in server;
-            server.sin_family = AF_INET;
-            server.sin_port = htons(port);
-            server.sin_addr.s_addr = inet_addr(ip.c_str()); // htonl(INADDR_ANY);
-            if (::bind(fd, (sockaddr*)(&server), sizeof(server)) != 0)
-            {
-                CloseSocket(fd);
-                return 0;
-            }
-
-            if (::listen(fd, 200) != 0)
-            {
-                CloseSocket(fd);
-                return -2;
-            }
-            return fd;
-        }
-
-        /************************************
-        * Method:    关闭socket
-        * Returns:   
-        * Parameter: fd socket ID
-        *************************************/
-        void CloseSocket(SocketType fd) const
-        {
-#if defined(WIN32)
-            closesocket(fd);
-#else
-            ::close(fd);
-#endif
-        }
-
-        /************************************
-        * Method:    socket 设置为非阻塞模式
-        * Returns:   
-        * Parameter: fd socket ID
-        *************************************/
-        bool SetSocketNonBlock(SocketType fd) const
-        {
-#ifdef WIN32
-            // set non block
-            u_long nonblock = 1;
-            return ioctlsocket(fd, FIONBIO, &nonblock) == NO_ERROR;
-#else
-            // set non block
-            int flags = fcntl(fd, F_GETFL, 0);
-            if (flags < 0)
-                return false;
-            return fcntl(fd, F_SETFL, flags | O_NONBLOCK) >= 0;
-#endif // WIN32
-        }
-
-        /************************************
-        * Method:    socket 设置reuse属性
-        * Returns:   
-        * Parameter: fd socket ID
-        *************************************/
-        void ReuseAddress(SocketType fd) const
-        {
-            // set reuse address
-            int on = 1;
-            ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
-                reinterpret_cast<const char*>(&on), sizeof(on));
-        }
-
-        /************************************
-        * Method:    禁用nagle算法
-        * Returns:   
-        * Parameter: fd socket id
-        *************************************/
-        void DisableNagle(SocketType fd) const
-        {
-            // disable Nagle
-            int on = 1;
-            ::setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
-                reinterpret_cast<const char*>(&on), sizeof(on));
-        }
 
         bool IsExist(SocketType fd) const
         {
@@ -727,6 +678,8 @@ namespace klib {
         KMutex m_connMtx;
         // 连接缓存 //
         std::map<SocketType, KTcpConnection<MessageType>*> m_connections;
+        std::map<std::string, int> m_ipConnCount;
+        KPthread m_checkThread;
 
         SSL_CTX* m_ctx;
 

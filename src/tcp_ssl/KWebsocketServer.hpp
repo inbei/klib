@@ -27,7 +27,7 @@ namespace klib
             wmsg.Serialize(buf);
             std::vector<KBuffer> bufs;
             bufs.push_back(buf);
-            if (!SendDataToConnection(fd, SocketEvent::SeSent, bufs))
+            if (!SendClient(fd, SocketEvent::SeSent, bufs))
             {
                 buf.Release();
                 return false;

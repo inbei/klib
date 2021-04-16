@@ -302,7 +302,7 @@ namespace klib
         virtual void OnMessage(const std::vector<KBuffer>& ev)
         {
             printf("%s recv raw message, count:[%d]\n", ev.size());
-            KTcpNetwork<KModbusMessage>::Release(const_cast<std::vector<KBuffer>&>(ev));
+            KTcpUtil::Release(const_cast<std::vector<KBuffer>&>(ev));
         }
     };
 };

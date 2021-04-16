@@ -259,9 +259,9 @@ namespace klib
         * Parameter: mode
         * Parameter: ipport
         *************************************/
-        virtual void OnConnected(NetworkMode mode, const std::string& ipport)
+        virtual void OnConnected(NetworkMode mode, const std::string& ipport, SocketType fd)
         {
-            KTcpConnection<KWebsocketMessage>::OnConnected(mode, ipport);
+            KTcpConnection<KWebsocketMessage>::OnConnected(mode, ipport, fd);
         }
 
         /************************************
@@ -305,7 +305,7 @@ namespace klib
 				sz = KOpenSSL::WriteSocket(GetSSL(), req.c_str(), req.size());
 			else
 #endif
-				sz = WriteSocket(GetSocket(), req.c_str(), req.size());
+				sz = KTcpUtil::WriteSocket(GetSocket(), req.c_str(), req.size());
             return sz == req.size();
         }
 
@@ -359,7 +359,7 @@ namespace klib
                     sz = KOpenSSL::WriteSocket(GetSSL(), resp.c_str(), resp.size());
                 else
 #endif
-                    sz = WriteSocket(fd, resp.c_str(), resp.size());
+                    sz = KTcpUtil::WriteSocket(fd, resp.c_str(), resp.size());
                 if (sz == resp.size())
                 {
                     printf("handshake with client successfully\n");
@@ -380,7 +380,7 @@ namespace klib
             }
 
         end:
-            KTcpNetwork<KWebsocketMessage>::Release(const_cast<std::vector<KBuffer>&>(ev));
+            KTcpUtil::Release(const_cast<std::vector<KBuffer>&>(ev));
             if (rc)
                 SetState(NsReadyToWork);
             return rc;
@@ -410,7 +410,7 @@ namespace klib
         virtual void OnMessage(const std::vector<KBuffer>& ev)
         {
             printf("%s recv raw message, count:[%d]\n", ev.size());
-            KTcpNetwork<KWebsocketMessage>::Release(const_cast<std::vector<KBuffer>&>(ev));
+            KTcpUtil::Release(const_cast<std::vector<KBuffer>&>(ev));
         }
 
     private:
@@ -507,7 +507,7 @@ namespace klib
             case KWebsocketMessage::opclose:
             {
                 printf("web socket recv close request start\n");
-                Disconnect(GetSocket());
+                m_poller->Disconnect(GetSocket());
                 printf("web socket recv close request end\n");
                 msg.payload.Release();
                 break;
