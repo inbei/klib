@@ -93,6 +93,10 @@ namespace klib {
                     printf("<%s> KTcpNetwork thread start failed, exception:[%s]\n", __FUNCTION__, e.what());
                     KEventObject<SocketType>::Stop();
                     KEventObject<SocketType>::WaitForStop();
+#ifdef __OPEN_SSL__
+            if (sslEnabled)
+                KOpenSSL::DestroyCtx(&m_ctx);
+#endif
                     return false;
                 }
 
@@ -544,6 +548,10 @@ namespace klib {
                     }
                     else
                     {
+#ifdef __OPEN_SSL__
+            			if (IsSslEnabled())
+                			KOpenSSL::Disconnect(&ssl);
+#endif
                         DeleteSocket(fd);
                         printf("New thread started failed\n");
                     }
@@ -552,6 +560,10 @@ namespace klib {
                 }
                 else
                 {
+#ifdef __OPEN_SSL__
+            		if (IsSslEnabled())
+                		KOpenSSL::Disconnect(&ssl);
+#endif
                     DeleteSocket(fd);
                     printf("New reach max client count:[%d]\n", m_maxClient);
                 }
