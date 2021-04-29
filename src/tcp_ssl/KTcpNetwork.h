@@ -200,12 +200,12 @@ namespace klib {
         void Disconnect(SocketType fd)
         {
             KLockGuard<KMutex> lock(m_connMtx);
+            DeleteSocket(fd);
             typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.find(fd);
             if (it != m_connections.end())
             {
                 KTcpConnection<MessageType>* c = it->second;
                 std::string ip = c->GetIP();
-                DeleteSocket(fd);
                 c->Disconnect(fd);
                 std::map<std::string, int>::iterator pit = m_ipConnCount.find(ip);
                 if (pit != m_ipConnCount.end() && --pit->second < 1)
@@ -640,23 +640,7 @@ namespace klib {
             m_fds.push_back(p);
 
             return true;
-        };
-
-        bool IsExist(SocketType fd) const
-        {
-            KLockGuard<KMutex> lock(m_connMtx);
-            typename std::map<SocketType, KTcpConnection<MessageType>*>::const_iterator it = m_connections.find(fd);
-            return (it != m_connections.end());
-        }
-
-        SSL* GetSSL(SocketType fd) const
-        {
-            KLockGuard<KMutex> lock(m_connMtx);
-            typename std::map<SocketType, KTcpConnection<MessageType>*>::const_iterator it = m_connections.find(fd);
-            if (it != m_connections.end())
-                return it->second->GetSSL();
-            return NULL;
-        }
+        }; 
 
     private:
         template<typename T>

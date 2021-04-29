@@ -80,7 +80,7 @@ namespace klib {
                 }
                 catch (const std::exception& e)
                 {
-                    printf("<%s> KTcpNetwork thread start failed, exception:[%s]\n", __FUNCTION__, e.what());
+                    //printf("<%s> KTcpNetwork thread start failed, exception:[%s]\n", __FUNCTION__, e.what());
                     KEventObject<SocketType>::Stop();
                     KEventObject<SocketType>::WaitForStop();
                     return false;
@@ -178,12 +178,12 @@ namespace klib {
         void Disconnect(SocketType fd)
         {
             KLockGuard<KMutex> lock(m_connMtx);
+            DeleteSocket(fd);
             typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.find(fd);
             if (it != m_connections.end())
             {
                 KTcpConnection<MessageType>* c = it->second;
                 std::string ip = c->GetIP();
-                DeleteSocket(fd);
                 c->Disconnect(fd);
                 std::map<std::string, int>::iterator pit = m_ipConnCount.find(ip);
                 if (pit != m_ipConnCount.end() && --pit->second < 1)
@@ -583,9 +583,7 @@ namespace klib {
             m_fds.push_back(p);
 
             return true;
-        };
-
-        
+        }; 
 
     private:
         template<typename T>
