@@ -59,6 +59,7 @@ namespace klib {
         KAny(const ValueType& v) :m_dat(new ValueHolder<ValueType>(v)) {}
         // 拷贝构造 //
         KAny(const KAny& rhs) 
+            :m_dat(NULL)
         {
             if (rhs.m_dat)
                 m_dat = rhs.m_dat->Clone();
