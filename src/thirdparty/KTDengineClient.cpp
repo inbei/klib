@@ -67,7 +67,7 @@ namespace thirdparty {
     }
     bool KTDEngineQuery::Next(std::vector<KTDengineValue>& row)
     {
-        row.swap(std::vector<KTDengineValue>());
+        row.clear();
 
         if (GetFields() == NULL)
             return false;

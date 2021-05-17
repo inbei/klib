@@ -294,7 +294,6 @@ namespace thirdparty {
                         groupStr.push_back(',');
                         ++it;
                     }
-                    groupStr.resize(groupStr.size() - 1);
                 }
 
                 char buf[1024] = { 0 };
@@ -304,7 +303,7 @@ namespace thirdparty {
                 sprintf(buf, "CREATE CONTINUOUS QUERY %s ON %s RESAMPLE EVERY 1m FOR %s "
 #endif
                     "BEGIN SELECT %s INTO %s.%s.:MEASUREMENT FROM /.*/ "
-                    "%s GROUP BY %s,time(%s) END",//tz('Asia/Shanghai')
+                    "%s GROUP BY %stime(%s) END",//tz('Asia/Shanghai')
                     p.cqname.c_str(), p.src.database.c_str(), p.interval.c_str(),
                     fields.c_str(), p.dst.database.c_str(),p.dst.rp.c_str(), //p.dst.measurement.c_str(), p.src.measurement.c_str(),
                     p.condition.c_str(),groupStr.c_str(), p.interval.c_str());
