@@ -525,13 +525,17 @@ namespace klib
                 m_conf.drvname.c_str(), m_conf.username.c_str(), m_conf.passwd.c_str(),
                 m_conf.host.c_str(), m_conf.port, m_conf.dbname.c_str());
             break;
+        case sqlite:
+        {
+            sprintf(constr, "DRIVER={%s};Database={%s};LongNames=0;Timeout=1000;NoTXN=0;SyncPragma=NORMAL;StepAPI=0;",
+                m_conf.drvname.c_str(), m_conf.dbname.c_str());
+            break;
+        }
         case sqlserver:
             sprintf(constr, "Driver={%s};Server=%s;Database=%s;"
                 "Uid=%s;Pwd=%s;",
                 m_conf.drvname.c_str(), m_conf.host.c_str(), m_conf.dbname.c_str(),
                 m_conf.username.c_str(), m_conf.passwd.c_str());
-            break;
-        case dbase:
             break;
         case sybase:
             sprintf(constr, "Driver={%s};Srvr=%s;Uid=%s;Pwd=%s",

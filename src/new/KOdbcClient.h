@@ -27,7 +27,7 @@ namespace klib
 
     enum KOdbcType
     {
-        null, mysql, db2, oracle, sqlserver, sybase, dbase
+        null, mysql, db2, oracle, sqlserver, sybase, dbase, sqlite
     };
     
     // 配置信息
