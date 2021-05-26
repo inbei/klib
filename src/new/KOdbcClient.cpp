@@ -256,6 +256,13 @@ namespace klib
                 &cd.sqltype, &cd.colsize, &cd.decimaldigits, &cd.nullable);
             if (!KOdbcClient::CheckSqlState(SQL_HANDLE_STMT, stmt, r))
                 return false;
+
+            if (cd.colsize == 0x7fffffff)// TEXT for sqlite
+            {
+                cd.sqltype = SQL_C_CHAR;
+                cd.colsize = 256;
+            }
+
             DescribeField(cd, buf[i]);
             r = SQLBindCol(stmt, i + 1, buf[i].ctype, buf[i].valbuf,
                 buf[i].bufsize, (SQLLEN*)&(buf[i].valsize));
@@ -527,7 +534,7 @@ namespace klib
             break;
         case sqlite:
         {
-            sprintf(constr, "DRIVER={%s};Database={%s};LongNames=0;Timeout=1000;NoTXN=0;SyncPragma=NORMAL;StepAPI=0;",
+            sprintf(constr, "DRIVER={%s};Database=%s;",
                 m_conf.drvname.c_str(), m_conf.dbname.c_str());
             break;
         }
