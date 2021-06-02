@@ -19,14 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\new\KOdbcClient.cpp" />
     <ClCompile Include="src\tcp\KTcpModbus.cpp" />
     <ClCompile Include="src\tcp\KTcpWebsocket.cpp" />
-    <ClCompile Include="src\thirdparty\KInfluxDbClient.cpp" />
-    <ClCompile Include="src\thirdparty\KKafkaProducer.cpp" />
-    <ClCompile Include="src\thirdparty\KRedisClient.cpp" />
-    <ClCompile Include="src\thirdparty\KRocketMqConsumer.cpp" />
-    <ClCompile Include="src\thirdparty\KTDengineClient.cpp" />
     <ClCompile Include="src\thread\KBuffer.cpp" />
     <ClCompile Include="src\thread\KCondVariable.cpp" />
     <ClCompile Include="src\thread\KError.cpp" />
@@ -55,11 +51,6 @@
     <ClInclude Include="src\tcp\KTcpWebsocket.h" />
     <ClInclude Include="src\tcp\KWebsocketClient.hpp" />
     <ClInclude Include="src\tcp\KWebsocketServer.hpp" />
-    <ClInclude Include="src\thirdparty\KInfluxDbClient.h" />
-    <ClInclude Include="src\thirdparty\KKafkaProducer.h" />
-    <ClInclude Include="src\thirdparty\KRedisClient.h" />
-    <ClInclude Include="src\thirdparty\KRocketMqConsumer.h" />
-    <ClInclude Include="src\thirdparty\KTDengineClient.h" />
     <ClInclude Include="src\thread\KAny.h" />
     <ClInclude Include="src\thread\KAtomic.h" />
     <ClInclude Include="src\thread\KBuffer.h" />
@@ -91,7 +82,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -136,8 +127,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>.\lib</OutDir>
-    <TargetName>lib$(ProjectName)</TargetName>
+    <OutDir>.\bin</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -156,12 +146,14 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>E:\depends\windows\pthreads-w32-2-9-1-release\Pre-built.2\include;E:\depends\windows\GnuWin32\include;E:\depends\windows\hiredis\include;E:\depends\windows\libcurl\include;E:\depends\windows\rdkafka\include;E:\depends\windows\rocketmq\include;.\src;.\;C:\Program Files (x86)\OpenSSL-Win32\include;E:\depends\windows\TDengine-2.0.16.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\workspace\windows\pthreads-w32-2-9-1-release\Pre-built.2\include;E:\workspace\windows\GnuWin32\include;E:\workspace\windows\hiredis\include;E:\workspace\windows\libcurl\include;E:\workspace\windows\rdkafka\include;E:\workspace\windows\rocketmq\include;.\src;.\;C:\Program Files (x86)\OpenSSL-Win32\include;E:\workspace\windows\TDengine-2.0.16.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>E:\workspace\windows\pthreads-w32-2-9-1-release\Pre-built.2\lib\x86;E:\workspace\windows\GnuWin32\lib;E:\workspace\windows\hiredis\lib;E:\workspace\windows\libcurl\lib;E:\workspace\windows\rdkafka\lib;E:\workspace\windows\rocketmq\lib;C:\Program Files (x86)\OpenSSL-Win32\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libiconv.lib;ws2_32.lib;pthreadVC2.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>pthreadVC2.lib;libiconv.lib;%(AdditionalDependencies)</AdditionalDependencies>
