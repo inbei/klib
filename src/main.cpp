@@ -16,7 +16,7 @@ int WsWorker(int j)
     conf.caFile = path + "ca.crt";
     conf.certFile = path + "client.crt";
     conf.privateKeyFile = path + "client.key";
-    if (wc.Start("127.0.0.1:9000", conf, true))
+    if (wc.Start("127.0.0.1:6789", conf, true))
     {
         while (!wc.IsConnected())
             klib::KTime::MSleep(100);
