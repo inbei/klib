@@ -15,7 +15,7 @@ int WsWorker(int j)
     klib::KOpenSSLConfig conf;
     conf.caFile = path + "ca.crt";
     conf.certFile = path + "client.crt";
-    conf.privateKeyFile = path + "client_rsa_private.pem.unsecure";
+    conf.privateKeyFile = path + "client.key";
     if (wc.Start("127.0.0.1:9000", conf, true))
     {
         while (!wc.IsConnected())
