@@ -179,7 +179,7 @@ namespace klib
     int KOpenSSL::ReadSocket(SSL* ssl, std::vector<KBuffer>& dat)
     {
         if (ssl == NULL)
-            return 0;
+            return -1;
 
         int bytes = 0;
         char buf[SSLBlockSize] = { 0 };

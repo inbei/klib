@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\new\KOdbcClient.cpp" />
+    <ClCompile Include="src\tcp\KOpenSSL.cpp" />
     <ClCompile Include="src\tcp\KTcpModbus.cpp" />
     <ClCompile Include="src\tcp\KTcpWebsocket.cpp" />
     <ClCompile Include="src\thread\KBuffer.cpp" />
@@ -43,6 +44,7 @@
     <ClInclude Include="src\new\KSpinLock.hpp" />
     <ClInclude Include="src\tcp\KModbusClient.hpp" />
     <ClInclude Include="src\tcp\KModbusServer.hpp" />
+    <ClInclude Include="src\tcp\KOpenSSL.h" />
     <ClInclude Include="src\tcp\KTcpClient.hpp" />
     <ClInclude Include="src\tcp\KTcpConnection.hpp" />
     <ClInclude Include="src\tcp\KTcpModbus.h" />
@@ -152,8 +154,8 @@
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>E:\workspace\windows\pthreads-w32-2-9-1-release\Pre-built.2\lib\x86;E:\workspace\windows\GnuWin32\lib;E:\workspace\windows\hiredis\lib;E:\workspace\windows\libcurl\lib;E:\workspace\windows\rdkafka\lib;E:\workspace\windows\rocketmq\lib;C:\Program Files (x86)\OpenSSL-Win32\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libiconv.lib;ws2_32.lib;pthreadVC2.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>E:\workspace\windows\pthreads-w32-2-9-1-release\Pre-built.2\lib\x86;E:\workspace\windows\GnuWin32\lib;E:\workspace\windows\hiredis\lib;E:\workspace\windows\libcurl\lib;E:\workspace\windows\rdkafka\lib;E:\workspace\windows\rocketmq\lib;C:\Program Files (x86)\OpenSSL-Win32\lib\VC</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libiconv.lib;ws2_32.lib;pthreadVC2.lib;hiredis.lib;libcrypto32MTd.lib;libssl32MTd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>pthreadVC2.lib;libiconv.lib;%(AdditionalDependencies)</AdditionalDependencies>

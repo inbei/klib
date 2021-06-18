@@ -78,6 +78,9 @@
     <ClCompile Include="src\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\tcp\KOpenSSL.cpp">
+      <Filter>tcp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\util\KBase64.h">
@@ -183,6 +186,9 @@
       <Filter>tcp</Filter>
     </ClInclude>
     <ClInclude Include="src\tcp\KWebsocketServer.hpp">
+      <Filter>tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tcp\KOpenSSL.h">
       <Filter>tcp</Filter>
     </ClInclude>
   </ItemGroup>

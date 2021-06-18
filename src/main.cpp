@@ -10,12 +10,13 @@
 
 int WsWorker(int j)
 {
+    std::string path("E:\\pci\\mics3\\iot_HmiAgent\\bin\\");
     klib::KWebsocketClient wc;
-    /*klib::KOpenSSLConfig conf;
-    conf.caFile = "E:\\openssl\\ca.crt";
-    conf.certFile = "E:\\openssl\\client.crt";
-    conf.privateKeyFile = "E:\\openssl\\client_rsa_private.pem.unsecure";*/
-    if (wc.Start("172.28.70.55:9000",/* conf, */true))
+    klib::KOpenSSLConfig conf;
+    conf.caFile = path + "ca.crt";
+    conf.certFile = path + "client.crt";
+    conf.privateKeyFile = path + "client_rsa_private.pem.unsecure";
+    if (wc.Start("127.0.0.1:9000", conf, true))
     {
         while (!wc.IsConnected())
             klib::KTime::MSleep(100);
@@ -32,7 +33,7 @@ int WsWorker(int j)
             if (!wc.Send(bufs))
                 buf.Release();
 
-            klib::KTime::MSleep(1000);
+            klib::KTime::MSleep(10);
             /*if (i % 999 == 0)
                 wc.Disconnect();*/
             //klib::KTime::MSleep(1000);
@@ -48,7 +49,7 @@ int WsWorker(int j)
 void TestWebsocket()
 {
     std::map<int, klib::KPthread*> threads;
-    for (int j = 0; j < 49; ++j)
+    for (int j = 0; j < 1; ++j)
     {
         klib::KPthread* t = new klib::KPthread("");
         if (t->Run(WsWorker, 1))
@@ -204,7 +205,7 @@ void Precision_select()
 
 int main()
 {
-    TestOdbc();
+    //TestOdbc();
 
     TestWebsocket();
     //TestOdbc();

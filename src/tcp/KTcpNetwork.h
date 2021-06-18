@@ -642,7 +642,17 @@ namespace klib {
             return true;
         };
 
-        
+        SSL* GetSSL(SocketType fd)
+        {
+			KLockGuard<KMutex> lock(m_connMtx);
+			typename std::map<SocketType, KTcpConnection<MessageType>*>::iterator it = m_connections.find(fd);
+			if (it != m_connections.end())
+			{
+				KTcpConnection<MessageType>* c = it->second;
+                return c->GetSSL();
+			}
+			return NULL;
+        }
 
     private:
         template<typename T>
