@@ -20,7 +20,7 @@ namespace klib {
         * Parameter: hosts 格式：1.1.1.1:12345,2.2.2.2:23456
         * Parameter: needAuth 是否需要授权
         *************************************/
-        bool Start(const std::string& hosts, bool needAuth = false)
+        bool Start(const std::string& hosts, const KOpenSSLConfig &conf, bool needAuth = false)
         {
             std::vector<std::string> brokers;
             klib::KStringUtility::SplitString(hosts, ",", brokers);
@@ -52,7 +52,7 @@ namespace klib {
             }
 
             m_it = m_hostip.begin();
-            return KTcpNetwork<MessageType>::Start(m_it->first, m_it->second, false, needAuth);
+            return KTcpNetwork<MessageType>::Start(m_it->first, m_it->second, conf, false, needAuth);
         }
 
         /************************************

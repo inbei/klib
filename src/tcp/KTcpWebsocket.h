@@ -299,7 +299,14 @@ namespace klib
             req.append(m_secKey + "\r\n");
             req.append("Sec-WebSocket-Version: 13\r\n\r\n");
 
-            return KTcpUtil::WriteSocket(GetSocket(), req.c_str(), req.size()) == req.size();
+			size_t sz = 0;
+#ifdef __OPEN_SSL__
+			if (m_poller->IsSslEnabled())
+				sz = KOpenSSL::WriteSocket(GetSSL(), req.c_str(), req.size());
+			else
+#endif
+				sz = KTcpUtil::WriteSocket(GetSocket(), req.c_str(), req.size());
+            return sz == req.size();
         }
 
         /************************************
@@ -346,7 +353,14 @@ namespace klib
                 }
                 resp.append("Upgrade: websocket\r\n\r\n");
 
-                if (KTcpUtil::WriteSocket(fd, resp.c_str(), resp.size()) == resp.size())
+                size_t sz = 0;
+#ifdef __OPEN_SSL__
+                if (m_poller->IsSslEnabled())
+                    sz = KOpenSSL::WriteSocket(GetSSL(), resp.c_str(), resp.size());
+                else
+#endif
+                    sz = KTcpUtil::WriteSocket(fd, resp.c_str(), resp.size());
+                if (sz == resp.size())
                 {
                     printf("handshake with client successfully\n");
                     rc = true;

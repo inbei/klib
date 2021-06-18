@@ -16,7 +16,7 @@ namespace klib {
         *************************************/
         KTcpNetwork()
             :KEventObject<SocketType>("Poll thread", 50),m_connected(false), 
-            m_isServer(false),m_needAuth(false),m_maxClient(100), m_checkThread("Check alive thread")
+            m_isServer(false),m_needAuth(false),m_maxClient(100),m_ctx(NULL), m_sslEnabled(false), m_checkThread("Check alive thread")
         {
 #if defined(WIN32)
             WSADATA wsd;
@@ -66,12 +66,22 @@ namespace klib {
         * Parameter: isServer 是否是服务器
         * Parameter: needAuth 是否需要授权
         *************************************/
-        virtual bool Start(const std::string& ip, int32_t port, bool isServer = true, bool needAuth = false)
+        virtual bool Start(const std::string& ip, int32_t port, const KOpenSSLConfig &conf, bool isServer = true, bool needAuth = false, bool sslEnabled = false)
         {
+#ifdef __OPEN_SSL__
+            if (sslEnabled && !KOpenSSL::CreateCtx(isServer, conf, &m_ctx))
+            {
+                KOpenSSL::DestroyCtx(&m_ctx);
+                return false;
+            }
+#endif
             m_ip = ip;
             m_port = port;
             m_isServer = isServer;
             m_needAuth = needAuth;
+#ifdef __OPEN_SSL__
+            m_sslEnabled = sslEnabled;
+#endif
             if (KEventObject<SocketType>::Start())
             {
                 try
@@ -83,12 +93,20 @@ namespace klib {
                     //printf("<%s> KTcpNetwork thread start failed, exception:[%s]\n", __FUNCTION__, e.what());
                     KEventObject<SocketType>::Stop();
                     KEventObject<SocketType>::WaitForStop();
+#ifdef __OPEN_SSL__
+            if (sslEnabled)
+                KOpenSSL::DestroyCtx(&m_ctx);
+#endif
                     return false;
                 }
 
                 PostForce(0);
                 return true;
             }
+#ifdef __OPEN_SSL__
+            if (sslEnabled)
+                KOpenSSL::DestroyCtx(&m_ctx);
+#endif
             return false;
         }
 
@@ -109,6 +127,9 @@ namespace klib {
         {
             KEventObject<SocketType>::WaitForStop();
             m_checkThread.Join();
+#ifdef __OPEN_SSL__
+            KOpenSSL::DestroyCtx(&m_ctx);
+#endif
         }
 
         /************************************
@@ -139,6 +160,7 @@ namespace klib {
                 KTcpConnection<MessageType>* c = it->second;
                 SocketEvent e(fd, et);
                 e.binDat = bufs;
+				e.ssl = c->GetSSL();
                 if (c->IsConnected())
                 {
                     if (!c->Post(e))
@@ -190,6 +212,8 @@ namespace klib {
                     m_ipConnCount.erase(pit);
             }
         }
+		
+		inline bool IsSslEnabled() const { return m_sslEnabled; }
 
     protected:        
         /************************************
@@ -347,7 +371,14 @@ namespace klib {
         void ReadSocket2(SocketType fd)
         {
             std::vector<KBuffer> bufs;
-            if (KTcpUtil::ReadSocket(fd, bufs) < 0)
+            int rc = 0;
+#ifdef __OPEN_SSL__
+            if (IsSslEnabled())
+                rc = KOpenSSL::ReadSocket(GetSSL(fd), bufs);
+            else
+#endif
+                rc = KTcpUtil::ReadSocket(fd, bufs);
+            if (rc < 0)
                 Disconnect(fd);
 
             if (!bufs.empty())
@@ -440,10 +471,27 @@ namespace klib {
                 }
                 ++it;
             }
+			SSL* ssl = NULL;
+#ifdef __OPEN_SSL__
+            if (IsSslEnabled())
+            {
+				if (m_isServer)
+					ssl = KOpenSSL::Accept(fd, m_ctx);
+				else
+					ssl = KOpenSSL::Connect(fd, m_ctx);
 
+				if (ssl == NULL)
+				{
+					KTcpUtil::CloseSocket(fd);
+					printf("CreateSSL failed\n");
+					return false;
+				}
+            }
+#endif
             if (recycle != m_connections.end())
             {
                 KTcpConnection<MessageType>* c = recycle->second;
+				c->SetSSL(ssl);
                 c->Connect(ip, port, fd);
                 if (SetSocket(fd))
                 {
@@ -472,6 +520,7 @@ namespace klib {
                 if (m_connections.size() < m_maxClient)
                 {
                     KTcpConnection<MessageType>* c = NewConnection(fd, ip + ":" + port);
+					c->SetSSL(ssl);
                     if (c->Start(m_isServer ? NmServer : NmClient, ip, port, fd, m_needAuth))
                     {
                         if (SetSocket(fd))
@@ -499,6 +548,10 @@ namespace klib {
                     }
                     else
                     {
+#ifdef __OPEN_SSL__
+            			if (IsSslEnabled())
+                			KOpenSSL::Disconnect(&ssl);
+#endif
                         DeleteSocket(fd);
                         printf("New thread started failed\n");
                     }
@@ -507,6 +560,10 @@ namespace klib {
                 }
                 else
                 {
+#ifdef __OPEN_SSL__
+            		if (IsSslEnabled())
+                		KOpenSSL::Disconnect(&ssl);
+#endif
                     DeleteSocket(fd);
                     printf("New reach max client count:[%d]\n", m_maxClient);
                 }
@@ -583,7 +640,9 @@ namespace klib {
             m_fds.push_back(p);
 
             return true;
-        }; 
+        };
+
+        
 
     private:
         template<typename T>
@@ -619,6 +678,10 @@ namespace klib {
         std::map<SocketType, KTcpConnection<MessageType>*> m_connections;
         std::map<std::string, int> m_ipConnCount;
         KPthread m_checkThread;
+
+        SSL_CTX* m_ctx;
+
+        volatile bool m_sslEnabled;
     };
 };
 

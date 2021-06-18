@@ -39,7 +39,18 @@
 #include "thread/KMutex.h"
 #include "thread/KEventObject.h"
 #include "util/KTime.h"
-
+#ifdef __OPEN_SSL__
+#include "tcp/KOpenSSL.h"
+#else
+struct SSL {};
+struct SSL_CTX {};
+struct KOpenSSLConfig
+{
+	std::string caFile;
+	std::string certFile;
+	std::string privateKeyFile;
+};
+#endif
 /**
 tcp数据处理类
 **/
@@ -256,10 +267,10 @@ namespace klib {
         };
 
         SocketEvent(SocketType f, EventType type)
-            :fd(f), ev(type) {}
+            :fd(f), ev(type), ssl(NULL) {}
 
         SocketEvent()
-            :fd(0), ev(SeUndefined) {}
+            :fd(0), ev(SeUndefined), ssl(NULL) {}
 
         SocketType fd;
         EventType ev;
@@ -267,6 +278,7 @@ namespace klib {
         std::vector<KBuffer> binDat;
         // 字符串数据 //
         std::string strDat;
+		SSL* ssl;
     };
 
     enum NetworkState
@@ -563,7 +575,7 @@ namespace klib {
     public:
         KTcpConnection(KTcpNetwork<MessageType> *poller)
             :KEventObject<SocketEvent>("Socket event thread", 1000),
-            m_state(NsUndefined), m_mode(NmUndefined), m_poller(poller), m_fd(0)
+            m_state(NsUndefined), m_mode(NmUndefined), m_poller(poller), m_fd(0),m_ssl(NULL)
         {
 
         }
@@ -621,6 +633,10 @@ namespace klib {
         * Returns:   socket
         *************************************/
         inline SocketType GetSocket() const { return m_fd; }
+
+        inline SSL* GetSSL() const { return m_ssl; }
+
+        inline void SetSSL(SSL* ssl) { m_ssl = ssl; }
 
         /************************************
         * Method:    获取IP和端口
@@ -729,7 +745,14 @@ namespace klib {
                         const std::string& smsg = ev.strDat;
                         if (!smsg.empty())
                         {
-                            int rc = KTcpUtil::WriteSocket(fd, smsg.c_str(), smsg.size());
+                            int rc = 0;
+#ifdef __OPEN_SSL__
+                            if(m_poller->IsSslEnabled())
+                                rc = KOpenSSL::WriteSocket(ev.ssl, smsg.c_str(), smsg.size());
+                            else
+#endif
+                                rc = KTcpUtil::WriteSocket(fd, smsg.c_str(), smsg.size());
+
                             if (rc < 0)
                             {
                                 m_poller->Disconnect(fd);
@@ -744,7 +767,16 @@ namespace klib {
                             while (it != bufs.end())
                             {
                                 KBuffer& buf = *it;
-                                if (KTcpUtil::WriteSocket(fd, buf.GetData(), buf.GetSize()) < 0)
+
+                                int rc = 0;
+#ifdef __OPEN_SSL__
+                                if (m_poller->IsSslEnabled())
+                                    rc = KOpenSSL::WriteSocket(ev.ssl, buf.GetData(), buf.GetSize());
+                                else
+#endif
+                                    rc = KTcpUtil::WriteSocket(fd, buf.GetData(), buf.GetSize());
+
+                                if (rc < 0)
                                 {
                                     m_poller->Disconnect(fd);
                                     break;
@@ -761,7 +793,14 @@ namespace klib {
                     if (bufs.empty())
                     {
                         std::vector<KBuffer> buffers;
-                        int rc = KTcpUtil::ReadSocket(fd, buffers);
+                        int rc = 0;
+#ifdef __OPEN_SSL__
+                        if (m_poller->IsSslEnabled())
+                            rc = KOpenSSL::ReadSocket(ev.ssl, buffers);
+                        else
+#endif
+                            rc = KTcpUtil::ReadSocket(fd, buffers);
+
                         if (rc < 0)
                             m_poller->Disconnect(fd);
 
@@ -839,6 +878,10 @@ namespace klib {
         *************************************/
         void Disconnect(SocketType fd)
         {
+#ifdef __OPEN_SSL__
+            if (m_poller->IsSslEnabled())
+                KOpenSSL::Disconnect(&m_ssl);
+#endif
             m_auth.Reset();
             m_remain.Release();
 
@@ -884,5 +927,6 @@ namespace klib {
         // 授权 //
         Authorization m_auth;
         
+        SSL* m_ssl;
     };
 };
